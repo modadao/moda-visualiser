@@ -1,5 +1,8 @@
 #define PI 3.1415926538
 
+uniform sampler2D u_colorscheme;
+uniform float u_floatHash;
+
 attribute float index;
 attribute float theta;
 attribute float gradient;
@@ -15,7 +18,8 @@ void main() {
   vec3 color1 = vec3(0.997,0.989,0.901);
   vec3 color2 = vec3(0.338,0.649,0.414);
 
-  vColor = mix(color1, color2, (-0.5 + gradient) * 2.);
+  vColor = texture2D(u_colorscheme, vec2(u_floatHash + 0.5 + gradient, 0.5)).rgb;
+  // vColor = mix(color1, color2, (-0.5 + gradient) * 2.);
 
   vec4 mvPosition = modelViewMatrix * vec4( newPosition, 1.0 );
 

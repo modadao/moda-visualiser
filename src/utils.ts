@@ -38,17 +38,28 @@ export const deriveData = (fingerprint: IFingerprint): IDerivedFingerPrint => {
       gradients.push(0);
     }
   }
+  // Normalize it between 0-1
   const gradientMax = gradients.reduce((acc, el) => Math.max(acc, el), 0);
   const gradientMin = gradients.reduce((acc, el) => Math.min(acc, el), 0);
   gradients = gradients.map((el) => {
     return MathUtils.mapLinear(el, gradientMin, gradientMax, 0, 1);
   })
 
+  // Create a hashed value
+  let hash = 0;
+  for (const el of fingerprint.coords) {
+    hash = ((hash<<5)-hash)+ el.x + el.y;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  console.log(hash/ 2_147_483_647);
+
   return { ...fingerprint,
     coords: fingerprint.coords.map((el, i) => ({
       x: el.x,
       y: el.y,
       g: gradients[i],
-    }))
+    })),
+    hash,
+    floatHash: hash / 2_147_483_647,
   }
 }

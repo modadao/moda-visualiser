@@ -11,5 +11,7 @@ export interface IDerivedCoordinate extends ICoordinate {
   g: number,
 };
 export interface IDerivedFingerPrint extends IFingerprint {
-  coords: IDerivedCoordinate[]
+  coords: IDerivedCoordinate[],
+  hash: number,
+  floatHash: number,
 }

@@ -20,8 +20,8 @@ export default class App {
     this.element.appendChild(this.renderer.domElement);
 
     this.scene = new Scene();
-    this.camera = new OrthographicCamera(-5, 5, 5, -5);
-    this.camera.position.y = 5;
+    this.camera = new OrthographicCamera(-5, 5, 5, -5, 0.001, 100);
+    this.camera.position.y = 10;
     this.camera.lookAt(0, 0, 0);
 
     const derivedFingerprint = deriveData(example as IFingerprint);
