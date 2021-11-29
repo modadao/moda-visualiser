@@ -8,7 +8,6 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const Dotenv = require('dotenv-webpack');
-const { VueLoaderPlugin } = require('vue-loader');
 const BannerPlugin = webpack.BannerPlugin;
 const CopyPlugin = require('copy-webpack-plugin');
 const { ESBuildMinifyPlugin } = require('esbuild-loader')
@@ -51,15 +50,6 @@ module.exports = (env = {}) => ({
   module: {
     rules: [
       {
-        test: /\.vue$/,
-        exclude: /node_modules/,
-        use: [
-          {
-            loader: 'vue-loader',
-          },
-        ]
-      },
-      {
         test: /\.(ts|js)x?$/,
         exclude: /node_modules/,
         loader: 'esbuild-loader',
@@ -71,7 +61,6 @@ module.exports = (env = {}) => ({
       {
         test: /\.scss$/,
         use: [
-          'vue-style-loader',
           'css-loader',
           'resolve-url-loader',
           'sass-loader',
@@ -113,10 +102,7 @@ module.exports = (env = {}) => ({
     ],
   },
   resolve: {
-    extensions: ['.ts', '.js', '.vue', '.json'],
-    alias: {
-      'vue': '@vue/runtime-dom',
-    }
+    extensions: ['.ts', '.js', '.json'],
   },
   plugins: [
     new Dotenv({
@@ -132,12 +118,8 @@ module.exports = (env = {}) => ({
     new MiniCssExtractPlugin({
       filename: '[name].css'
     }),
-    new VueLoaderPlugin(),
     new BannerPlugin({
       banner: getBanner(),
-    }),
-    new webpack.DefinePlugin({
-      __VUE_OPTIONS_API__: false,
     }),
     new CopyPlugin({
       patterns: [

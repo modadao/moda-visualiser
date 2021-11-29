@@ -1,7 +1,6 @@
-import { createApp } from 'vue'
-import App from './App.vue'
+import App from './App'
 
-const app = createApp(App);
-app.mount('#app');
-
-console.log('Up and running :)');
+const container = document.getElementById('app');
+if (container) {
+  const app = new App(container);
+}
