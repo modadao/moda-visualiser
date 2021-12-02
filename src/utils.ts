@@ -1,6 +1,6 @@
 import { BufferAttribute, MathUtils, ShaderMaterial, Vector } from "three";
 import gui from "./helpers/gui";
-import { IDerivedFingerPrint, IFingerprint } from "./types";
+import { IDerivedCoordinate, IDerivedFingerPrint, IFingerprint } from "./types";
 
 export const buildAttribute = (length: number, itemSize: number, predicate: (i: number) => number[]): BufferAttribute => {
   const array = new Float32Array(length * itemSize);
@@ -78,13 +78,14 @@ export const deriveData = (fingerprint: IFingerprint): IDerivedFingerPrint => {
   }
   const floatHash = (hash / 2_147_483_647) * 0.5 + 0.5;
 
+  const selectedFeatures = [];
   let probabilityScaler = 1;
   let numberOfFeatures = 0;
   const targetNumberOfFeatures = 7 + Math.floor(fingerprint.coords.length / 3000);
   const result =  { ...fingerprint,
     coords: fingerprint.coords.map((el, i) => {
-      const r = customRandom.deterministic(el.x, el.y, gradients[i]);
-      const threshold = (1 - numberOfFeatures / targetNumberOfFeatures) * probabilityScaler / fingerprint.coords.length;
+      let r = customRandom.deterministic(el.x, el.y, gradients[i]);
+      const threshold = (1 - numberOfFeatures / targetNumberOfFeatures) * probabilityScaler / fingerprint.coords.length * probabilityScaler * 0.01;
       const isFeature = r < threshold;
       if (!isFeature) probabilityScaler += 0.1;
       else {

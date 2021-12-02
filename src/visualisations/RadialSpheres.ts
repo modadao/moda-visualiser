@@ -4,6 +4,8 @@ import { CatmullRomCurve3, Vector3, Mesh, Object3D, LineBasicMaterial, Scene, Sh
 import { hilbert3D } from "three/examples/jsm/utils/GeometryUtils";
 import FragShader from '../shaders/spheres_frag.glsl';
 import VertShader from '../shaders/spheres_vert.glsl';
+import RingFragShader from '../shaders/v1_rings_frag.glsl';
+import RingVertShader from '../shaders/v1_rings_vert.glsl';
 import ColorSchemeImg from '../assets/color_scheme.jpg';
 import CircleLineGeometry from '../helpers/CircleLineGeometry';
 import CrossLineGeometry from "../helpers/CrossLineGeometry";
@@ -30,7 +32,7 @@ export default class RadialSphere extends Object3D {
     colorSchemeTexture.wrapT = RepeatWrapping;
 
     // Add rings for flare
-    const geo = new CircleLineGeometry(1, 64);
+    const geo = new CircleLineGeometry(1, 128);
     const matGrey = new LineBasicMaterial({ color: 0x666666 });
     const matWhite = new LineBasicMaterial({ color: 0xdddddd });
     const l = new Line(geo, matWhite);
@@ -46,7 +48,12 @@ export default class RadialSphere extends Object3D {
 
 
     const greyRing = l.clone();
-    greyRing.material = matGrey;
+    const ringShaderMat = new ShaderMaterial({
+      vertexShader: RingVertShader,
+      fragmentShader: RingFragShader,
+    })
+    // @ts-ignore
+    greyRing.material = ringShaderMat;
     new Array(20).fill(0).forEach((_, i) => {
       const ring = greyRing.clone()
       ring.scale.setScalar(4.0 + i * 0.3);
@@ -97,9 +104,9 @@ export default class RadialSphere extends Object3D {
 
       // Orbit rings
       if (p.featureLevel !== 0) {
-        const featureGeometry = p.featureLevel > 0.9
+        const featureGeometry = p.featureLevel > 0.7
             ? new CircleLineGeometry(1, 16)
-            : p.featureLevel > 0.5
+            : p.featureLevel > 0.2
               ? new CrossLineGeometry(2)
               : new SphereBufferGeometry(1, 2, 2);
 

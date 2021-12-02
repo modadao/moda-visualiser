@@ -2,12 +2,13 @@ import { IDerivedCoordinate, IDerivedFingerPrint } from "@/types";
 import { BufferAttribute, BufferGeometry, MathUtils, Vector3 } from "three";
 
 export default class RingBarGeometry extends BufferGeometry {
-  constructor(radius: number, fingerprint: IDerivedFingerPrint, amplitude: number) {
+  constructor(radius: number, fingerprint: IDerivedFingerPrint, amplitude: number, skip = 1) {
     super();
     const { PI, sin, cos } = Math;
     const [height, width] = fingerprint.shape;
-    const points = fingerprint.coords.map((p) => {
-      const theta = MathUtils.mapLinear(p.x / (width + 1), 0, 1, 0, 2 * PI);
+    const points = fingerprint.coords.map((p, i) => {
+      if (i % skip !== 0) return [];
+      const theta = MathUtils.mapLinear(p.x / (width), 0, 1, 0, 2 * PI);
       const tx = sin(theta);
       const ty = cos(theta);
       return [

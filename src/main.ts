@@ -8,7 +8,7 @@ import { IFingerprint } from './types';
 const container = document.getElementById('app');
 let app: App|undefined;
 if (container) {
-  app = new App(container, example as IFingerprint);
+  app = new App(container, exampleFis as unknown as IFingerprint);
 }
 
 const textarea = document.getElementById('fingerprint');
