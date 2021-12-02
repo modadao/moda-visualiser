@@ -1,4 +1,4 @@
-import { BufferAttribute, MathUtils, ShaderMaterial } from "three";
+import { BufferAttribute, MathUtils, ShaderMaterial, Vector } from "three";
 import gui from "./helpers/gui";
 import { IDerivedFingerPrint, IFingerprint } from "./types";
 
@@ -14,6 +14,29 @@ export const buildAttribute = (length: number, itemSize: number, predicate: (i: 
     }
   }
   return new BufferAttribute(array, itemSize);
+}
+export const customRandom = {
+  seed: 49734321,
+  setSeed(seed: number) {
+    customRandom.seed = seed;
+  },
+  deterministic(...seeds: number[]) {
+    if (seeds) {
+      seeds.forEach((val, i) => {
+        if (i === 0) {
+          customRandom.seed = ((val + 0x7ed55d16) + (val << 12)) & 0xffffffff
+        } else {
+          customRandom.seed = (customRandom.seed ^ 0xc761c23c ^ (customRandom.seed >>> 19) ^ val) & 0xffffffff
+        }
+      });
+    }
+    return customRandom.random();
+  },
+  random() {
+    customRandom.seed = ((customRandom.seed + 0xd3a2646c) ^ (customRandom.seed << 9)) & 0xffffffff
+    customRandom.seed = (customRandom.seed + 0xfd7046c5 + (customRandom.seed << 3)) & 0xffffffff
+    return (customRandom.seed & 0xfffffff) / 0x10000000
+  },
 }
 
 export const deriveData = (fingerprint: IFingerprint): IDerivedFingerPrint => {
@@ -55,21 +78,27 @@ export const deriveData = (fingerprint: IFingerprint): IDerivedFingerPrint => {
   }
   const floatHash = (hash / 2_147_483_647) * 0.5 + 0.5;
 
-  const maxGradientIndex = gradients.findIndex(el => el === gradientMax);
-  const minGradientIndex = gradients.findIndex(el => el === gradientMin);
-  const maxVal = Math.max(...fingerprint.coords.map(el => el.x));
-  const minVal = Math.min(...fingerprint.coords.map(el => el.x));
-
+  let probabilityScaler = 1;
+  let numberOfFeatures = 0;
+  const targetNumberOfFeatures = 7 + Math.floor(fingerprint.coords.length / 3000);
   const result =  { ...fingerprint,
-    coords: fingerprint.coords.map((el, i) => ({
-      x: el.x,
-      y: el.y,
-      g: gradients[i],
-      gmax: i === maxGradientIndex,
-      gmin: i === minGradientIndex,
-      max: el.x === maxVal,
-      min: el.x === minVal,
-    })),
+    coords: fingerprint.coords.map((el, i) => {
+      const r = customRandom.deterministic(el.x, el.y, gradients[i]);
+      const threshold = (1 - numberOfFeatures / targetNumberOfFeatures) * probabilityScaler / fingerprint.coords.length;
+      const isFeature = r < threshold;
+      if (!isFeature) probabilityScaler += 0.1;
+      else {
+        console.log('Is feature')
+        probabilityScaler = 1;
+        numberOfFeatures += 1
+      }
+      return {
+        x: el.x,
+        y: el.y,
+        g: gradients[i],
+        featureLevel: isFeature ? customRandom.deterministic(el.x, el.y) : 0,
+      }
+    }),
     hash,
     floatHash,
   }
@@ -85,4 +114,15 @@ export const createShaderControls = (mat: ShaderMaterial) => {
     if (typeof binding.value === 'number')
       f.add(binding, 'value', 0, 10, 0.01).name(`${key}`)
   })
+}
+
+export const bezierVector = <T extends Vector>(A: T, B: T, C: T, D: T, t: number): T => {
+  const tv1 = A.clone().lerp(B, t);
+  const tv2 = B.clone().lerp(C, t);
+  const tv3 = C.clone().lerp(D, t);
+  tv1.lerp(tv2, t);
+  tv2.lerp(tv3, t);
+
+  tv1.lerp(tv2, t);
+  return tv1.clone() as T;
 }

@@ -1,36 +1,57 @@
 import { IDerivedFingerPrint } from "../types";
-import { buildAttribute, createShaderControls } from "../utils";
-import { CatmullRomCurve3, Vector3, Mesh, Object3D, LineBasicMaterial, Scene, ShaderMaterial, SphereBufferGeometry, TextureLoader, BufferGeometry, Line } from "three";
+import { bezierVector, buildAttribute, createShaderControls } from "../utils";
+import { CatmullRomCurve3, Vector3, Mesh, Object3D, LineBasicMaterial, Scene, ShaderMaterial, SphereBufferGeometry, TextureLoader, BufferGeometry, Line, Vector2, BoxGeometry, BoxBufferGeometry, RepeatWrapping } from "three";
 import { hilbert3D } from "three/examples/jsm/utils/GeometryUtils";
 import FragShader from '../shaders/spheres_frag.glsl';
 import VertShader from '../shaders/spheres_vert.glsl';
 import ColorSchemeImg from '../assets/color_scheme.jpg';
 import CircleLineGeometry from '../helpers/CircleLineGeometry';
+import CrossLineGeometry from "../helpers/CrossLineGeometry";
+import RingBarGeometry from "../helpers/RingBarGeometry";
 
 const tl = new TextureLoader();
 export default class RadialSphere extends Object3D {
   constructor(private scene: Scene, private fingerprint: IDerivedFingerPrint) {
     super();
 
+    const sizeBezierPoints = [
+      new Vector2(0, 0.05),
+      new Vector2(0.25, 0.1),
+      new Vector2(0.5, 0.3),
+      new Vector2(1, 0.5),
+    ];
+    const scaleSize = (t: number) => {
+      const [a, b, c, d] = sizeBezierPoints;
+      return bezierVector(a,b,c,d,t)
+    }
+
     const colorSchemeTexture = tl.load(ColorSchemeImg);
+    colorSchemeTexture.wrapS = RepeatWrapping;
+    colorSchemeTexture.wrapT = RepeatWrapping;
 
     // Add rings for flare
     const geo = new CircleLineGeometry(1, 64);
-    const mat = new LineBasicMaterial({ color: 0x666666 });
-    const l = new Line(geo, mat);
+    const matGrey = new LineBasicMaterial({ color: 0x666666 });
+    const matWhite = new LineBasicMaterial({ color: 0xdddddd });
+    const l = new Line(geo, matWhite);
     l.position.setY(-0.1);
     l.rotateX(Math.PI / 2)
-    l.scale.setScalar(1.3);
+    l.scale.setScalar(0.9);
     this.add(l);
-    const l2 = l.clone();
-    l2.scale.setScalar(2.3);
-    this.add(l2);
-    const l3 = l.clone();
-    l3.scale.setScalar(3.3);
-    this.add(l3);
-    const l4 = l.clone();
-    l4.scale.setScalar(0.7);
-    this.add(l4);
+
+    const ringBarGeo = new RingBarGeometry(3.3, fingerprint, 0.001);
+    const ringBarLine = new Line(ringBarGeo, matWhite);
+    ringBarLine.rotateX(Math.PI / 2);
+    this.add(ringBarLine);
+
+
+    const greyRing = l.clone();
+    greyRing.material = matGrey;
+    new Array(20).fill(0).forEach((_, i) => {
+      const ring = greyRing.clone()
+      ring.scale.setScalar(4.0 + i * 0.3);
+      this.add(ring);
+    })
 
     const { sin, cos, floor, max, pow } = Math;
     const [ width, height ] = fingerprint.shape;
@@ -70,32 +91,20 @@ export default class RadialSphere extends Object3D {
       // Size
       const d = (Math.abs(p.g - 0.5) + scale);
       mesh.scale.setScalar(d * scale);
-      const scaleMultiplier = p.max 
-        ? 3
-        : p.gmax
-          ? 2
-          : p.min
-            ? 1.5
-            : p.gmin
-              ? 1.2
-              : 1;
-      if (scaleMultiplier !== 1) {
-        mesh.scale.multiplyScalar(scaleMultiplier);
+      if (p.featureLevel !== 0) {
+        mesh.scale.setScalar(scaleSize(p.featureLevel).y);
       }
 
       // Orbit rings
-      let repeatCount = (p.max || p.gmax) 
-        ? 2
-        : p.min || p.gmin
-          ? 1
-          : 0;
-      let i = 0;
-      while (i < repeatCount) {
-        const points = hilbert3D( new Vector3( 0, 0, 0 ), 200.0, 1, 0, 1, 2, 3, 4, 5, 6, 7 );
-        const spline = new CatmullRomCurve3( points );
-        const samples = spline.getPoints( points.length * 3 );
+      if (p.featureLevel !== 0) {
+        const featureGeometry = p.featureLevel > 0.9
+            ? new CircleLineGeometry(1, 16)
+            : p.featureLevel > 0.5
+              ? new CrossLineGeometry(2)
+              : new SphereBufferGeometry(1, 2, 2);
+
         const ringMesh = new Line(
-          new CircleLineGeometry(1, 32),
+          featureGeometry,
           new LineBasicMaterial({
             color: 0xffffff,
             linewidth: 1,
@@ -104,15 +113,13 @@ export default class RadialSphere extends Object3D {
           })
         )
         ringMesh.position.copy(mesh.position);
-        ringMesh.scale.setScalar((d + 1.1) * 0.15 + 0.1 * i);
+        ringMesh.scale.setScalar((mesh.scale.x + 0.1));
         ringMesh.rotateX(Math.PI / 2)
         this.add(ringMesh);
-        i += 1;
       }
 
       // Colour
-      const color = fingerprint.floatHash + sin(theta + p.g) * 0.2;
-      console.log(color);
+      const color = fingerprint.floatHash + sin(theta) * 0.15 + p.g * 0.3;
       m.uniforms.u_floatHash.value = color < 0 ? color + 1 : color;
 
       this.add(mesh);
