@@ -3,6 +3,7 @@ import example from './data/example.json';
 import exampleDebug from './data/example_test.json';
 import exampleFis from './data/example_fis.json';
 import exampleRock from './data/example_rock.json';
+import exampleSoftDisco from './data/example_softdisco.json';
 import { IFingerprint } from './types';
 
 const container = document.getElementById('app');
@@ -27,6 +28,7 @@ const lookup = {
   ['Test'] : exampleDebug,
   ['Snare-y experimental'] : exampleFis,
   ['Rock'] : exampleRock,
+  ['Disco-y'] : exampleSoftDisco,
 }
 
 document.querySelectorAll('.example-button').forEach(el => {
