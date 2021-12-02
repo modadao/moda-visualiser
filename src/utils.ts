@@ -1,4 +1,5 @@
-import { BufferAttribute, MathUtils } from "three";
+import { BufferAttribute, MathUtils, ShaderMaterial } from "three";
+import gui from "./helpers/gui";
 import { IDerivedFingerPrint, IFingerprint } from "./types";
 
 export const buildAttribute = (length: number, itemSize: number, predicate: (i: number) => number[]): BufferAttribute => {
@@ -44,6 +45,7 @@ export const deriveData = (fingerprint: IFingerprint): IDerivedFingerPrint => {
   gradients = gradients.map((el) => {
     return MathUtils.mapLinear(el, gradientMin, gradientMax, 0, 1);
   })
+  console.log({ gradients })
 
   // Create a hashed value
   let hash = 0;
@@ -51,15 +53,36 @@ export const deriveData = (fingerprint: IFingerprint): IDerivedFingerPrint => {
     hash = ((hash<<5)-hash)+ el.x + el.y;
     hash = hash & hash; // Convert to 32bit integer
   }
-  console.log(hash/ 2_147_483_647);
+  const floatHash = (hash / 2_147_483_647) * 0.5 + 0.5;
 
-  return { ...fingerprint,
+  const maxGradientIndex = gradients.findIndex(el => el === gradientMax);
+  const minGradientIndex = gradients.findIndex(el => el === gradientMin);
+  const maxVal = Math.max(...fingerprint.coords.map(el => el.x));
+  const minVal = Math.min(...fingerprint.coords.map(el => el.x));
+
+  const result =  { ...fingerprint,
     coords: fingerprint.coords.map((el, i) => ({
       x: el.x,
       y: el.y,
       g: gradients[i],
+      gmax: i === maxGradientIndex,
+      gmin: i === minGradientIndex,
+      max: el.x === maxVal,
+      min: el.x === minVal,
     })),
     hash,
-    floatHash: hash / 2_147_483_647,
+    floatHash,
   }
+
+  console.log('Derived data result: ', result);
+  return result;
+}
+
+export const createShaderControls = (mat: ShaderMaterial) => {
+  const f = gui.addFolder('Shader');
+  Object.keys(mat.uniforms).forEach(key => {
+    const binding = mat.uniforms[key];
+    if (typeof binding.value === 'number')
+      f.add(binding, 'value', 0, 10, 0.01).name(`${key}`)
+  })
 }

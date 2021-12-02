@@ -1,8 +1,8 @@
 import { IDerivedFingerPrint } from "../types";
-import { buildAttribute } from "../utils";
-import { AdditiveBlending, AxesHelper, BufferGeometry, CircleBufferGeometry, Line, LineBasicMaterial, Mesh, Object3D, Points, Scene, ShaderMaterial, TextureLoader } from "three";
-import FragShader from '../shaders/v1_lines_frag.glsl';
-import VertShader from '../shaders/v1_lines_vert.glsl';
+import { buildAttribute, createShaderControls } from "../utils";
+import { BufferGeometry, Object3D, Points, Scene, ShaderMaterial, TextureLoader } from "three";
+import FragShader from '../shaders/v1_main_frag.glsl';
+import VertShader from '../shaders/v1_main_vert.glsl';
 import ColorSchemeImg from '../assets/color_scheme.jpg';
 
 const tl = new TextureLoader();
@@ -44,27 +44,20 @@ export default class V1 extends Object3D {
       uniforms: {
         u_colorscheme: { value: colorSchemeTexture },
         u_hash: { value: fingerprint.hash },
-        u_floathash: { value: fingerprint.floatHash }
+        u_floatHash: { value: fingerprint.floatHash },
+        u_noiseLambda: { value: 5 },
+        u_noiseAlpha: { value: 0 },
+        u_distMult: { value: 10 },
+        u_distAdd: { value: 1 },
+        u_logMult: { value: 0.5 },
+        u_logAdd: { value: 0.2 },
       }
     });
+
+    createShaderControls(material);
+
     const mesh = new Points(geometry, material)
-    mesh.add(new AxesHelper(0.5));
     
     this.add(mesh);
-
-    const circle = new CircleBufferGeometry(0.8, 32);
-    const circleMat = new LineBasicMaterial({ color: 0x666666 });
-    const circleMesh = new Line(circle, circleMat);
-    circleMesh.rotateX(Math.PI / 2);
-    this.add(circleMesh);
-    const circle2 = circleMesh.clone();
-    circle2.scale.setScalar(3.0);
-    this.add(circle2);
-    const circle3 = circleMesh.clone();
-    circle3.scale.setScalar(5.0);
-    this.add(circle3);
-    const circle4 = circleMesh.clone();
-    circle4.scale.setScalar(7.0);
-    this.add(circle4);
   }
 }

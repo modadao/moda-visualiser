@@ -1,21 +1,21 @@
 import { Camera, Color, OrthographicCamera, PerspectiveCamera, Scene, WebGLRenderer } from "three";
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
-import example from './data/example.json';
-import { IFingerprint } from "./types";
+import { IDerivedFingerPrint, IFingerprint } from "./types";
 import { deriveData } from "./utils";
-import V1 from "./visualisations/v1";
+import RadialSphere from "./visualisations/RadialSpheres";
 
 export default class App {
   renderer: WebGLRenderer;
   scene: Scene;
   camera: Camera;
   orbitControls: OrbitControls;
-  constructor(public element: HTMLElement) {
+  constructor(public element: HTMLElement, fingerprint: IFingerprint) {
     this.renderer = new WebGLRenderer({
       antialias: true,
     })
     this.renderer.setSize(800, 800);
+    this.renderer.setPixelRatio(window.devicePixelRatio)
     this.renderer.setClearColor(new Color('#1B1D21'))
     this.element.appendChild(this.renderer.domElement);
 
@@ -24,12 +24,16 @@ export default class App {
     this.camera.position.y = 10;
     this.camera.lookAt(0, 0, 0);
 
-    const derivedFingerprint = deriveData(example as IFingerprint);
-    this.scene.add(new V1(this.scene, derivedFingerprint));
 
     this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
 
+    const derivedFingerprint = deriveData(fingerprint);
+    this.buildScene(derivedFingerprint);
     this.startAnimation();
+  }
+
+  buildScene(fingerprint: IDerivedFingerPrint) {
+    this.scene.add(new RadialSphere(this.scene, fingerprint));
   }
 
   startAnimation() {
@@ -41,5 +45,11 @@ export default class App {
     this.orbitControls.update()
     this.renderer.render(this.scene, this.camera);
     window.requestAnimationFrame(this.update);
+  }
+
+  dispose() {
+    this.scene.clear();
+    this.renderer.dispose();
+    this.renderer.domElement.parentElement?.removeChild(this.renderer.domElement);
   }
 }

@@ -96,9 +96,13 @@ module.exports = (env = {}) => ({
         ]
       },
       {
-        test: /\.glsl$/,
-        loader: 'webpack-glsl-loader'
-      },
+        test: /\.(glsl|vs|fs|vert|frag)$/,
+        use: [
+          'raw-loader',
+          'glslify-loader'
+        ]
+      }
+  
     ],
   },
   resolve: {

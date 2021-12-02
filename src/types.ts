@@ -9,6 +9,10 @@ export interface IFingerprint {
 
 export interface IDerivedCoordinate extends ICoordinate {
   g: number,
+  gmax: boolean,
+  gmin: boolean,
+  max: boolean,
+  min: boolean,
 };
 export interface IDerivedFingerPrint extends IFingerprint {
   coords: IDerivedCoordinate[],

@@ -9,5 +9,5 @@ void main() {
     discard;
   }
 
-  gl_FragColor = vec4( vColor, 1.);
+  gl_FragColor = vec4( vColor + ringAlpha, 1.);
 }
