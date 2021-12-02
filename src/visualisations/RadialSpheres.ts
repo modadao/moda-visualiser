@@ -10,7 +10,6 @@ import CircleLineGeometry from '../helpers/CircleLineGeometry';
 const tl = new TextureLoader();
 export default class RadialSphere extends Object3D {
   constructor(private scene: Scene, private fingerprint: IDerivedFingerPrint) {
-    console.log('V1')
     super();
 
     const colorSchemeTexture = tl.load(ColorSchemeImg);
@@ -30,7 +29,7 @@ export default class RadialSphere extends Object3D {
     l3.scale.setScalar(3.3);
     this.add(l3);
     const l4 = l.clone();
-    l4.scale.setScalar(0.3);
+    l4.scale.setScalar(0.7);
     this.add(l4);
 
     const { sin, cos, floor, max, pow } = Math;
@@ -59,13 +58,13 @@ export default class RadialSphere extends Object3D {
       const mesh = new Mesh(g, m);
 
       // Position
-      const numberOfRings = 3;
+      const numberOfRings = 1;
       const theta = (p.y / width) * Math.PI * 2 * numberOfRings;
       const x = sin(theta);
       const z = cos(theta);
       const step = floor(theta / (Math.PI * 2));
-      const amp = p.x / height * 0.5;
-      const r = step + 0.5 + amp ;
+      const amp = p.x / height * 2;
+      const r = step + 1.0 + amp ;
       mesh.position.set(x * r, 0, z * r);
 
       // Size
@@ -112,7 +111,8 @@ export default class RadialSphere extends Object3D {
       }
 
       // Colour
-      const color = sin(theta + fingerprint.floatHash - (p.x / width) * 0.8)
+      const color = fingerprint.floatHash + sin(theta + p.g) * 0.2;
+      console.log(color);
       m.uniforms.u_floatHash.value = color < 0 ? color + 1 : color;
 
       this.add(mesh);

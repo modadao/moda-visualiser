@@ -50,7 +50,7 @@ export const deriveData = (fingerprint: IFingerprint): IDerivedFingerPrint => {
   // Create a hashed value
   let hash = 0;
   for (const el of fingerprint.coords) {
-    hash = ((hash<<5)-hash)+ el.x + el.y;
+    hash = ((hash<<5)-hash)+ el.x - el.y;
     hash = hash & hash; // Convert to 32bit integer
   }
   const floatHash = (hash / 2_147_483_647) * 0.5 + 0.5;

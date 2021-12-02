@@ -19,7 +19,7 @@ varying vec3 vColor;
 
 void main() {
 
-  float colorSampleP = sin(u_floatHash * 0.3);
+  float colorSampleP = u_floatHash;
   vColor = texture2D(u_colorscheme, vec2(colorSampleP, 0.5)).rgb;
   vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
 
