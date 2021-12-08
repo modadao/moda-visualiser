@@ -13,7 +13,7 @@ export default class RingBarGeometry extends BufferGeometry {
       const ty = cos(theta);
       return [
         tx * radius, ty * radius, 0, // Base point along ring
-        tx * radius + tx * p.y * amplitude, ty * radius + ty * p.y * amplitude, 0, // Up to amplitude
+        tx * radius + tx * p.smoothed * amplitude, ty * radius + ty * p.smoothed * amplitude, 0, // Up to amplitude
         tx * radius, ty * radius, 0, // Back down to base
       ];
     });

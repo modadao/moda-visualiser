@@ -41,6 +41,19 @@ export const customRandom = {
 
 export const deriveData = (fingerprint: IFingerprint): IDerivedFingerPrint => {
   console.log('Deriving data from fingerprint')
+  // Generate smoothed data
+  const SMOOTH_RANGE = 20;
+  const smoothedValues = fingerprint.coords.map((c, i) => {
+    const startIndex = Math.max(0, i - SMOOTH_RANGE);
+    const endIndex = Math.min(fingerprint.coords.length, i + SMOOTH_RANGE);
+    let v = 0;
+    for (let j = startIndex; j < endIndex; j++) {
+      v += fingerprint.coords[j].y;
+    }
+    v /= endIndex - startIndex;
+    return v;
+  })
+
   // Get raw gradient
   let gradients = [] as number[];
   console.log(Array(fingerprint.coords.length -1).keys())
@@ -97,6 +110,7 @@ export const deriveData = (fingerprint: IFingerprint): IDerivedFingerPrint => {
         x: el.x,
         y: el.y,
         g: gradients[i],
+        smoothed: smoothedValues[i],
         featureLevel: isFeature ? customRandom.deterministic(el.x, el.y) : 0,
       }
     }),

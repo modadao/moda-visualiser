@@ -9,6 +9,7 @@ export interface IFingerprint {
 
 export interface IDerivedCoordinate extends ICoordinate {
   g: number,
+  smoothed: number,
   featureLevel: number,
 };
 export interface IDerivedFingerPrint extends IFingerprint {
