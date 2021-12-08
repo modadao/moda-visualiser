@@ -16,13 +16,20 @@ attribute float theta;
 attribute float gradient;
 
 varying vec3 vColor;
+varying vec3 vColor2;
+varying vec3 vNormal;
+varying vec3 vPosition;
 
 void main() {
 
   float colorSampleP = u_floatHash;
   vColor = texture2D(u_colorscheme, vec2(colorSampleP, 0.5)).rgb;
-  vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+  // vColor2 = texture2D(u_colorscheme, vec2(colorSampleP + 0.1, 0.5)).rgb;
+  vColor2 = vColor;
+  vNormal = normal;
+  vec4 mPosition = modelViewMatrix * vec4( position, 1.0 );
 
-  gl_Position = projectionMatrix * mvPosition;
+  gl_Position = projectionMatrix * mPosition ;
+  vPosition = gl_Position.xyz;
 
 }

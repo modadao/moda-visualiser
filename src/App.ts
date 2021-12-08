@@ -10,6 +10,8 @@ export default class App {
   scene: Scene;
   camera: Camera;
   orbitControls: OrbitControls;
+
+  radialSpheres: RadialSphere;
   constructor(public element: HTMLElement, fingerprint: IFingerprint) {
     this.renderer = new WebGLRenderer({
       antialias: true,
@@ -33,7 +35,8 @@ export default class App {
   }
 
   buildScene(fingerprint: IDerivedFingerPrint) {
-    this.scene.add(new RadialSphere(this.scene, fingerprint));
+    this.radialSpheres = new RadialSphere(this.scene, this.camera, fingerprint);
+    this.scene.add(this.radialSpheres);
   }
 
   startAnimation() {
@@ -44,6 +47,7 @@ export default class App {
   update() {
     this.orbitControls.update()
     this.renderer.render(this.scene, this.camera);
+    this.radialSpheres.update();
     window.requestAnimationFrame(this.update);
   }
 

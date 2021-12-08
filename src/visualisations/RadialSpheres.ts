@@ -1,6 +1,6 @@
 import { IDerivedFingerPrint } from "../types";
 import { bezierVector, buildAttribute, createShaderControls } from "../utils";
-import { CatmullRomCurve3, Vector3, Mesh, Object3D, LineBasicMaterial, Scene, ShaderMaterial, SphereBufferGeometry, TextureLoader, BufferGeometry, Line, Vector2, BoxGeometry, BoxBufferGeometry, RepeatWrapping } from "three";
+import { CatmullRomCurve3, Vector3, Mesh, Object3D, LineBasicMaterial, Scene, ShaderMaterial, SphereBufferGeometry, TextureLoader, BufferGeometry, Line, Vector2, BoxGeometry, BoxBufferGeometry, RepeatWrapping, SplineCurve, Camera, Shader, TubeGeometry, MeshBasicMaterial, CurvePath, QuadraticBezierCurve3, Curve } from "three";
 import { hilbert3D } from "three/examples/jsm/utils/GeometryUtils";
 import FragShader from '../shaders/spheres_frag.glsl';
 import VertShader from '../shaders/spheres_vert.glsl';
@@ -13,7 +13,8 @@ import RingBarGeometry from "../helpers/RingBarGeometry";
 
 const tl = new TextureLoader();
 export default class RadialSphere extends Object3D {
-  constructor(private scene: Scene, private fingerprint: IDerivedFingerPrint) {
+  points: Mesh[] = [];
+  constructor(private scene: Scene, private camera: Camera, private fingerprint: IDerivedFingerPrint) {
     super();
 
     const sizeBezierPoints = [
@@ -65,9 +66,9 @@ export default class RadialSphere extends Object3D {
 
     const scale = (500 + max(-pow(height, 0.8), -pow(height, 0.7)-100, -pow(height, 0.6)-150)) / 400 * 0.15
     console.log({scale})
+    const g = new SphereBufferGeometry(1);
     for (const p of fingerprint.coords) {
       // Build geometry 
-      const g = new SphereBufferGeometry(1);
       const m = new ShaderMaterial({
         fragmentShader: FragShader,
         vertexShader: VertShader,
@@ -81,13 +82,15 @@ export default class RadialSphere extends Object3D {
           u_distAdd: { value: 1 },
           u_logMult: { value: 0.5 },
           u_logAdd: { value: 0.2 },
+          u_innerColorMultiplier: { value: 1.5, },
+          u_outerColorMultiplier: { value: 1, },
+          u_cameraDirection: { value: new Vector3() },
         }
       })
       const mesh = new Mesh(g, m);
 
       // Position
-      const numberOfRings = 1;
-      const theta = (p.y / width) * Math.PI * 2 * numberOfRings;
+      const theta = (p.y / width) * Math.PI * 2;
       const x = sin(theta);
       const z = cos(theta);
       const step = floor(theta / (Math.PI * 2));
@@ -100,6 +103,7 @@ export default class RadialSphere extends Object3D {
       mesh.scale.setScalar(d * scale);
       if (p.featureLevel !== 0) {
         mesh.scale.setScalar(scaleSize(p.featureLevel).y);
+        // m.uniforms.u_innerColorMultiplier.value = p.featureLevel + 1;
       }
 
       // Orbit rings
@@ -131,5 +135,50 @@ export default class RadialSphere extends Object3D {
 
       this.add(mesh);
     }
+
+    // Bezier through feature points
+    const featurePoints = fingerprint.coords.filter(p => p.featureLevel !== 0);
+    const featurePositions = featurePoints.map(p => {
+      const theta = (p.y / width) * Math.PI * 2;
+      const x = sin(theta);
+      const z = cos(theta);
+      const step = floor(theta / (Math.PI * 2));
+      const amp = p.x / height * 2;
+      const r = step + 1.0 + amp ;
+      return new Vector3(x * r, 0, z * r);
+    });
+
+    const curvePath = new CurvePath();
+    for (let i = 1; i < featurePositions.length - 2; i ++) {
+      const prev = featurePositions[i - 1];
+      const cur = featurePositions[i];
+      const next = featurePositions[i + 1];
+      const final = featurePositions[i + 2];
+
+      const temp = new QuadraticBezierCurve3(cur, next, final);
+      const anchor = temp.getPointAt(0.25);
+      temp.v0 = cur;
+      temp.v1 = anchor;
+      temp.v2 = next;
+      curvePath.add(temp);
+    }
+
+    const curve = new CatmullRomCurve3(featurePositions, false, 'catmullrom', 5.);
+    const tubeGeometry = new TubeGeometry( curve, 200, 0.01, 5, false );
+    const material = new MeshBasicMaterial( { color : 0xffffff, wireframe: false, } );
+    const curveObject = new Mesh( tubeGeometry, material );
+    this.add(curveObject);
   }
+
+  update() {
+    const dir = new Vector3();
+    this.camera.updateMatrixWorld();
+    this.camera.getWorldDirection(dir);
+    console.log(dir);
+    this.points.forEach(m => {
+      const mat = (m.material as ShaderMaterial)
+      mat.uniforms.u_cameraDirection.value = dir;
+    });
+  }
+
 }
