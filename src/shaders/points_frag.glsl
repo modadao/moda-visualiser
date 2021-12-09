@@ -65,6 +65,6 @@ vec4 LinearToRGBD( in vec4 value, in float maxRange ) {
 vec4 linearToOutputTexel( vec4 value ) { return LinearToLinear( value ); }
 
 void main() {
-  gl_FragColor = vec4(1., 0., 0., 1.);
+  gl_FragColor = vec4(1., 1., 1., 1.);
 }
 

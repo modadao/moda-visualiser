@@ -113,7 +113,6 @@ export default class RadialSphere extends Object3D {
         mesh.scale.setScalar(scaleSize(p.featureLevel).y);
         // m.uniforms.u_innerColorMultiplier.value = p.featureLevel + 1;
       }
-      mesh.visible = false;
       billboardScales.push(mesh.scale.x);
 
       // Orbit rings
@@ -174,9 +173,6 @@ export default class RadialSphere extends Object3D {
     const billboardMaterial = new RawShaderMaterial({
       vertexShader: PointsVertShader,
       fragmentShader: PointsFragShader,
-      transparent: true,
-      depthWrite: false,
-      depthTest: false,
     });
     // const billboardMesh = new Points(billboardGeo, billboardMaterial);
     // this.add(billboardMesh);
@@ -197,7 +193,7 @@ export default class RadialSphere extends Object3D {
     const func = (() => {
       const amount = 3;
       const count = Math.pow(amount, 3);
-      const geometry = new TorusBufferGeometry( 1, 0.01, 4, 16);
+      const geometry = new TorusBufferGeometry( 1, 0.05, 4, 32);
 
       const mesh = new InstancedMesh( geometry, billboardMaterial, this.points.length);
 

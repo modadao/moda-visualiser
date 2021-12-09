@@ -57,5 +57,19 @@ attribute vec2 uv;
 #define GLSLIFY 1
 
 void main(){
-  gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4( position, 1.0 );
+  mat4 mvMatrix = modelViewMatrix * instanceMatrix;
+  mvMatrix[0][0] = length(vec3(instanceMatrix[0]));
+  mvMatrix[0][1] = 0.;
+  mvMatrix[0][2] = 0.;
+
+  mvMatrix[1][0] = 0.;
+  mvMatrix[1][1] = length(vec3(instanceMatrix[1]));
+  mvMatrix[1][2] = 0.;
+
+  mvMatrix[2][0] = 0.;
+  mvMatrix[2][1] = 0.;
+  mvMatrix[2][2] = 1.;
+
+  gl_Position = projectionMatrix * mvMatrix * vec4(position, 1.);
+
 }
