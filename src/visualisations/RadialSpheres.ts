@@ -96,7 +96,7 @@ export default class RadialSphere extends Object3D {
           u_distAdd: { value: 1 },
           u_logMult: { value: 0.5 },
           u_logAdd: { value: 0.2 },
-          u_innerColorMultiplier: { value: 1.5, },
+          u_innerColorMultiplier: { value: 1.0, },
           u_outerColorMultiplier: { value: 1, },
           u_cameraDirection: { value: new Vector3() },
         }
@@ -120,6 +120,7 @@ export default class RadialSphere extends Object3D {
       const d = (Math.abs(p.g - 0.5) + scale);
       mesh.scale.setScalar(d * scale);
       outlineMesh.scale.setScalar(d * scale + OUTLINE_SIZE);
+      mesh.material.uniforms.u_innerColorMultiplier.value = 1.2 + p.featureLevel;
       if (p.featureLevel !== 0) {
         mesh.scale.setScalar(scaleSize(p.featureLevel).y);
         outlineMesh.scale.setScalar(scaleSize(p.featureLevel).y + OUTLINE_SIZE);
