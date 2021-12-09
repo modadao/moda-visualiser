@@ -14,8 +14,10 @@ uniform float u_noiseAlpha;
 attribute float index;
 attribute float theta;
 attribute float gradient;
+attribute float scale;
 
 varying vec3 vColor;
+varying float vScale;
 
 #pragma glslify: noise = require('glsl-noise/simplex/3d')
 
@@ -31,9 +33,10 @@ void main() {
   vColor = texture2D(u_colorscheme, vec2(colorSampleP, 0.5)).rgb;
   // vColor = mix(color1, color2, (-0.5 + gradient) * 2.);
 
-  vec4 mvPosition = modelViewMatrix * vec4( newPosition, 1.0 );
+  vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
 
-  gl_PointSize = (log(u_distMult * distance(gradient, 0.5) + u_distAdd) * u_logMult + u_logAdd) * 20.;
+  gl_PointSize = (scale) * 400.;
+  vScale = gl_PointSize;
   gl_Position = projectionMatrix * mvPosition;
 
 }

@@ -21,8 +21,6 @@ float atan2(in float y, in float x)
 }
 
 void main() {
-
-
   vColor = vec3(0.5, 0.5, 0.5);
 
   vec4 mPosition = modelMatrix * vec4( position, 1.0 );
