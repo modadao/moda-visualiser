@@ -10,6 +10,7 @@ import ColorSchemeImg from '../assets/color_scheme.jpg';
 import CircleLineGeometry from '../helpers/CircleLineGeometry';
 import CrossLineGeometry from "../helpers/CrossLineGeometry";
 import RingBarGeometry from "../helpers/RingBarGeometry";
+import FlagMesh from "../helpers/FlagMesh";
 
 const tl = new TextureLoader();
 export default class RadialSphere extends Object3D {
@@ -33,7 +34,7 @@ export default class RadialSphere extends Object3D {
     colorSchemeTexture.wrapT = RepeatWrapping;
 
     // Add rings for flare
-    const geo = new CircleLineGeometry(1, 128);
+    const geo = new CircleLineGeometry(1, 512, fingerprint);
     const matGrey = new LineBasicMaterial({ color: 0x666666 });
     const matWhite = new LineBasicMaterial({ color: 0xdddddd });
     const l = new Line(geo, matWhite);
@@ -108,25 +109,9 @@ export default class RadialSphere extends Object3D {
 
       // Orbit rings
       if (p.featureLevel !== 0) {
-        const featureGeometry = p.featureLevel > 0.7
-            ? new CircleLineGeometry(1, 16)
-            : p.featureLevel > 0.2
-              ? new CrossLineGeometry(2)
-              : new SphereBufferGeometry(1, 2, 2);
-
-        const ringMesh = new Line(
-          featureGeometry,
-          new LineBasicMaterial({
-            color: 0xffffff,
-            linewidth: 1,
-            linecap: 'round', //ignored by WebGLRenderer
-            linejoin:  'round' //ignored by WebGLRenderer
-          })
-        )
-        ringMesh.position.copy(mesh.position);
-        ringMesh.scale.setScalar((mesh.scale.x + 0.1));
-        ringMesh.rotateX(Math.PI / 2)
-        this.add(ringMesh);
+        const flag = new FlagMesh(10, 0.02, 0.3);
+        flag.position.set(0, scaleSize(p.featureLevel).y, 0);
+        mesh.add(flag);
       }
 
       // Colour
@@ -174,7 +159,6 @@ export default class RadialSphere extends Object3D {
     const dir = new Vector3();
     this.camera.updateMatrixWorld();
     this.camera.getWorldDirection(dir);
-    console.log(dir);
     this.points.forEach(m => {
       const mat = (m.material as ShaderMaterial)
       mat.uniforms.u_cameraDirection.value = dir;

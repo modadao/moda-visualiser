@@ -8,6 +8,7 @@ uniform float u_noiseAlpha;
 
 attribute float index;
 attribute float theta;
+attribute float amplitude;
 
 varying vec3 vColor;
 
@@ -28,7 +29,8 @@ void main() {
   vec3 alteredPos = mPosition.xyz;
 
   float l = length(alteredPos);
-  float n = (noise(alteredPos / l * 3.)) * clamp(l - 4., 0., 10.) / 10.;
+  // float n = (amplitude) * clamp(l - 4., 0., 10.) / 10.;
+  float n = (amplitude) * clamp(distance(l, 4.), 0., 2.) / 2.;
 
   gl_Position = projectionMatrix * viewMatrix * vec4(alteredPos + vec3(0., n, 0.), 1.);
 

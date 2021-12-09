@@ -42,7 +42,7 @@ export const customRandom = {
 export const deriveData = (fingerprint: IFingerprint): IDerivedFingerPrint => {
   console.log('Deriving data from fingerprint')
   // Generate smoothed data
-  const SMOOTH_RANGE = 20;
+  const SMOOTH_RANGE = 40;
   const smoothedValues = fingerprint.coords.map((c, i) => {
     const startIndex = Math.max(0, i - SMOOTH_RANGE);
     const endIndex = Math.min(fingerprint.coords.length, i + SMOOTH_RANGE);
