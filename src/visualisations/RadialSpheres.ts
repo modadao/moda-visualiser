@@ -1,6 +1,6 @@
 import { IDerivedFingerPrint } from "../types";
 import { bezierVector, buildAttribute, createShaderControls } from "../utils";
-import { CatmullRomCurve3, Vector3, Mesh, Object3D, LineBasicMaterial, Scene, ShaderMaterial, SphereBufferGeometry, TextureLoader, BufferGeometry, Line, Vector2, BoxGeometry, BoxBufferGeometry, RepeatWrapping, SplineCurve, Camera, Shader, TubeGeometry, MeshBasicMaterial, CurvePath, QuadraticBezierCurve3, Curve, Float32BufferAttribute, Points, InstancedMesh, DynamicDrawUsage, InstancedBufferGeometry, InstancedBufferAttribute, IcosahedronBufferGeometry, Matrix4, TorusBufferGeometry, Quaternion, RawShaderMaterial } from "three";
+import { CatmullRomCurve3, Vector3, Mesh, Object3D, LineBasicMaterial, Scene, ShaderMaterial, SphereBufferGeometry, TextureLoader, BufferGeometry, Line, Vector2, BoxGeometry, BoxBufferGeometry, RepeatWrapping, SplineCurve, Camera, Shader, TubeGeometry, MeshBasicMaterial, CurvePath, QuadraticBezierCurve3, Curve, Float32BufferAttribute, Points, InstancedMesh, DynamicDrawUsage, InstancedBufferGeometry, InstancedBufferAttribute, IcosahedronBufferGeometry, Matrix4, TorusBufferGeometry, Quaternion, RawShaderMaterial, BackSide } from "three";
 import { GeometryUtils, hilbert3D } from "three/examples/jsm/utils/GeometryUtils";
 import FragShader from '../shaders/spheres_frag.glsl';
 import VertShader from '../shaders/spheres_vert.glsl';
@@ -13,6 +13,8 @@ import RingBarGeometry from "../helpers/RingBarGeometry";
 import FlagMesh from "../helpers/FlagMesh";
 import PointsFragShader from '../shaders/points_frag.glsl';
 import PointsVertShader from '../shaders/points_vert.glsl';
+
+const OUTLINE_SIZE = 0.007;
 
 const tl = new TextureLoader();
 export default class RadialSphere extends Object3D {
@@ -70,6 +72,11 @@ export default class RadialSphere extends Object3D {
     const scale = (500 + max(-pow(height, 0.8), -pow(height, 0.7)-100, -pow(height, 0.6)-150)) / 400 * 0.15
     console.log({scale})
     const g = new SphereBufferGeometry(1);
+    const outlineM = new MeshBasicMaterial({
+      color: 0xffffff,
+      side: BackSide,
+      depthWrite: false,
+    })
 
     // Billboarded outlines
     const billboardedPositions: Vector3[] = [];
@@ -95,6 +102,8 @@ export default class RadialSphere extends Object3D {
         }
       })
       const mesh = new Mesh(g, m);
+      const outlineMesh = new Mesh(g, outlineM);
+      outlineMesh.renderOrder = -1;
 
       // Position
       const theta = (p.y / width) * Math.PI * 2;
@@ -104,13 +113,16 @@ export default class RadialSphere extends Object3D {
       const amp = p.x / height * 2;
       const r = step + 1.0 + amp ;
       mesh.position.set(x * r, 0, z * r);
+      outlineMesh.position.copy(mesh.position);
       billboardedPositions.push(mesh.position.clone());
 
       // Size
       const d = (Math.abs(p.g - 0.5) + scale);
       mesh.scale.setScalar(d * scale);
+      outlineMesh.scale.setScalar(d * scale + OUTLINE_SIZE);
       if (p.featureLevel !== 0) {
         mesh.scale.setScalar(scaleSize(p.featureLevel).y);
+        outlineMesh.scale.setScalar(scaleSize(p.featureLevel).y + OUTLINE_SIZE);
         // m.uniforms.u_innerColorMultiplier.value = p.featureLevel + 1;
       }
       billboardScales.push(mesh.scale.x);
@@ -127,6 +139,7 @@ export default class RadialSphere extends Object3D {
       m.uniforms.u_floatHash.value = color < 0 ? color + 1 : color;
 
       this.add(mesh);
+      this.add(outlineMesh);
       this.points.push(mesh);
     }
 
@@ -165,55 +178,55 @@ export default class RadialSphere extends Object3D {
 
 
     // Construct the billboarded outlines
-    const billboardVerts = ([] as number[]).concat(...billboardedPositions.map(el => el.toArray()));
-    // const billboardGeo = new BufferGeometry();
-    // billboardGeo.setAttribute( 'position', new Float32BufferAttribute( billboardVerts, 3 ) );
-    // billboardGeo.setAttribute( 'scale', new Float32BufferAttribute( billboardScales, 1 ) );
-    // console.log(scale);
-    const billboardMaterial = new RawShaderMaterial({
-      vertexShader: PointsVertShader,
-      fragmentShader: PointsFragShader,
-    });
-    // const billboardMesh = new Points(billboardGeo, billboardMaterial);
-    // this.add(billboardMesh);
+    // const billboardVerts = ([] as number[]).concat(...billboardedPositions.map(el => el.toArray()));
+    // // const billboardGeo = new BufferGeometry();
+    // // billboardGeo.setAttribute( 'position', new Float32BufferAttribute( billboardVerts, 3 ) );
+    // // billboardGeo.setAttribute( 'scale', new Float32BufferAttribute( billboardScales, 1 ) );
+    // // console.log(scale);
+    // const billboardMaterial = new RawShaderMaterial({
+    //   vertexShader: PointsVertShader,
+    //   fragmentShader: PointsFragShader,
+    // });
+    // // const billboardMesh = new Points(billboardGeo, billboardMaterial);
+    // // this.add(billboardMesh);
 
-    const circleGeometry = new CircleLineGeometry(1, 32);
-    const instancedCircleGeometry = new InstancedBufferGeometry();
-    const positions: number[] = [];
-    positions.push( 0.025, - 0.025, 0 );
-    positions.push( - 0.025, 0.025, 0 );
-    positions.push( 0, 0, 0.025 );
-    instancedCircleGeometry.setAttribute( 'position', new Float32BufferAttribute( positions, 3 ) );
-    // instancedCircleGeometry.setAttribute('position', circleGeometry.getAttribute('position'));
-    instancedCircleGeometry.setAttribute('scale', new InstancedBufferAttribute(new Float32Array(billboardScales), 1));
-    instancedCircleGeometry.setAttribute('offset', new InstancedBufferAttribute(new Float32Array(billboardVerts), 3));
-    const outlineMesh = new Mesh(instancedCircleGeometry, billboardMaterial);
-    this.add(outlineMesh);
+    // const circleGeometry = new CircleLineGeometry(1, 32);
+    // const instancedCircleGeometry = new InstancedBufferGeometry();
+    // const positions: number[] = [];
+    // positions.push( 0.025, - 0.025, 0 );
+    // positions.push( - 0.025, 0.025, 0 );
+    // positions.push( 0, 0, 0.025 );
+    // instancedCircleGeometry.setAttribute( 'position', new Float32BufferAttribute( positions, 3 ) );
+    // // instancedCircleGeometry.setAttribute('position', circleGeometry.getAttribute('position'));
+    // instancedCircleGeometry.setAttribute('scale', new InstancedBufferAttribute(new Float32Array(billboardScales), 1));
+    // instancedCircleGeometry.setAttribute('offset', new InstancedBufferAttribute(new Float32Array(billboardVerts), 3));
+    // const outlineMesh = new Mesh(instancedCircleGeometry, billboardMaterial);
+    // this.add(outlineMesh);
 
-    const func = (() => {
-      const amount = 3;
-      const count = Math.pow(amount, 3);
-      const geometry = new TorusBufferGeometry( 1, 0.05, 4, 32);
+    // const func = (() => {
+    //   const amount = 3;
+    //   const count = Math.pow(amount, 3);
+    //   const geometry = new TorusBufferGeometry( 1, 0.05, 4, 32);
 
-      const mesh = new InstancedMesh( geometry, billboardMaterial, this.points.length);
+    //   const mesh = new InstancedMesh( geometry, billboardMaterial, this.points.length);
 
-      let i = 0;
-      const offset = ( amount - 1 ) / 2;
+    //   let i = 0;
+    //   const offset = ( amount - 1 ) / 2;
 
-      const matrix = new Matrix4();
+    //   const matrix = new Matrix4();
 
-      const dummyQuat = new Quaternion();
-      const scale = new Vector3();
-      for (let i = 0; i < this.points.length; i++) {
-        const p = this.points[i];
-        scale.setScalar(billboardScales[i]);
-        matrix.compose(p.position, dummyQuat, scale);
-        mesh.setMatrixAt( i, matrix );
-        i ++;
+    //   const dummyQuat = new Quaternion();
+    //   const scale = new Vector3();
+    //   for (let i = 0; i < this.points.length; i++) {
+    //     const p = this.points[i];
+    //     scale.setScalar(billboardScales[i]);
+    //     matrix.compose(p.position, dummyQuat, scale);
+    //     mesh.setMatrixAt( i, matrix );
+    //     i ++;
 
-      }
-      this.add(mesh);
-    })()
+    //   }
+    //   this.add(mesh);
+    // })()
     
   }
 
