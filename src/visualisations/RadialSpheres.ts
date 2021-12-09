@@ -121,7 +121,10 @@ export default class RadialSphere extends Object3D {
       mesh.scale.setScalar(d * scale);
       outlineMesh.scale.setScalar(d * scale + OUTLINE_SIZE);
       mesh.material.uniforms.u_innerColorMultiplier.value = 1.2 + p.featureLevel;
+      mesh.visible = false;
+      outlineMesh.visible = false;
       if (p.featureLevel !== 0) {
+        mesh.visible = true;
         mesh.scale.setScalar(scaleSize(p.featureLevel).y);
         outlineMesh.scale.setScalar(scaleSize(p.featureLevel).y + OUTLINE_SIZE);
         // m.uniforms.u_innerColorMultiplier.value = p.featureLevel + 1;
@@ -149,32 +152,37 @@ export default class RadialSphere extends Object3D {
     // Bezier through feature points
     const featurePoints = fingerprint.coords.filter(p => p.featureLevel !== 0);
     const featurePositions = featurePoints.map(p => {
-      const theta = (p.y / width) * Math.PI * 2;
+      // Position
+      const theta = (p.x / height) * Math.PI * 2;
       const x = sin(theta);
       const z = cos(theta);
       const step = floor(theta / (Math.PI * 2));
-      const amp = p.x / height * 2;
+      const amp = p.y / width * 2;
       const r = step + 1.0 + amp ;
       return new Vector3(x * r, 0, z * r);
     });
 
     const curvePath = new CurvePath();
-    for (let i = 1; i < featurePositions.length - 2; i ++) {
-      const prev = featurePositions[i - 1];
+    const dir = new Vector3(fingerprint.floatHash * 2 - 1, 0, fingerprint.floatHash * 2 - 1).normalize();
+    for (let i = 0; i < featurePositions.length - 1; i ++) {
       const cur = featurePositions[i];
       const next = featurePositions[i + 1];
-      const final = featurePositions[i + 2];
+      const dist = cur.distanceTo(next);
+      console.log({ dist });
+      const anchor1 = cur.clone().add(dir.clone().multiplyScalar(dist * 2));
 
-      const temp = new QuadraticBezierCurve3(cur, next, final);
-      const anchor = temp.getPointAt(0.25);
-      temp.v0 = cur;
-      temp.v1 = anchor;
-      temp.v2 = next;
+      const temp = new QuadraticBezierCurve3(cur, anchor1, next);
+      const v1 = temp.getPointAt(0.99);
+      const v2 = temp.getPointAt(1);
+
+      v2.sub(v1);
+      dir.copy(v2).normalize();
+      console.log(dir);
+
       curvePath.add(temp);
     }
 
-    const curve = new CatmullRomCurve3(featurePositions, false, 'catmullrom', 5.);
-    const tubeGeometry = new TubeGeometry( curve, 200, 0.01, 5, false );
+    const tubeGeometry = new TubeGeometry( curvePath, 200, 0.01, 5, false );
     const material = new MeshBasicMaterial( { color : 0xffffff, wireframe: false, } );
     const curveObject = new Mesh( tubeGeometry, material );
     this.add(curveObject);
