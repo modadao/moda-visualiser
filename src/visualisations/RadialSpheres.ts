@@ -1,6 +1,6 @@
 import { IDerivedFingerPrint } from "../types";
 import { bezierVector, buildAttribute, createShaderControls } from "../utils";
-import { CatmullRomCurve3, Vector3, Mesh, Object3D, LineBasicMaterial, Scene, ShaderMaterial, SphereBufferGeometry, TextureLoader, BufferGeometry, Line, Vector2, BoxGeometry, BoxBufferGeometry, RepeatWrapping, SplineCurve, Camera, Shader, TubeGeometry, MeshBasicMaterial, CurvePath, QuadraticBezierCurve3, Curve, Float32BufferAttribute, Points, InstancedMesh, DynamicDrawUsage, InstancedBufferGeometry, InstancedBufferAttribute, IcosahedronBufferGeometry, Matrix4, TorusBufferGeometry, Quaternion, RawShaderMaterial, BackSide } from "three";
+import { CatmullRomCurve3, Vector3, Mesh, Object3D, LineBasicMaterial, Scene, ShaderMaterial, SphereBufferGeometry, TextureLoader, BufferGeometry, Line, Vector2, BoxGeometry, BoxBufferGeometry, RepeatWrapping, SplineCurve, Camera, Shader, TubeGeometry, MeshBasicMaterial, CurvePath, QuadraticBezierCurve3, Curve, Float32BufferAttribute, Points, InstancedMesh, DynamicDrawUsage, InstancedBufferGeometry, InstancedBufferAttribute, IcosahedronBufferGeometry, Matrix4, TorusBufferGeometry, Quaternion, RawShaderMaterial, BackSide, MathUtils } from "three";
 import { GeometryUtils, hilbert3D } from "three/examples/jsm/utils/GeometryUtils";
 import FragShader from '../shaders/spheres_frag.glsl';
 import VertShader from '../shaders/spheres_vert.glsl';
@@ -106,11 +106,11 @@ export default class RadialSphere extends Object3D {
       outlineMesh.renderOrder = -1;
 
       // Position
-      const theta = (p.y / width) * Math.PI * 2;
+      const theta = (p.x / height) * Math.PI * 2;
       const x = sin(theta);
       const z = cos(theta);
       const step = floor(theta / (Math.PI * 2));
-      const amp = p.x / height * 2;
+      const amp = p.y / width * 2;
       const r = step + 1.0 + amp ;
       mesh.position.set(x * r, 0, z * r);
       outlineMesh.position.copy(mesh.position);
@@ -135,8 +135,10 @@ export default class RadialSphere extends Object3D {
       }
 
       // Colour
-      const color = fingerprint.floatHash + sin(theta) * 0.15 + p.g * 0.3;
-      m.uniforms.u_floatHash.value = color < 0 ? color + 1 : color;
+      // const color = fingerprint.floatHash + sin(theta) * 0.15 + p.g * 0.3;
+      console.log(theta);
+      const color = (fingerprint.floatHash + sin(theta) * 0.2 + p.g * 0.3) % 1;
+      m.uniforms.u_floatHash.value = color;
 
       this.add(mesh);
       this.add(outlineMesh);

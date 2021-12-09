@@ -29,7 +29,7 @@ void main() {
   float r = 0.4 + floor(theta / PI * 2.) * 1.8 + position.y * 3. + rotNoise * u_noiseAlpha;
   vec3 newPosition = vec3(sin(t), 0, cos(t)) * r;
 
-  float colorSampleP = sin(u_floatHash * 2. + gradient * 0.3 + sin(t) * 0.3);
+  float colorSampleP = sin(u_floatHash * 2. + gradient * 0.3 + sin(t));
   vColor = texture2D(u_colorscheme, vec2(colorSampleP, 0.5)).rgb;
   // vColor = mix(color1, color2, (-0.5 + gradient) * 2.);
 
