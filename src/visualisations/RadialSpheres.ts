@@ -13,20 +13,22 @@ import RingBarGeometry from "../helpers/RingBarGeometry";
 import FlagMesh from "../helpers/FlagMesh";
 import PointsFragShader from '../shaders/points_frag.glsl';
 import PointsVertShader from '../shaders/points_vert.glsl';
+import { ISettings } from "@/main";
 
 const OUTLINE_SIZE = 0.007;
 
 const tl = new TextureLoader();
 export default class RadialSphere extends Object3D {
   points: Mesh[] = [];
-  constructor(private scene: Scene, private camera: Camera, private fingerprint: IDerivedFingerPrint) {
+  constructor(private scene: Scene, private camera: Camera, private fingerprint: IDerivedFingerPrint, settings: ISettings) {
     super();
 
+    const { sizeSmall, sizeMed, sizeMdLg, sizeLarge } = settings.featurePoints
     const sizeBezierPoints = [
-      new Vector2(0, 0.05),
-      new Vector2(0.25, 0.1),
-      new Vector2(0.5, 0.3),
-      new Vector2(1, 0.5),
+      new Vector2(0, sizeSmall),
+      new Vector2(0.25, sizeMed),
+      new Vector2(0.5, sizeMdLg),
+      new Vector2(1, sizeLarge),
     ];
     const scaleSize = (t: number) => {
       const [a, b, c, d] = sizeBezierPoints;
@@ -138,7 +140,8 @@ export default class RadialSphere extends Object3D {
 
       // Colour
       // const color = fingerprint.floatHash + sin(theta) * 0.15 + p.g * 0.3;
-      const color = (fingerprint.floatHash + sin(theta) * 0.2 + p.g * 0.3) % 1;
+      const { baseVariation, velocityVariation } = settings.color;
+      const color = (fingerprint.floatHash + sin(theta) * baseVariation + p.g * velocityVariation) % 1;
       m.uniforms.u_floatHash.value = color;
 
       this.add(mesh);
@@ -163,6 +166,7 @@ export default class RadialSphere extends Object3D {
     const center = new Vector3();
     const dir = featurePositions[0].clone().sub(center).normalize();
     let isFacingTowardsCenter = false;
+    const { flareOut, flareIn } = settings.beziers;
     for (let i = 0; i < featurePositions.length; i ++) {
       const isLast = i === featurePositions.length - 1;
       const cur = featurePositions[i];
@@ -179,7 +183,7 @@ export default class RadialSphere extends Object3D {
       if (isFacingTowardsCenter) dir.multiplyScalar(-1)
 
       const dist = cur.distanceTo(next);
-      const handleDist = isFacingTowardsCenter ? dist * 0.7 : dist * 2;
+      const handleDist = isFacingTowardsCenter ? dist * flareIn : dist * flareOut;
       console.log({ dist });
       const anchor1 = cur.clone().add(dir.clone().multiplyScalar(handleDist));
       const anchor2 = next.clone().add(nextDir.clone().multiplyScalar(handleDist));

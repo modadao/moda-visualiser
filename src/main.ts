@@ -13,6 +13,18 @@ export interface ISettings {
   featurePoints: {
     count: number,
     extraPer: number,
+    sizeSmall: number,
+    sizeMed: number,
+    sizeMdLg: number,
+    sizeLarge: number,
+  },
+  color: {
+    baseVariation: number,
+    velocityVariation: number,
+  },
+  beziers: {
+    flareOut: 2,
+    flareIn: 0.8,
   },
   update: () => void,
 }
@@ -20,6 +32,18 @@ const settings: ISettings = {
   featurePoints: {
     count: 7,
     extraPer: 3000,
+    sizeSmall: 0.05,
+    sizeMed: 0.1,
+    sizeMdLg: 0.3,
+    sizeLarge: 0.5,
+  },
+  color: {
+    baseVariation: 0.2,
+    velocityVariation: 0.3,
+  },
+  beziers: {
+    flareOut: 2,
+    flareIn: 0.8,
   },
   update: () => {
     if (app && container && lastContent) {
@@ -32,6 +56,19 @@ const settings: ISettings = {
 const featurePoints = gui.addFolder('FeaturePoints');
 featurePoints.add(settings.featurePoints, 'count', 0, 15, 1);
 featurePoints.add(settings.featurePoints, 'extraPer', 200, 5000, 1);
+featurePoints.add(settings.featurePoints, 'sizeSmall', 0, 1, 0.01);
+featurePoints.add(settings.featurePoints, 'sizeMed', 0, 1, 0.01);
+featurePoints.add(settings.featurePoints, 'sizeMdLg', 0, 1, 0.01);
+featurePoints.add(settings.featurePoints, 'sizeLarge', 0, 1, 0.01);
+
+const colorFolder = gui.addFolder('Color');
+colorFolder.add(settings.color, 'baseVariation', 0, 1, 0.01);
+colorFolder.add(settings.color, 'velocityVariation', 0, 1, 0.01);
+
+const bezierFolder = gui.addFolder('Beziers');
+bezierFolder.add(settings.beziers, 'flareOut', 0, 5, 0.01);
+bezierFolder.add(settings.beziers, 'flareIn', 0, 1, 0.01);
+
 gui.add(settings, 'update');
 
 
