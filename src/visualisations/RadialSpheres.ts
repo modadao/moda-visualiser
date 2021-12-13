@@ -1,6 +1,6 @@
 import { IDerivedFingerPrint } from "../types";
 import { bezierVector, buildAttribute, createShaderControls } from "../utils";
-import { CatmullRomCurve3, Vector3, Mesh, Object3D, LineBasicMaterial, Scene, ShaderMaterial, SphereBufferGeometry, TextureLoader, BufferGeometry, Line, Vector2, BoxGeometry, BoxBufferGeometry, RepeatWrapping, SplineCurve, Camera, Shader, TubeGeometry, MeshBasicMaterial, CurvePath, QuadraticBezierCurve3, Curve, Float32BufferAttribute, Points, InstancedMesh, DynamicDrawUsage, InstancedBufferGeometry, InstancedBufferAttribute, IcosahedronBufferGeometry, Matrix4, TorusBufferGeometry, Quaternion, RawShaderMaterial, BackSide, MathUtils } from "three";
+import { CatmullRomCurve3, Vector3, Mesh, Object3D, LineBasicMaterial, Scene, ShaderMaterial, SphereBufferGeometry, TextureLoader, BufferGeometry, Line, Vector2, BoxGeometry, BoxBufferGeometry, RepeatWrapping, SplineCurve, Camera, Shader, TubeGeometry, MeshBasicMaterial, CurvePath, QuadraticBezierCurve3, Curve, Float32BufferAttribute, Points, InstancedMesh, DynamicDrawUsage, InstancedBufferGeometry, InstancedBufferAttribute, IcosahedronBufferGeometry, Matrix4, TorusBufferGeometry, Quaternion, RawShaderMaterial, BackSide, MathUtils, CubicBezierCurve3 } from "three";
 import { GeometryUtils, hilbert3D } from "three/examples/jsm/utils/GeometryUtils";
 import FragShader from '../shaders/spheres_frag.glsl';
 import VertShader from '../shaders/spheres_vert.glsl';
@@ -121,8 +121,6 @@ export default class RadialSphere extends Object3D {
       mesh.scale.setScalar(d * scale);
       outlineMesh.scale.setScalar(d * scale + OUTLINE_SIZE);
       mesh.material.uniforms.u_innerColorMultiplier.value = 1.2 + p.featureLevel;
-      mesh.visible = false;
-      outlineMesh.visible = false;
       if (p.featureLevel !== 0) {
         mesh.visible = true;
         mesh.scale.setScalar(scaleSize(p.featureLevel).y);
@@ -163,15 +161,26 @@ export default class RadialSphere extends Object3D {
     });
 
     const curvePath = new CurvePath();
-    const dir = new Vector3(fingerprint.floatHash * 2 - 1, 0, fingerprint.floatHash * 2 - 1).normalize();
+    const center = new Vector3();
+    const dir = featurePositions[0].clone().sub(center).normalize();
+    let isFacingTowardsCenter = false;
     for (let i = 0; i < featurePositions.length - 1; i ++) {
       const cur = featurePositions[i];
       const next = featurePositions[i + 1];
-      const dist = cur.distanceTo(next);
-      console.log({ dist });
-      const anchor1 = cur.clone().add(dir.clone().multiplyScalar(dist * 2));
+      const dir = cur.clone().sub(center).normalize();
+      const nextDir = next.clone().sub(center).normalize();
+      if (isFacingTowardsCenter) {
+        nextDir.multiplyScalar(-1);
+        dir.multiplyScalar(-1)
+      }
 
-      const temp = new QuadraticBezierCurve3(cur, anchor1, next);
+      const dist = cur.distanceTo(next);
+      const handleDist = isFacingTowardsCenter ? dist * 0.7 : dist * 2;
+      console.log({ dist });
+      const anchor1 = cur.clone().add(dir.clone().multiplyScalar(handleDist));
+      const anchor2 = next.clone().add(nextDir.clone().multiplyScalar(handleDist));
+
+      const temp = new CubicBezierCurve3(cur, anchor1, anchor2, next);
       const v1 = temp.getPointAt(0.99);
       const v2 = temp.getPointAt(1);
 
@@ -180,6 +189,7 @@ export default class RadialSphere extends Object3D {
       console.log(dir);
 
       curvePath.add(temp);
+      isFacingTowardsCenter = !isFacingTowardsCenter;
     }
 
     const tubeGeometry = new TubeGeometry( curvePath, 200, 0.01, 5, false );
@@ -187,58 +197,6 @@ export default class RadialSphere extends Object3D {
     const curveObject = new Mesh( tubeGeometry, material );
     this.add(curveObject);
 
-
-    // Construct the billboarded outlines
-    // const billboardVerts = ([] as number[]).concat(...billboardedPositions.map(el => el.toArray()));
-    // // const billboardGeo = new BufferGeometry();
-    // // billboardGeo.setAttribute( 'position', new Float32BufferAttribute( billboardVerts, 3 ) );
-    // // billboardGeo.setAttribute( 'scale', new Float32BufferAttribute( billboardScales, 1 ) );
-    // // console.log(scale);
-    // const billboardMaterial = new RawShaderMaterial({
-    //   vertexShader: PointsVertShader,
-    //   fragmentShader: PointsFragShader,
-    // });
-    // // const billboardMesh = new Points(billboardGeo, billboardMaterial);
-    // // this.add(billboardMesh);
-
-    // const circleGeometry = new CircleLineGeometry(1, 32);
-    // const instancedCircleGeometry = new InstancedBufferGeometry();
-    // const positions: number[] = [];
-    // positions.push( 0.025, - 0.025, 0 );
-    // positions.push( - 0.025, 0.025, 0 );
-    // positions.push( 0, 0, 0.025 );
-    // instancedCircleGeometry.setAttribute( 'position', new Float32BufferAttribute( positions, 3 ) );
-    // // instancedCircleGeometry.setAttribute('position', circleGeometry.getAttribute('position'));
-    // instancedCircleGeometry.setAttribute('scale', new InstancedBufferAttribute(new Float32Array(billboardScales), 1));
-    // instancedCircleGeometry.setAttribute('offset', new InstancedBufferAttribute(new Float32Array(billboardVerts), 3));
-    // const outlineMesh = new Mesh(instancedCircleGeometry, billboardMaterial);
-    // this.add(outlineMesh);
-
-    // const func = (() => {
-    //   const amount = 3;
-    //   const count = Math.pow(amount, 3);
-    //   const geometry = new TorusBufferGeometry( 1, 0.05, 4, 32);
-
-    //   const mesh = new InstancedMesh( geometry, billboardMaterial, this.points.length);
-
-    //   let i = 0;
-    //   const offset = ( amount - 1 ) / 2;
-
-    //   const matrix = new Matrix4();
-
-    //   const dummyQuat = new Quaternion();
-    //   const scale = new Vector3();
-    //   for (let i = 0; i < this.points.length; i++) {
-    //     const p = this.points[i];
-    //     scale.setScalar(billboardScales[i]);
-    //     matrix.compose(p.position, dummyQuat, scale);
-    //     mesh.setMatrixAt( i, matrix );
-    //     i ++;
-
-    //   }
-    //   this.add(mesh);
-    // })()
-    
   }
 
   update() {
