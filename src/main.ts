@@ -5,20 +5,45 @@ import exampleFis from './data/example_fis.json';
 import exampleRock from './data/example_rock.json';
 import exampleSoftDisco from './data/example_softdisco.json';
 import { IFingerprint } from './types';
+import gui from './helpers/gui';
 
 const container = document.getElementById('app');
-let app: App|undefined;
-if (container) {
-  app = new App(container, exampleFis as unknown as IFingerprint);
+
+export interface ISettings {
+  featurePoints: {
+    count: number,
+    extraPer: number,
+  },
+  update: () => void,
+}
+const settings: ISettings = {
+  featurePoints: {
+    count: 7,
+    extraPer: 3000,
+  },
+  update: () => {
+    if (app && container && lastContent) {
+      app.dispose();
+      app = new App(container, lastContent, settings)
+    }
+  }
 }
 
+const featurePoints = gui.addFolder('FeaturePoints');
+featurePoints.add(settings.featurePoints, 'count', 0, 15, 1);
+featurePoints.add(settings.featurePoints, 'extraPer', 200, 5000, 1);
+gui.add(settings, 'update');
+
+
+let lastContent: undefined|IFingerprint;
 const textarea = document.getElementById('fingerprint');
 if (textarea) {
   textarea.textContent = JSON.stringify(example);
   textarea.addEventListener('change', (ev) => {
     if (app && container && textarea.textContent !== null) {
+      lastContent = JSON.parse(textarea.textContent) as IFingerprint;
       app.dispose();
-      app = new App(container, JSON.parse(textarea.textContent) as IFingerprint);
+      app = new App(container, lastContent, settings);
     }
   })
 }
@@ -41,3 +66,8 @@ document.querySelectorAll('.example-button').forEach(el => {
     }
   })
 })
+let app: App|undefined;
+if (container) {
+  lastContent = exampleFis as unknown as IFingerprint;
+  app = new App(container, lastContent, settings);
+}

@@ -1,5 +1,6 @@
 import { Camera, Color, OrthographicCamera, PerspectiveCamera, Scene, WebGLRenderer } from "three";
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import gui from "./helpers/gui";
 
 import { IDerivedFingerPrint, IFingerprint } from "./types";
 import { deriveData } from "./utils";
@@ -12,7 +13,7 @@ export default class App {
   orbitControls: OrbitControls;
 
   radialSpheres: RadialSphere;
-  constructor(public element: HTMLElement, fingerprint: IFingerprint) {
+  constructor(public element: HTMLElement, fingerprint: IFingerprint, settings: ISettings) {
     this.renderer = new WebGLRenderer({
       antialias: true,
     })
@@ -26,10 +27,9 @@ export default class App {
     this.camera.position.y = 10;
     this.camera.lookAt(0, 0, 0);
 
-
     this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
 
-    const derivedFingerprint = deriveData(fingerprint);
+    const derivedFingerprint = deriveData(fingerprint, settings);
     this.buildScene(derivedFingerprint);
     this.startAnimation();
   }

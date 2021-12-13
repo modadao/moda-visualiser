@@ -1,4 +1,6 @@
 import { BufferAttribute, MathUtils, ShaderMaterial, Vector } from "three";
+import { randFloat } from "three/src/math/MathUtils";
+import { ISettings } from "./App";
 import gui from "./helpers/gui";
 import { IDerivedCoordinate, IDerivedFingerPrint, IFingerprint } from "./types";
 
@@ -39,7 +41,7 @@ export const customRandom = {
   },
 }
 
-export const deriveData = (fingerprint: IFingerprint): IDerivedFingerPrint => {
+export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDerivedFingerPrint => {
   console.log('Deriving data from fingerprint')
   // Generate smoothed data
   const SMOOTH_RANGE = 40;
@@ -91,27 +93,36 @@ export const deriveData = (fingerprint: IFingerprint): IDerivedFingerPrint => {
   }
   const floatHash = (hash / 2_147_483_647) * 0.5 + 0.5;
 
-  const selectedFeatures = [];
-  let probabilityScaler = 1;
-  let numberOfFeatures = 0;
-  const targetNumberOfFeatures = 7 + Math.floor(fingerprint.coords.length / 3000);
+  const targetNumberOfFeatures = settings.featurePoints.count + Math.floor(fingerprint.coords.length / settings.featurePoints.extraPer);
+  console.log({targetNumberOfFeatures})
+  let features: number[] = [];
+  let featureLevels: number[] = [];
+  for (let i = 0; i < targetNumberOfFeatures; i++) {
+    let targetFeatureIndex = 0;
+    let j = 0;
+    // Regenerate targetFeatureIndex until it's unique
+    do {
+      j += 1;
+      targetFeatureIndex = Math.floor(customRandom.deterministic(i, floatHash, j) * fingerprint.coords.length);
+    } while(features.includes(targetFeatureIndex))
+
+    // Push 
+    features.push(targetFeatureIndex)
+    featureLevels.push(customRandom.deterministic(i, floatHash));
+  }
+  console.log(features);
   const result =  { ...fingerprint,
     coords: fingerprint.coords.map((el, i) => {
-      let r = customRandom.deterministic(el.x, el.y, gradients[i]);
-      const threshold = (1 - numberOfFeatures / targetNumberOfFeatures) * probabilityScaler / fingerprint.coords.length * probabilityScaler * 0.01;
-      const isFeature = r < threshold;
-      if (!isFeature) probabilityScaler += 0.1;
-      else {
-        console.log('Is feature')
-        probabilityScaler = 1;
-        numberOfFeatures += 1
-      }
+      const j = features.findIndex(featureIndex => i === featureIndex);
+      const featureLevel = j !== -1 
+        ? featureLevels[j]
+        : 0;
       return {
         x: el.x,
         y: el.y,
         g: gradients[i],
         smoothed: smoothedValues[i],
-        featureLevel: isFeature ? customRandom.deterministic(el.x, el.y) : 0,
+        featureLevel,
       }
     }),
     hash,

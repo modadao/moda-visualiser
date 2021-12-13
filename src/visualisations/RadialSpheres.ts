@@ -138,7 +138,6 @@ export default class RadialSphere extends Object3D {
 
       // Colour
       // const color = fingerprint.floatHash + sin(theta) * 0.15 + p.g * 0.3;
-      console.log(theta);
       const color = (fingerprint.floatHash + sin(theta) * 0.2 + p.g * 0.3) % 1;
       m.uniforms.u_floatHash.value = color;
 
