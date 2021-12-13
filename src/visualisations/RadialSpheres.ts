@@ -1,5 +1,5 @@
 import { IDerivedFingerPrint } from "../types";
-import { bezierVector, buildAttribute, createShaderControls } from "../utils";
+import { bezierVector, buildAttribute, createShaderControls, customRandom } from "../utils";
 import { CatmullRomCurve3, Vector3, Mesh, Object3D, LineBasicMaterial, Scene, ShaderMaterial, SphereBufferGeometry, TextureLoader, BufferGeometry, Line, Vector2, BoxGeometry, BoxBufferGeometry, RepeatWrapping, SplineCurve, Camera, Shader, TubeGeometry, MeshBasicMaterial, CurvePath, QuadraticBezierCurve3, Curve, Float32BufferAttribute, Points, InstancedMesh, DynamicDrawUsage, InstancedBufferGeometry, InstancedBufferAttribute, IcosahedronBufferGeometry, Matrix4, TorusBufferGeometry, Quaternion, RawShaderMaterial, BackSide, MathUtils, CubicBezierCurve3 } from "three";
 import { GeometryUtils, hilbert3D } from "three/examples/jsm/utils/GeometryUtils";
 import FragShader from '../shaders/spheres_frag.glsl';
@@ -164,7 +164,8 @@ export default class RadialSphere extends Object3D {
 
     const curvePath = new CurvePath();
     const center = new Vector3();
-    const dir = featurePositions[0].clone().sub(center).normalize();
+    const firstDir = featurePositions[0].clone().sub(center).normalize().multiplyScalar(-1);
+    const prevDir = firstDir.clone();
     let isFacingTowardsCenter = false;
     const { flareOut, flareIn } = settings.beziers;
     for (let i = 0; i < featurePositions.length; i ++) {
@@ -173,14 +174,14 @@ export default class RadialSphere extends Object3D {
       const next = isLast
         ? featurePositions[0]
         : featurePositions[i + 1];
-      const dir = cur.clone().sub(center).normalize();
-      const nextDir = isLast
-        ? curvePath.getPointAt(0).clone().sub(center).normalize() as Vector3
-        : next.clone().sub(center).normalize();
-      if (isFacingTowardsCenter || isLast) {
-        nextDir.multiplyScalar(-1);
-      }
-      if (isFacingTowardsCenter) dir.multiplyScalar(-1)
+      const dir = prevDir.clone().multiplyScalar(-1);
+      const nextDir = isLast 
+        ? firstDir
+        : next.clone().sub(center).normalize()
+          // Rotate the angle of entry
+          .applyAxisAngle(new Vector3(0, 1, 0), customRandom.deterministic(i, next.x) * settings.beziers.randomAngleScale - settings.beziers.randomAngleScale / 2);
+
+      if (isFacingTowardsCenter && !isLast) nextDir.multiplyScalar(-1);
 
       const dist = cur.distanceTo(next);
       const handleDist = isFacingTowardsCenter ? dist * flareIn : dist * flareOut;
@@ -198,6 +199,7 @@ export default class RadialSphere extends Object3D {
 
       curvePath.add(temp);
       isFacingTowardsCenter = !isFacingTowardsCenter;
+      prevDir.copy(nextDir)
     }
 
     const tubeGeometry = new TubeGeometry( curvePath, 200, 0.01, 5, false );

@@ -23,8 +23,9 @@ export interface ISettings {
     velocityVariation: number,
   },
   beziers: {
-    flareOut: 2,
-    flareIn: 0.8,
+    flareOut: number,
+    flareIn: number,
+    randomAngleScale: number,
   },
   update: () => void,
 }
@@ -42,8 +43,9 @@ const settings: ISettings = {
     velocityVariation: 0.3,
   },
   beziers: {
-    flareOut: 2,
-    flareIn: 0.8,
+    flareOut: 2.5,
+    flareIn: 0.5,
+    randomAngleScale: 1,
   },
   update: () => {
     if (app && container && lastContent) {
@@ -68,6 +70,7 @@ colorFolder.add(settings.color, 'velocityVariation', 0, 1, 0.01);
 const bezierFolder = gui.addFolder('Beziers');
 bezierFolder.add(settings.beziers, 'flareOut', 0, 5, 0.01);
 bezierFolder.add(settings.beziers, 'flareIn', 0, 1, 0.01);
+bezierFolder.add(settings.beziers, 'randomAngleScale', 0, 5, 0.01);
 
 gui.add(settings, 'update');
 
