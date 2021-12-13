@@ -164,15 +164,20 @@ export default class RadialSphere extends Object3D {
     const center = new Vector3();
     const dir = featurePositions[0].clone().sub(center).normalize();
     let isFacingTowardsCenter = false;
-    for (let i = 0; i < featurePositions.length - 1; i ++) {
+    for (let i = 0; i < featurePositions.length; i ++) {
+      const isLast = i === featurePositions.length - 1;
       const cur = featurePositions[i];
-      const next = featurePositions[i + 1];
+      const next = isLast
+        ? featurePositions[0]
+        : featurePositions[i + 1];
       const dir = cur.clone().sub(center).normalize();
-      const nextDir = next.clone().sub(center).normalize();
-      if (isFacingTowardsCenter) {
+      const nextDir = isLast
+        ? curvePath.getPointAt(0).clone().sub(center).normalize() as Vector3
+        : next.clone().sub(center).normalize();
+      if (isFacingTowardsCenter || isLast) {
         nextDir.multiplyScalar(-1);
-        dir.multiplyScalar(-1)
       }
+      if (isFacingTowardsCenter) dir.multiplyScalar(-1)
 
       const dist = cur.distanceTo(next);
       const handleDist = isFacingTowardsCenter ? dist * 0.7 : dist * 2;
