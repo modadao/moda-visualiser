@@ -16,6 +16,7 @@ void main() {
   vec2 center = vec2(0.5, 0.5);
   vec3 center3 = vec3(0.5, 0.0, 0.5);
   vec2 diff = vUv - center;
+  float dist = distance(vUv, center);
 
   vec3 camDir = cameraPosition;
   camDir.y = 0.;
@@ -43,6 +44,16 @@ void main() {
   // float c = 1. - distance(fragDir, camDir);
   // float s = 1. - distance(fragDir, shimmerDir);
   // gl_FragColor = vec4(s, c, f,1.);
-  gl_FragColor = color * smoothstep(0.5, 1.0, f) * 0.8;
+  // float innerRingGradient = smoothstep(0.15, 0.09, dist);
+  // float holeMask = 1. - step(0.6, innerRingGradient);
+  // float outerRingGradient = smoothstep(0.36, 0.41, dist);
+  // float outerMask = 1. - step(0.6, outerRingGradient);
+  // float diskMask = max(
+  //   min(holeMask, innerRingGradient),
+  //   min(outerMask, outerRingGradient)
+  // );
 
+
+  // gl_FragColor = color * smoothstep(0.5, 1.0, f) * 0.8 + diskMask;
+  gl_FragColor = color * smoothstep(0.5, 1.0, f) * 0.8;
 }
