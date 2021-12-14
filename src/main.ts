@@ -4,6 +4,7 @@ import exampleDebug from './data/example_test.json';
 import exampleFis from './data/example_fis.json';
 import exampleRock from './data/example_rock.json';
 import exampleSoftDisco from './data/example_softdisco.json';
+import exampleAbientTechno from './data/example_ambient_techno.json';
 import { IFingerprint } from './types';
 import gui from './helpers/gui';
 
@@ -11,6 +12,7 @@ const container = document.getElementById('app');
 
 export interface ISettings {
   featurePoints: {
+    outlineSize: number,
     count: number,
     extraPer: number,
     sizeSmall: number,
@@ -25,16 +27,18 @@ export interface ISettings {
   beziers: {
     flareOut: number,
     flareIn: number,
-    randomAngleScale: number,
+    angleRandomness: number,
+    verticalAngleRandomness: number,
   },
   update: () => void,
 }
 const settings: ISettings = {
   featurePoints: {
+    outlineSize: 0.007,
     count: 7,
     extraPer: 3000,
-    sizeSmall: 0.05,
-    sizeMed: 0.1,
+    sizeSmall: 0.15,
+    sizeMed: 0.2,
     sizeMdLg: 0.3,
     sizeLarge: 0.5,
   },
@@ -45,7 +49,8 @@ const settings: ISettings = {
   beziers: {
     flareOut: 2.5,
     flareIn: 0.5,
-    randomAngleScale: 1,
+    angleRandomness: 1,
+    verticalAngleRandomness: 1,
   },
   update: () => {
     if (app && container && lastContent) {
@@ -56,6 +61,7 @@ const settings: ISettings = {
 }
 
 const featurePoints = gui.addFolder('FeaturePoints');
+featurePoints.add(settings.featurePoints, 'outlineSize', 0, 0.05, 0.001);
 featurePoints.add(settings.featurePoints, 'count', 0, 15, 1);
 featurePoints.add(settings.featurePoints, 'extraPer', 200, 5000, 1);
 featurePoints.add(settings.featurePoints, 'sizeSmall', 0, 1, 0.01);
@@ -70,7 +76,8 @@ colorFolder.add(settings.color, 'velocityVariation', 0, 1, 0.01);
 const bezierFolder = gui.addFolder('Beziers');
 bezierFolder.add(settings.beziers, 'flareOut', 0, 5, 0.01);
 bezierFolder.add(settings.beziers, 'flareIn', 0, 1, 0.01);
-bezierFolder.add(settings.beziers, 'randomAngleScale', 0, 5, 0.01);
+bezierFolder.add(settings.beziers, 'angleRandomness', 0, 5, 0.01);
+bezierFolder.add(settings.beziers, 'verticalAngleRandomness', 0, 5, 0.01);
 
 gui.add(settings, 'update');
 
@@ -89,11 +96,10 @@ if (textarea) {
 }
 
 const lookup = {
-  ['Example'] : example,
-  ['Test'] : exampleDebug,
   ['Snare-y experimental'] : exampleFis,
   ['Rock'] : exampleRock,
   ['Disco-y'] : exampleSoftDisco,
+  ['Ambient Techno'] : exampleAbientTechno,
 }
 
 document.querySelectorAll('.example-button').forEach(el => {

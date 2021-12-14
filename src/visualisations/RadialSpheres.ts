@@ -1,7 +1,6 @@
 import { IDerivedFingerPrint } from "../types";
-import { bezierVector, buildAttribute, createShaderControls, customRandom } from "../utils";
-import { CatmullRomCurve3, Vector3, Mesh, Object3D, LineBasicMaterial, Scene, ShaderMaterial, SphereBufferGeometry, TextureLoader, BufferGeometry, Line, Vector2, BoxGeometry, BoxBufferGeometry, RepeatWrapping, SplineCurve, Camera, Shader, TubeGeometry, MeshBasicMaterial, CurvePath, QuadraticBezierCurve3, Curve, Float32BufferAttribute, Points, InstancedMesh, DynamicDrawUsage, InstancedBufferGeometry, InstancedBufferAttribute, IcosahedronBufferGeometry, Matrix4, TorusBufferGeometry, Quaternion, RawShaderMaterial, BackSide, MathUtils, CubicBezierCurve3 } from "three";
-import { GeometryUtils, hilbert3D } from "three/examples/jsm/utils/GeometryUtils";
+import { bezierVector, buildAttribute, chunk, createShaderControls, customRandom, pickRandom } from "../utils";
+import { CatmullRomCurve3, Vector3, Mesh, Object3D, LineBasicMaterial, Scene, ShaderMaterial, SphereBufferGeometry, TextureLoader, BufferGeometry, Line, Vector2, BoxGeometry, BoxBufferGeometry, RepeatWrapping, SplineCurve, Camera, Shader, TubeGeometry, MeshBasicMaterial, CurvePath, QuadraticBezierCurve3, Curve, Float32BufferAttribute, Points, InstancedMesh, DynamicDrawUsage, InstancedBufferGeometry, InstancedBufferAttribute, IcosahedronBufferGeometry, Matrix4, TorusBufferGeometry, Quaternion, RawShaderMaterial, BackSide, MathUtils, CubicBezierCurve3, Vector } from "three";
 import FragShader from '../shaders/spheres_frag.glsl';
 import VertShader from '../shaders/spheres_vert.glsl';
 import RingFragShader from '../shaders/v1_rings_frag.glsl';
@@ -14,12 +13,18 @@ import FlagMesh from "../helpers/FlagMesh";
 import PointsFragShader from '../shaders/points_frag.glsl';
 import PointsVertShader from '../shaders/points_vert.glsl';
 import { ISettings } from "@/main";
-
-const OUTLINE_SIZE = 0.007;
+import gui from "../helpers/gui";
+import GUI from "lil-gui";
 
 const tl = new TextureLoader();
 export default class RadialSphere extends Object3D {
   points: Mesh[] = [];
+  outlines: Mesh[] = [];
+  mainLine: Mesh;
+  extraLines: Mesh[] = [];
+  rings: Line[] = [];
+  barGraph: Line;
+  folder: GUI;
   constructor(private scene: Scene, private camera: Camera, private fingerprint: IDerivedFingerPrint, settings: ISettings) {
     super();
 
@@ -49,10 +54,11 @@ export default class RadialSphere extends Object3D {
     l.scale.setScalar(0.9);
     this.add(l);
 
-    const ringBarGeo = new RingBarGeometry(3.3, fingerprint, 0.001);
+    const ringBarGeo = new RingBarGeometry(3.22, fingerprint, 0.0013);
     const ringBarLine = new Line(ringBarGeo, matWhite);
     ringBarLine.rotateX(Math.PI / 2);
     this.add(ringBarLine);
+    this.barGraph = ringBarLine;
 
 
     const greyRing = l.clone();
@@ -66,6 +72,7 @@ export default class RadialSphere extends Object3D {
       const ring = greyRing.clone()
       ring.scale.setScalar(4.0 + i * 0.3);
       this.add(ring);
+      this.rings.push(ring);
     })
 
     const { sin, cos, floor, max, pow } = Math;
@@ -80,9 +87,6 @@ export default class RadialSphere extends Object3D {
       depthWrite: false,
     })
 
-    // Billboarded outlines
-    const billboardedPositions: Vector3[] = [];
-    const billboardScales: number[] = [];
     for (const p of fingerprint.coords) {
       // Build geometry 
       const m = new ShaderMaterial({
@@ -116,20 +120,18 @@ export default class RadialSphere extends Object3D {
       const r = step + 1.0 + amp ;
       mesh.position.set(x * r, 0, z * r);
       outlineMesh.position.copy(mesh.position);
-      billboardedPositions.push(mesh.position.clone());
 
       // Size
       const d = (Math.abs(p.g - 0.5) + scale);
       mesh.scale.setScalar(d * scale);
-      outlineMesh.scale.setScalar(d * scale + OUTLINE_SIZE);
+      outlineMesh.scale.setScalar(d * scale + settings.featurePoints.outlineSize);
       mesh.material.uniforms.u_innerColorMultiplier.value = 1.2 + p.featureLevel;
       if (p.featureLevel !== 0) {
         mesh.visible = true;
         mesh.scale.setScalar(scaleSize(p.featureLevel).y);
-        outlineMesh.scale.setScalar(scaleSize(p.featureLevel).y + OUTLINE_SIZE);
+        outlineMesh.scale.setScalar(scaleSize(p.featureLevel).y + settings.featurePoints.outlineSize);
         // m.uniforms.u_innerColorMultiplier.value = p.featureLevel + 1;
       }
-      billboardScales.push(mesh.scale.x);
 
       // Orbit rings
       if (p.featureLevel !== 0) {
@@ -147,6 +149,7 @@ export default class RadialSphere extends Object3D {
       this.add(mesh);
       this.add(outlineMesh);
       this.points.push(mesh);
+      this.outlines.push(outlineMesh);
     }
 
     // Bezier through feature points
@@ -162,50 +165,116 @@ export default class RadialSphere extends Object3D {
       return new Vector3(x * r, 0, z * r);
     });
 
-    const curvePath = new CurvePath();
+    // const curvePath = new CurvePath();
     const center = new Vector3();
     const firstDir = featurePositions[0].clone().sub(center).normalize().multiplyScalar(-1);
     const prevDir = firstDir.clone();
     let isFacingTowardsCenter = false;
-    const { flareOut, flareIn } = settings.beziers;
-    for (let i = 0; i < featurePositions.length; i ++) {
-      const isLast = i === featurePositions.length - 1;
-      const cur = featurePositions[i];
-      const next = isLast
-        ? featurePositions[0]
-        : featurePositions[i + 1];
-      const dir = prevDir.clone().multiplyScalar(-1);
-      const nextDir = isLast 
-        ? firstDir
+    const { flareOut, flareIn, angleRandomness, verticalAngleRandomness } = settings.beziers;
+    // for (let i = 0; i < featurePositions.length; i ++) {
+    //   const isLast = i === featurePositions.length - 1;
+    //   const cur = featurePositions[i];
+    //   const next = isLast
+    //     ? featurePositions[0]
+    //     : featurePositions[i + 1];
+    //   const dir = prevDir.clone().multiplyScalar(-1);
+    //   const nextDir = isLast 
+    //     ? firstDir
+    //     : next.clone().sub(center).normalize()
+    //       // Rotate the angle of entry
+    //       .applyAxisAngle(new Vector3(0, 1, 0), customRandom.deterministic(i, next.x) * settings.beziers.angleRandomness - settings.beziers.angleRandomness / 2);
+
+    //   if (isFacingTowardsCenter && !isLast) nextDir.multiplyScalar(-1);
+
+    //   const dist = cur.distanceTo(next);
+    //   const handleDist = isFacingTowardsCenter ? dist * flareIn : dist * flareOut;
+    //   console.log({ dist });
+    //   const anchor1 = cur.clone().add(dir.clone().multiplyScalar(handleDist));
+    //   const anchor2 = next.clone().add(nextDir.clone().multiplyScalar(handleDist));
+
+    //   const temp = new CubicBezierCurve3(cur, anchor1, anchor2, next);
+    //   const v1 = temp.getPointAt(0.99);
+    //   const v2 = temp.getPointAt(1);
+
+    //   v2.sub(v1);
+    //   dir.copy(v2).normalize();
+    //   console.log(dir);
+
+    //   curvePath.add(temp);
+    //   isFacingTowardsCenter = !isFacingTowardsCenter;
+    //   prevDir.copy(nextDir)
+    // }
+
+    const [firstPoint, ...remainingPoints] = featurePositions;
+    const traverseBeziers = (points: Vector3[], cur: Vector3, dir: Vector3, path: CurvePath<Vector3>, facingTowardsCenter: boolean, firstPoint?: Vector3, firstDir?: Vector3): CurvePath<Vector3> => {
+      const isLast = points.length === 0;
+      const targetDist = 2;
+      const next = isLast 
+        ? firstPoint as Vector3 
+        : points.reduce((acc, el) => {
+            return Math.abs(targetDist - cur.distanceTo(el)) < Math.abs(targetDist - cur.distanceTo(acc)) ? el : acc
+          }, points[0])
+      const remaining = points.filter(el => !el.equals(next));
+      console.log(points.length, next, remaining);
+
+      const nextDir = isLast
+        ? (firstDir as Vector3).multiplyScalar(-1)
         : next.clone().sub(center).normalize()
-          // Rotate the angle of entry
-          .applyAxisAngle(new Vector3(0, 1, 0), customRandom.deterministic(i, next.x) * settings.beziers.randomAngleScale - settings.beziers.randomAngleScale / 2);
-
-      if (isFacingTowardsCenter && !isLast) nextDir.multiplyScalar(-1);
-
+          .applyAxisAngle(new Vector3(0, 1, 0), customRandom.deterministic(cur.x, cur.y) * angleRandomness - angleRandomness / 2)
+          .applyAxisAngle(new Vector3(1, 0, 0), customRandom.deterministic(cur.x, cur.y) * verticalAngleRandomness - verticalAngleRandomness / 2);
+      if (facingTowardsCenter && !isLast) nextDir.multiplyScalar(-1);
       const dist = cur.distanceTo(next);
-      const handleDist = isFacingTowardsCenter ? dist * flareIn : dist * flareOut;
-      console.log({ dist });
-      const anchor1 = cur.clone().add(dir.clone().multiplyScalar(handleDist));
+      const handleDist = facingTowardsCenter ? dist * flareIn : dist * flareOut;
+      const anchor1 = cur.clone().add(dir.clone().multiplyScalar(handleDist))
       const anchor2 = next.clone().add(nextDir.clone().multiplyScalar(handleDist));
+      
+      path.add(new CubicBezierCurve3(cur, anchor1, anchor2, next));
 
-      const temp = new CubicBezierCurve3(cur, anchor1, anchor2, next);
-      const v1 = temp.getPointAt(0.99);
-      const v2 = temp.getPointAt(1);
-
-      v2.sub(v1);
-      dir.copy(v2).normalize();
-      console.log(dir);
-
-      curvePath.add(temp);
-      isFacingTowardsCenter = !isFacingTowardsCenter;
-      prevDir.copy(nextDir)
+      if (isLast) {
+        return path;
+      } else {
+        return traverseBeziers(remaining, next, nextDir.multiplyScalar(-1), path, !facingTowardsCenter, firstPoint ?? cur, firstDir ?? dir);
+      }
     }
-
+    const curvePath = traverseBeziers(remainingPoints, firstPoint, firstDir, new CurvePath(), true);
     const tubeGeometry = new TubeGeometry( curvePath, 200, 0.01, 5, false );
     const material = new MeshBasicMaterial( { color : 0xffffff, wireframe: false, } );
     const curveObject = new Mesh( tubeGeometry, material );
     this.add(curveObject);
+    this.mainLine = curveObject;
+
+
+    const secondaryMat = new MeshBasicMaterial({ color: 0xcccccc })
+    const chunkedPoints = chunk(pickRandom(fingerprint.coords, 18), 6);
+    console.log(chunkedPoints);
+    chunkedPoints.forEach(points => {
+      if (points.length < 4) return;
+      const positions = points.map(p => {
+        // Position
+        const theta = (p.x / height) * Math.PI * 2;
+        const x = sin(theta);
+        const z = cos(theta);
+        const step = floor(theta / (Math.PI * 2));
+        const amp = p.y / width * 2;
+        const r = step + 1.0 + amp ;
+        return new Vector3(x * r, 0, z * r);
+      });
+      const [firstPoint, ...remainingPoints] = positions;
+      const firstDir = positions[0].clone().sub(center).normalize().multiplyScalar(-1);
+      const curvePath = traverseBeziers(remainingPoints, firstPoint, firstDir, new CurvePath(), true)
+      const geo = new TubeGeometry(curvePath, 200, 0.005, 3, false);
+      const mesh = new Mesh(geo, secondaryMat);
+      this.add(mesh);
+      this.extraLines.push(mesh);
+    })
+
+    const elementsFolder = gui.addFolder('Scene Elements');
+    this.folder = elementsFolder;
+    elementsFolder.add({ x: true}, 'x').name('Outlines').onChange(v => this.outlines.forEach(l => l.visible = v));
+    elementsFolder.add(this.barGraph, 'visible').name('Circumference')
+    elementsFolder.add(this.mainLine, 'visible').name('Main line')
+    elementsFolder.add({ x: true}, 'x').name('Secondary lines').onChange(v => this.extraLines.forEach(l => l.visible = v));
+    elementsFolder.add({ x: true}, 'x').name('Rings').onChange(v => this.rings.forEach(l => l.visible = v));
 
   }
 
@@ -217,6 +286,10 @@ export default class RadialSphere extends Object3D {
       const mat = (m.material as ShaderMaterial)
       mat.uniforms.u_cameraDirection.value = dir;
     });
+  }
+
+  dispose() {
+    this.folder.destroy();
   }
 
 }

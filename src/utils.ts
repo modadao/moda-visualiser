@@ -152,3 +152,22 @@ export const bezierVector = <T extends Vector>(A: T, B: T, C: T, D: T, t: number
   tv1.lerp(tv2, t);
   return tv1.clone() as T;
 }
+
+export const chunk = <T,>(arr: T[], size: number): T[][] => (
+  arr.reduce((acc, e, i) => (i % size ? acc[acc.length - 1].push(e) : acc.push([e]), acc), [] as T[][])
+);
+
+export const pickRandom = (arr: any[], count: number) => {
+  let indices = [] as number[];
+  for (let i = 0; i < count; i++) {
+    let j = 0;
+    let index = 0;
+    do {
+      j += 1;
+      index = Math.floor(customRandom.deterministic(i, j) * arr.length);
+    } while(arr.includes(index))
+    indices.push(index);
+  }
+
+  return indices.map(index => arr[index]);
+}

@@ -56,5 +56,6 @@ export default class App {
     this.scene.clear();
     this.renderer.dispose();
     this.renderer.domElement.parentElement?.removeChild(this.renderer.domElement);
+    this.radialSpheres.dispose();
   }
 }
