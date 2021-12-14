@@ -10,6 +10,8 @@ import CircleLineGeometry from '../helpers/CircleLineGeometry';
 import CrossLineGeometry from "../helpers/CrossLineGeometry";
 import RingBarGeometry from "../helpers/RingBarGeometry";
 import FlagMesh from "../helpers/FlagMesh";
+import ParticleVert from '../shaders/particle_vert.glsl';
+import ParticleFrag from '../shaders/particle_frag.glsl';
 import BackgroundFloorVert from '../shaders/background_floor_vert.glsl';
 import BackgroundFloorFrag from '../shaders/background_floor_frag.glsl';
 import { ISettings } from "@/main";
@@ -27,13 +29,18 @@ export default class RadialSphere extends Object3D {
   points: Mesh[] = [];
   outlines: Mesh[] = [];
   mainLine: Mesh;
+  flags: FlagMesh[] = [];
   extraLines: Mesh[] = [];
   rings: Line[] = [];
   barGraph: Line;
   floor: Mesh|undefined;
   folder: GUI;
+  galaxyPointsMat: ShaderMaterial;
   constructor(private scene: Scene, private camera: Camera, renderer: WebGLRenderer, private fingerprint: IDerivedFingerPrint, settings: ISettings) {
     super();
+
+    const elementsFolder = gui.addFolder('Scene Elements');
+    this.folder = elementsFolder;
 
     const { sizeSmall, sizeMed, sizeMdLg, sizeLarge } = settings.featurePoints
     const sizeBezierPoints = [
@@ -79,6 +86,7 @@ export default class RadialSphere extends Object3D {
       const ring = greyRing.clone()
       ring.scale.setScalar(4.0 + i * 0.3);
       this.add(ring);
+      ring.visible = false;
       this.rings.push(ring);
     })
 
@@ -144,6 +152,8 @@ export default class RadialSphere extends Object3D {
       if (p.featureLevel !== 0) {
         const flag = new FlagMesh(10, 0.02, 0.3);
         flag.position.set(0, scaleSize(p.featureLevel).y, 0);
+        this.flags.push(flag);
+        flag.visible = false;
         mesh.add(flag);
       }
 
@@ -238,66 +248,100 @@ export default class RadialSphere extends Object3D {
       const geo = new TubeGeometry(curvePath, 200, 0.005, 3, false);
       const mesh = new Mesh(geo, secondaryMat);
       this.add(mesh);
+      mesh.visible = false;
       this.extraLines.push(mesh);
-    })
+    });
 
-    const elementsFolder = gui.addFolder('Scene Elements');
-    this.folder = elementsFolder;
-    elementsFolder.add({ x: true}, 'x').name('Outlines').onChange(v => this.outlines.forEach(l => l.visible = v));
-    elementsFolder.add(this.barGraph, 'visible').name('Circumference')
-    elementsFolder.add(this.mainLine, 'visible').name('Main line')
-    elementsFolder.add({ x: true}, 'x').name('Secondary lines').onChange(v => this.extraLines.forEach(l => l.visible = v));
-    elementsFolder.add({ x: true}, 'x').name('Rings').onChange(v => this.rings.forEach(l => l.visible = v));
+    // Build particle background
+    (() => {
+      // const g = new CrossLineGeometry(1).getAttribute('position');
+      const instances = 1000;
+      const g = new InstancedBufferGeometry();
+      g.setAttribute('position', new CrossLineGeometry(1).getAttribute('position'));
+      const offsets: number[] = [];
+      const scales: number[] = [];
+      for (let i = 0; i < 1000; i++) {
+        const theta = customRandom.deterministic(i, 2) * Math.PI * 2;
+        const radius = customRandom.deterministic(i) * 8 + 5;
+        const x = sin(theta);
+        const z = cos(theta);
+        offsets.push(x * radius, 0, z * radius);
+        scales.push(0.1 + customRandom.deterministic(i) * 0.1);
+      }
+
+      g.setAttribute('offset', new InstancedBufferAttribute(new Float32Array(offsets), 3));
+      g.setAttribute('scale', new InstancedBufferAttribute(new Float32Array(scales), 1));
+
+      const mat = new ShaderMaterial({
+        vertexShader: ParticleVert,
+        fragmentShader: ParticleFrag,
+        uniforms: {
+          u_time: {
+            value: 0,
+          }
+        }
+      })
+      const l = new Line(g, mat)
+      this.add(l);
+      elementsFolder.add(l, 'visible').name('Galaxy points');
+      this.galaxyPointsMat = mat;
+    })();
 
     // Build render target and background
     setTimeout(() => {
-    (() => {
-      const rtCam = new OrthographicCamera(-4, 4, 4, -4, 0.001, 100);
-      rtCam.position.y = 10;
-      rtCam.lookAt(0, 0, 0);
-      rtCam.layers.enable(1)
-      rtCam.layers.disable(0)
-      const oldClearColor = new Color();
-      renderer.getClearColor(oldClearColor);
-      renderer.setClearColor(new Color(0x000000))
+      (() => {
+        const rtCam = new OrthographicCamera(-4, 4, 4, -4, 0.001, 100);
+        rtCam.position.y = 10;
+        rtCam.lookAt(0, 0, 0);
+        rtCam.layers.enable(1)
+        rtCam.layers.disable(0)
+        const oldClearColor = new Color();
+        renderer.getClearColor(oldClearColor);
+        renderer.setClearColor(new Color(0x000000))
 
-      const size = new Vector2();
-      renderer.getSize(size);
-      const rt = new WebGLRenderTarget(size.width, size.height)
-      renderer.setRenderTarget(rt);
-      renderer.render(scene, rtCam);
-      renderer.setRenderTarget(null);
-      const t = rt.texture;
-      console.log(t);
+        const size = new Vector2();
+        renderer.getSize(size);
+        const rt = new WebGLRenderTarget(size.width, size.height)
+        renderer.setRenderTarget(rt);
+        renderer.render(scene, rtCam);
+        renderer.setRenderTarget(null);
+        const t = rt.texture;
+        console.log(t);
 
-      renderer.setClearColor(oldClearColor);
+        renderer.setClearColor(oldClearColor);
 
-      preProcessTexture(renderer, t, [
-        new ShaderPass(HorizontalBlurShader),
-        new ShaderPass(VerticalBlurShader),
-      ]).then(bloomMap => {
-        const geo = new PlaneGeometry(8, 8)
-        const mat = new ShaderMaterial({
-          fragmentShader: BackgroundFloorFrag,
-          vertexShader: BackgroundFloorVert,
-          uniforms: {
-            tex0: {
-              value: bloomMap,
-            }
-          },
-          depthWrite: false,
-          blending: AdditiveBlending,
-        })
-        const m = new Mesh(geo, mat);
-        m.rotateX(-Math.PI / 2)
-        m.position.y = -0.5;
-        this.add(m);
-        this.floor = m;
-        elementsFolder.add(m, 'visible').name('Reflection visible');
-      });
-    })()
-
+        preProcessTexture(renderer, t, [
+          new ShaderPass(HorizontalBlurShader),
+          new ShaderPass(VerticalBlurShader),
+        ]).then(bloomMap => {
+          const geo = new PlaneGeometry(8, 8)
+          const mat = new ShaderMaterial({
+            fragmentShader: BackgroundFloorFrag,
+            vertexShader: BackgroundFloorVert,
+            uniforms: {
+              tex0: {
+                value: bloomMap,
+              }
+            },
+            depthWrite: false,
+            blending: AdditiveBlending,
+          })
+          const m = new Mesh(geo, mat);
+          m.rotateX(-Math.PI / 2)
+          m.position.y = -0.5;
+          this.add(m);
+          this.floor = m;
+          elementsFolder.add(m, 'visible').name('Reflection visible');
+        });
+      })()
     }, 1000)
+
+    elementsFolder.add({ x: true}, 'x').name('Outlines').onChange(v => this.outlines.forEach(l => l.visible = v));
+    elementsFolder.add(this.barGraph, 'visible').name('Circumference')
+    elementsFolder.add(this.mainLine, 'visible').name('Main line')
+    elementsFolder.add({ x: false}, 'x').name('Secondary lines').onChange(v => this.extraLines.forEach(l => l.visible = v));
+    elementsFolder.add({ x: false}, 'x').name('Rings').onChange(v => this.rings.forEach(l => l.visible = v));
+    elementsFolder.add({ x: false}, 'x').name('Flags').onChange(v => this.flags.forEach(l => l.visible = v));
   }
 
   update() {
@@ -308,6 +352,7 @@ export default class RadialSphere extends Object3D {
       const mat = (m.material as ShaderMaterial)
       mat.uniforms.u_cameraDirection.value = dir;
     });
+    this.galaxyPointsMat.uniforms.u_time.value += 0.1;
   }
 
   dispose() {

@@ -164,7 +164,7 @@ export const chunk = <T,>(arr: T[], size: number): T[][] => (
   arr.reduce((acc, e, i) => (i % size ? acc[acc.length - 1].push(e) : acc.push([e]), acc), [] as T[][])
 );
 
-export const pickRandom = (arr: any[], count: number) => {
+export const pickRandom = <T>(arr: T[], count: number) => {
   let indices = [] as number[];
   for (let i = 0; i < count; i++) {
     let j = 0;
@@ -172,7 +172,7 @@ export const pickRandom = (arr: any[], count: number) => {
     do {
       j += 1;
       index = Math.floor(customRandom.deterministic(i, j) * arr.length);
-    } while(arr.includes(index))
+    } while(indices.includes(index))
     indices.push(index);
   }
 
