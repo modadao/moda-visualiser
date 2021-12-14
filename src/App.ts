@@ -36,7 +36,7 @@ export default class App {
   }
 
   buildScene(fingerprint: IDerivedFingerPrint, settings: ISettings) {
-    this.radialSpheres = new RadialSphere(this.scene, this.camera, fingerprint, settings);
+    this.radialSpheres = new RadialSphere(this.scene, this.camera, this.renderer, fingerprint, settings);
     this.scene.add(this.radialSpheres);
   }
 

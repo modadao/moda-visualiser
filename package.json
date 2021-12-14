@@ -34,7 +34,7 @@
     "css-loader": "^6.5.1",
     "dotenv": "^10.0.0",
     "dotenv-webpack": "^7.0.3",
-    "esbuild-loader": "^2.16.0",
+    "esbuild-loader": "^2.17.0",
     "eslint": "^8.2.0",
     "eslint-plugin-import": "^2.25.3",
     "file-loader": "^6.2.0",

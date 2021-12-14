@@ -1,6 +1,6 @@
 import { IDerivedFingerPrint } from "../types";
-import { bezierVector, buildAttribute, chunk, createShaderControls, customRandom, pickRandom } from "../utils";
-import { CatmullRomCurve3, Vector3, Mesh, Object3D, LineBasicMaterial, Scene, ShaderMaterial, SphereBufferGeometry, TextureLoader, BufferGeometry, Line, Vector2, BoxGeometry, BoxBufferGeometry, RepeatWrapping, SplineCurve, Camera, Shader, TubeGeometry, MeshBasicMaterial, CurvePath, QuadraticBezierCurve3, Curve, Float32BufferAttribute, Points, InstancedMesh, DynamicDrawUsage, InstancedBufferGeometry, InstancedBufferAttribute, IcosahedronBufferGeometry, Matrix4, TorusBufferGeometry, Quaternion, RawShaderMaterial, BackSide, MathUtils, CubicBezierCurve3, Vector } from "three";
+import { bezierVector, buildAttribute, chunk, createShaderControls, customRandom, pickRandom, preProcessTexture } from "../utils";
+import { CatmullRomCurve3, Vector3, Mesh, Object3D, LineBasicMaterial, Scene, ShaderMaterial, SphereBufferGeometry, TextureLoader, BufferGeometry, Line, Vector2, BoxGeometry, BoxBufferGeometry, RepeatWrapping, SplineCurve, Camera, Shader, TubeGeometry, MeshBasicMaterial, CurvePath, QuadraticBezierCurve3, Curve, Float32BufferAttribute, Points, InstancedMesh, DynamicDrawUsage, InstancedBufferGeometry, InstancedBufferAttribute, IcosahedronBufferGeometry, Matrix4, TorusBufferGeometry, Quaternion, RawShaderMaterial, BackSide, MathUtils, CubicBezierCurve3, Vector, WebGLRenderer, WebGLRenderTarget, PlaneGeometry, OrthographicCamera, AdditiveBlending, Color } from "three";
 import FragShader from '../shaders/spheres_frag.glsl';
 import VertShader from '../shaders/spheres_vert.glsl';
 import RingFragShader from '../shaders/v1_rings_frag.glsl';
@@ -10,11 +10,17 @@ import CircleLineGeometry from '../helpers/CircleLineGeometry';
 import CrossLineGeometry from "../helpers/CrossLineGeometry";
 import RingBarGeometry from "../helpers/RingBarGeometry";
 import FlagMesh from "../helpers/FlagMesh";
-import PointsFragShader from '../shaders/points_frag.glsl';
-import PointsVertShader from '../shaders/points_vert.glsl';
+import BackgroundFloorVert from '../shaders/background_floor_vert.glsl';
+import BackgroundFloorFrag from '../shaders/background_floor_frag.glsl';
 import { ISettings } from "@/main";
 import gui from "../helpers/gui";
 import GUI from "lil-gui";
+import { GlitchPass } from 'three/examples/jsm/postprocessing/GlitchPass';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
+import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
+import { ToonShader1 } from 'three/examples/jsm/shaders/ToonShader';
+import { HorizontalBlurShader } from 'three/examples/jsm/shaders/HorizontalBlurShader';
+import { VerticalBlurShader } from 'three/examples/jsm/shaders/VerticalBlurShader';
 
 const tl = new TextureLoader();
 export default class RadialSphere extends Object3D {
@@ -24,8 +30,9 @@ export default class RadialSphere extends Object3D {
   extraLines: Mesh[] = [];
   rings: Line[] = [];
   barGraph: Line;
+  floor: Mesh|undefined;
   folder: GUI;
-  constructor(private scene: Scene, private camera: Camera, private fingerprint: IDerivedFingerPrint, settings: ISettings) {
+  constructor(private scene: Scene, private camera: Camera, renderer: WebGLRenderer, private fingerprint: IDerivedFingerPrint, settings: ISettings) {
     super();
 
     const { sizeSmall, sizeMed, sizeMdLg, sizeLarge } = settings.featurePoints
@@ -146,6 +153,7 @@ export default class RadialSphere extends Object3D {
       const color = (fingerprint.floatHash + sin(theta) * baseVariation + p.g * velocityVariation) % 1;
       m.uniforms.u_floatHash.value = color;
 
+      mesh.layers.enable(1);
       this.add(mesh);
       this.add(outlineMesh);
       this.points.push(mesh);
@@ -165,46 +173,10 @@ export default class RadialSphere extends Object3D {
       return new Vector3(x * r, 0, z * r);
     });
 
-    // const curvePath = new CurvePath();
+    // Generate main bezier
     const center = new Vector3();
     const firstDir = featurePositions[0].clone().sub(center).normalize().multiplyScalar(-1);
-    const prevDir = firstDir.clone();
-    let isFacingTowardsCenter = false;
     const { flareOut, flareIn, angleRandomness, verticalAngleRandomness } = settings.beziers;
-    // for (let i = 0; i < featurePositions.length; i ++) {
-    //   const isLast = i === featurePositions.length - 1;
-    //   const cur = featurePositions[i];
-    //   const next = isLast
-    //     ? featurePositions[0]
-    //     : featurePositions[i + 1];
-    //   const dir = prevDir.clone().multiplyScalar(-1);
-    //   const nextDir = isLast 
-    //     ? firstDir
-    //     : next.clone().sub(center).normalize()
-    //       // Rotate the angle of entry
-    //       .applyAxisAngle(new Vector3(0, 1, 0), customRandom.deterministic(i, next.x) * settings.beziers.angleRandomness - settings.beziers.angleRandomness / 2);
-
-    //   if (isFacingTowardsCenter && !isLast) nextDir.multiplyScalar(-1);
-
-    //   const dist = cur.distanceTo(next);
-    //   const handleDist = isFacingTowardsCenter ? dist * flareIn : dist * flareOut;
-    //   console.log({ dist });
-    //   const anchor1 = cur.clone().add(dir.clone().multiplyScalar(handleDist));
-    //   const anchor2 = next.clone().add(nextDir.clone().multiplyScalar(handleDist));
-
-    //   const temp = new CubicBezierCurve3(cur, anchor1, anchor2, next);
-    //   const v1 = temp.getPointAt(0.99);
-    //   const v2 = temp.getPointAt(1);
-
-    //   v2.sub(v1);
-    //   dir.copy(v2).normalize();
-    //   console.log(dir);
-
-    //   curvePath.add(temp);
-    //   isFacingTowardsCenter = !isFacingTowardsCenter;
-    //   prevDir.copy(nextDir)
-    // }
-
     const [firstPoint, ...remainingPoints] = featurePositions;
     const traverseBeziers = (points: Vector3[], cur: Vector3, dir: Vector3, path: CurvePath<Vector3>, facingTowardsCenter: boolean, firstPoint?: Vector3, firstDir?: Vector3): CurvePath<Vector3> => {
       const isLast = points.length === 0;
@@ -244,6 +216,7 @@ export default class RadialSphere extends Object3D {
     this.mainLine = curveObject;
 
 
+    // Generate random secondary beziers
     const secondaryMat = new MeshBasicMaterial({ color: 0xcccccc })
     const chunkedPoints = chunk(pickRandom(fingerprint.coords, 18), 6);
     console.log(chunkedPoints);
@@ -276,6 +249,55 @@ export default class RadialSphere extends Object3D {
     elementsFolder.add({ x: true}, 'x').name('Secondary lines').onChange(v => this.extraLines.forEach(l => l.visible = v));
     elementsFolder.add({ x: true}, 'x').name('Rings').onChange(v => this.rings.forEach(l => l.visible = v));
 
+    // Build render target and background
+    setTimeout(() => {
+    (() => {
+      const rtCam = new OrthographicCamera(-4, 4, 4, -4, 0.001, 100);
+      rtCam.position.y = 10;
+      rtCam.lookAt(0, 0, 0);
+      rtCam.layers.enable(1)
+      rtCam.layers.disable(0)
+      const oldClearColor = new Color();
+      renderer.getClearColor(oldClearColor);
+      renderer.setClearColor(new Color(0x000000))
+
+      const size = new Vector2();
+      renderer.getSize(size);
+      const rt = new WebGLRenderTarget(size.width, size.height)
+      renderer.setRenderTarget(rt);
+      renderer.render(scene, rtCam);
+      renderer.setRenderTarget(null);
+      const t = rt.texture;
+      console.log(t);
+
+      renderer.setClearColor(oldClearColor);
+
+      preProcessTexture(renderer, t, [
+        new ShaderPass(HorizontalBlurShader),
+        new ShaderPass(VerticalBlurShader),
+      ]).then(bloomMap => {
+        const geo = new PlaneGeometry(8, 8)
+        const mat = new ShaderMaterial({
+          fragmentShader: BackgroundFloorFrag,
+          vertexShader: BackgroundFloorVert,
+          uniforms: {
+            tex0: {
+              value: bloomMap,
+            }
+          },
+          depthWrite: false,
+          blending: AdditiveBlending,
+        })
+        const m = new Mesh(geo, mat);
+        m.rotateX(-Math.PI / 2)
+        m.position.y = -0.5;
+        this.add(m);
+        this.floor = m;
+        elementsFolder.add(m, 'visible').name('Reflection visible');
+      });
+    })()
+
+    }, 1000)
   }
 
   update() {

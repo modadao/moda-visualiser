@@ -1,8 +1,15 @@
-import { BufferAttribute, MathUtils, ShaderMaterial, Vector } from "three";
+import { BufferAttribute, MathUtils, ShaderMaterial, Texture, Vector, Vector2, WebGLRenderer, WebGLRenderTarget } from "three";
 import { randFloat } from "three/src/math/MathUtils";
 import { ISettings } from "./App";
 import gui from "./helpers/gui";
 import { IDerivedCoordinate, IDerivedFingerPrint, IFingerprint } from "./types";
+import { Pass } from 'three/examples/jsm/postprocessing/Pass';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
+import { TexturePass } from 'three/examples/jsm/postprocessing/TexturePass';
+import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
+import { HorizontalBlurShader } from "three/examples/jsm/shaders/HorizontalBlurShader";
+import { VerticalBlurShader } from "three/examples/jsm/shaders/VerticalBlurShader";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass";
 
 export const buildAttribute = (length: number, itemSize: number, predicate: (i: number) => number[]): BufferAttribute => {
   const array = new Float32Array(length * itemSize);
@@ -170,4 +177,26 @@ export const pickRandom = (arr: any[], count: number) => {
   }
 
   return indices.map(index => arr[index]);
+}
+
+export const preProcessTexture = (renderer: WebGLRenderer, tex: Texture, passes: Pass[]): Promise<Texture> => {
+  return new Promise(res => {
+    const composer = new EffectComposer(renderer);
+    composer.setPixelRatio(window.devicePixelRatio);
+    composer.addPass(new TexturePass(tex));
+    const s = new Vector2()
+    renderer.getSize(s)
+    s.multiplyScalar(window.devicePixelRatio);
+    composer.addPass(new UnrealBloomPass(s, 1, 0.2, 0.2))
+    composer.addPass(new ShaderPass(HorizontalBlurShader))
+    composer.addPass(new ShaderPass(VerticalBlurShader))
+    passes.forEach(p => {
+      composer.addPass(p);
+    })
+    console.log(composer.passes)
+    setTimeout(() => {
+      composer.render(0.1);
+      res(composer.readBuffer.texture);
+    }, 1000)
+  })
 }
