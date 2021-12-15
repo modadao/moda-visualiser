@@ -192,8 +192,10 @@ export default class RadialSphere extends Object3D {
 
     // Generate main bezier
     const center = new Vector3();
-    const firstDir = featurePositions[0].clone().sub(center).normalize().multiplyScalar(-1);
-    const { flareOut, flareIn, angleRandomness, verticalAngleRandomness } = settings.beziers;
+    const { flareOut, flareIn, angleRandomness, verticalAngleRandomness, verticalIncidence } = settings.beziers;
+    const firstDir = verticalIncidence 
+      ? new Vector3(0, 1, 0)
+      : featurePositions[0].clone().sub(center).normalize().multiplyScalar(-1);
     const [firstPoint, ...remainingPoints] = featurePositions;
     const traverseBeziers = (points: Vector3[], cur: Vector3, dir: Vector3, facingTowardsCenter: boolean, curves: Curve<Vector3>[] = [], firstPoint?: Vector3, firstDir?: Vector3): Curve<Vector3>[] => {
       const isLast = points.length === 0;
@@ -207,12 +209,18 @@ export default class RadialSphere extends Object3D {
 
       const nextDir = isLast
         ? (firstDir as Vector3).multiplyScalar(-1)
-        : next.clone().sub(center).normalize()
-          .applyAxisAngle(new Vector3(0, 1, 0), customRandom.deterministic(cur.x, cur.y) * angleRandomness - angleRandomness / 2)
-          .applyAxisAngle(new Vector3(1, 0, 0), customRandom.deterministic(cur.x, cur.y) * verticalAngleRandomness - verticalAngleRandomness / 2);
+        : verticalIncidence
+          ? (facingTowardsCenter ? new Vector3(0, 1, 0) : new Vector3(0, -1, 0))
+            .applyAxisAngle(new Vector3(0, 0, 1), customRandom.deterministic(cur.x, cur.y) * angleRandomness - angleRandomness / 2)
+            .applyAxisAngle(new Vector3(1, 0, 0), customRandom.deterministic(cur.x, cur.y) * verticalAngleRandomness - verticalAngleRandomness / 2)
+          : next.clone().sub(center).normalize()
+            .applyAxisAngle(new Vector3(0, 1, 0), customRandom.deterministic(cur.x, cur.y) * angleRandomness - angleRandomness / 2)
+            .applyAxisAngle(new Vector3(1, 0, 0), customRandom.deterministic(cur.x, cur.y) * verticalAngleRandomness - verticalAngleRandomness / 2);
       if (facingTowardsCenter && !isLast) nextDir.multiplyScalar(-1);
       const dist = cur.distanceTo(next);
-      const handleDist = facingTowardsCenter ? dist * flareIn : dist * flareOut;
+      const handleDist = verticalIncidence
+        ? flareOut * 2 + dist
+        : facingTowardsCenter ? dist * flareIn : dist * flareOut;
       const anchor1 = cur.clone().add(dir.clone().multiplyScalar(handleDist))
       const anchor2 = next.clone().add(nextDir.clone().multiplyScalar(handleDist));
       
@@ -293,42 +301,7 @@ export default class RadialSphere extends Object3D {
       });
     })()
 
-    // Build particle background
-    // (() => {
-    //   // const g = new CrossLineGeometry(1).getAttribute('position');
-    //   const instances = 1000;
-    //   const g = new InstancedBufferGeometry();
-    //   g.setAttribute('position', new CrossLineGeometry(1).getAttribute('position'));
-    //   const offsets: number[] = [];
-    //   const scales: number[] = [];
-    //   for (let i = 0; i < 1000; i++) {
-    //     const theta = customRandom.deterministic(i, 2) * Math.PI * 2;
-    //     const radius = customRandom.deterministic(i) * 8 + 5;
-    //     const x = sin(theta);
-    //     const z = cos(theta);
-    //     offsets.push(x * radius, 0, z * radius);
-    //     scales.push(0.1 + customRandom.deterministic(i) * 0.1);
-    //   }
-
-    //   g.setAttribute('offset', new InstancedBufferAttribute(new Float32Array(offsets), 3));
-    //   g.setAttribute('scale', new InstancedBufferAttribute(new Float32Array(scales), 1));
-
-    //   const mat = new ShaderMaterial({
-    //     vertexShader: ParticleVert,
-    //     fragmentShader: ParticleFrag,
-    //     uniforms: {
-    //       u_time: {
-    //         value: 0,
-    //       }
-    //     }
-    //   })
-    //   const l = new Line(g, mat)
-    //   this.add(l);
-    //   l.visible = settings.sceneElements.galaxyPoints;
-    //   this.galaxyPointsMat = mat;
-    // })();
-
-    // Build render target and background
+     // Build render target and background
     setTimeout(() => {
       (() => {
         const rtCam = new OrthographicCamera(-4, 4, 4, -4, 0.001, 100);

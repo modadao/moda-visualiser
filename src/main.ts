@@ -29,6 +29,7 @@ export interface ISettings {
     flareIn: number,
     angleRandomness: number,
     verticalAngleRandomness: number,
+    verticalIncidence: boolean,
   },
   sceneElements: {
     galaxyPoints: boolean,
@@ -61,6 +62,7 @@ const settings: ISettings = {
     flareIn: 0.5,
     angleRandomness: 1,
     verticalAngleRandomness: 1,
+    verticalIncidence: false,
   },
   sceneElements: {
     galaxyPoints: false,
@@ -97,6 +99,7 @@ bezierFolder.add(settings.beziers, 'flareOut', 0, 5, 0.01);
 bezierFolder.add(settings.beziers, 'flareIn', 0, 1, 0.01);
 bezierFolder.add(settings.beziers, 'angleRandomness', 0, 5, 0.01);
 bezierFolder.add(settings.beziers, 'verticalAngleRandomness', 0, 5, 0.01);
+bezierFolder.add(settings.beziers, 'verticalIncidence', 0, 5, 0.01);
 
 let changeTimeout: number|undefined;
 const handleSettingsChange = () => {
