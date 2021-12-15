@@ -2,7 +2,7 @@ import { BufferAttribute, BufferGeometry, Line, LineBasicMaterial, MathUtils, Sh
 import { randFloat } from "three/src/math/MathUtils";
 import { ISettings } from "./App";
 import gui from "./helpers/gui";
-import { IDerivedCoordinate, IDerivedFingerPrint, IFingerprint } from "./types";
+import { ICoordinate, IDerivedCoordinate, IDerivedFingerPrint, IFingerprint } from "./types";
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { TexturePass } from 'three/examples/jsm/postprocessing/TexturePass';
@@ -117,19 +117,56 @@ export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDer
     features.push(targetFeatureIndex)
     featureLevels.push(customRandom.deterministic(i, floatHash));
   }
-  console.log(features);
+
+  // Split the coords into segments
+  const [height, width] = fingerprint.shape;
+  const segmentSize = Math.floor(width / targetNumberOfFeatures + 1);
+  const segmentedPoints: Array<Array<ICoordinate>> = new Array(targetNumberOfFeatures).fill(0).map(() => []);
+  fingerprint.coords.forEach(el => {
+    const bucketIndex = Math.floor(el.x / segmentSize);
+    segmentedPoints[bucketIndex].push(el);
+  });
+
+  const distance2d = (v1: {x: number, y:number}, v2: {x: number, y: number}) => {
+    return Math.sqrt(Math.pow(v1.x - v2.x, 2) + Math.pow(v1.y - v2.y, 2));
+  }
+  // Find the densest coord in each segment
+  const maxDist = Math.max(segmentSize, height);
+  console.log(segmentedPoints.length);
+  let mostDenseCoords = segmentedPoints.map(( points, i ) => {
+    console.log(`Bucket ${i} has ${points.length} points`)
+    const densities = points.map(p => {
+      const density = points.reduce((acc, el) => {
+        return acc + (1 - distance2d(p, el) / maxDist);
+      }, 0) / points.length;
+      return density;
+    })
+
+    const mostDense = Math.max(...densities);
+    const mostDenseIndex = densities.findIndex(el => el === mostDense);
+    console.log(`\tMaking the most dense point ${mostDenseIndex} at ${mostDense}`);
+    const globalMostDenseIndex = Math.floor(i * segmentSize + mostDenseIndex);
+    console.log(`\tThe global most dense index is ${globalMostDenseIndex}`);
+    return { index: globalMostDenseIndex, density: mostDense }
+  });
+  const minDense = Math.min(...mostDenseCoords.map(c => c.density));
+  const maxDense = Math.max(...mostDenseCoords.map(c => c.density));
+  mostDenseCoords = mostDenseCoords.map(c => {
+    return {
+      ...c,
+      density: MathUtils.mapLinear(c.density, minDense, maxDense, 0.05, 1),
+    }
+  })
+
   const result =  { ...fingerprint,
     coords: fingerprint.coords.map((el, i) => {
-      const j = features.findIndex(featureIndex => i === featureIndex);
-      const featureLevel = j !== -1 
-        ? featureLevels[j]
-        : 0;
+      const featurePoint = mostDenseCoords.find(el => el.index === i);
       return {
         x: el.x,
         y: el.y,
         g: gradients[i],
         smoothed: smoothedValues[i],
-        featureLevel,
+        featureLevel: featurePoint ? featurePoint.density : 0,
       }
     }),
     hash,
