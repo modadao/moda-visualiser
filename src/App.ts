@@ -52,6 +52,13 @@ export default class App {
     window.requestAnimationFrame(this.update);
   }
 
+  refresh(fingerprint: IFingerprint, settings: ISettings) {
+    this.scene.clear();
+    this.radialSpheres.dispose();
+    const derivedFingerprint = deriveData(fingerprint, settings);
+    this.buildScene(derivedFingerprint, settings);
+  }
+
   dispose() {
     this.scene.clear();
     this.renderer.dispose();

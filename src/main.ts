@@ -30,6 +30,16 @@ export interface ISettings {
     angleRandomness: number,
     verticalAngleRandomness: number,
   },
+  sceneElements: {
+    galaxyPoints: boolean,
+    outlines: boolean,
+    circumferenceGraph: boolean,
+    mainBezier: boolean,
+    extraBeziers: boolean,
+    rings: boolean,
+    flags: boolean,
+    reflection: boolean,
+  },
   update: () => void,
 }
 const settings: ISettings = {
@@ -52,10 +62,19 @@ const settings: ISettings = {
     angleRandomness: 1,
     verticalAngleRandomness: 1,
   },
+  sceneElements: {
+    galaxyPoints: false,
+    outlines: true,
+    circumferenceGraph: true,
+    mainBezier: true,
+    extraBeziers: false,
+    rings: true,
+    flags: false,
+    reflection: false,
+  },
   update: () => {
     if (app && container && lastContent) {
-      app.dispose();
-      app = new App(container, lastContent, settings)
+      app.refresh(lastContent, settings);
     }
   }
 }
@@ -78,6 +97,18 @@ bezierFolder.add(settings.beziers, 'flareOut', 0, 5, 0.01);
 bezierFolder.add(settings.beziers, 'flareIn', 0, 1, 0.01);
 bezierFolder.add(settings.beziers, 'angleRandomness', 0, 5, 0.01);
 bezierFolder.add(settings.beziers, 'verticalAngleRandomness', 0, 5, 0.01);
+
+let changeTimeout: number|undefined;
+const handleSettingsChange = () => {
+  if (changeTimeout) clearTimeout(changeTimeout);
+  changeTimeout = setTimeout(() => {
+    settings.update()
+  }, 50);
+}
+
+bezierFolder.onChange(handleSettingsChange);
+colorFolder.onChange(handleSettingsChange);
+featurePoints.onChange(handleSettingsChange);
 
 gui.add(settings, 'update');
 

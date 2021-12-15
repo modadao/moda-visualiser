@@ -73,6 +73,7 @@ export default class RadialSphere extends Object3D {
     ringBarLine.rotateX(Math.PI / 2);
     this.add(ringBarLine);
     this.barGraph = ringBarLine;
+    this.barGraph.visible = settings.sceneElements.circumferenceGraph;
 
 
     const greyRing = l.clone();
@@ -86,7 +87,7 @@ export default class RadialSphere extends Object3D {
       const ring = greyRing.clone()
       ring.scale.setScalar(4.0 + i * 0.3);
       this.add(ring);
-      ring.visible = false;
+      ring.visible = settings.sceneElements.rings;
       this.rings.push(ring);
     })
 
@@ -168,6 +169,7 @@ export default class RadialSphere extends Object3D {
       this.add(outlineMesh);
       this.points.push(mesh);
       this.outlines.push(outlineMesh);
+      outlineMesh.visible = settings.sceneElements.outlines;
     }
 
     // Bezier through feature points
@@ -224,6 +226,7 @@ export default class RadialSphere extends Object3D {
     const curveObject = new Mesh( tubeGeometry, material );
     this.add(curveObject);
     this.mainLine = curveObject;
+    this.mainLine.visible = settings.sceneElements.mainBezier;
 
 
     // Generate random secondary beziers
@@ -253,39 +256,39 @@ export default class RadialSphere extends Object3D {
     });
 
     // Build particle background
-    (() => {
-      // const g = new CrossLineGeometry(1).getAttribute('position');
-      const instances = 1000;
-      const g = new InstancedBufferGeometry();
-      g.setAttribute('position', new CrossLineGeometry(1).getAttribute('position'));
-      const offsets: number[] = [];
-      const scales: number[] = [];
-      for (let i = 0; i < 1000; i++) {
-        const theta = customRandom.deterministic(i, 2) * Math.PI * 2;
-        const radius = customRandom.deterministic(i) * 8 + 5;
-        const x = sin(theta);
-        const z = cos(theta);
-        offsets.push(x * radius, 0, z * radius);
-        scales.push(0.1 + customRandom.deterministic(i) * 0.1);
-      }
+    // (() => {
+    //   // const g = new CrossLineGeometry(1).getAttribute('position');
+    //   const instances = 1000;
+    //   const g = new InstancedBufferGeometry();
+    //   g.setAttribute('position', new CrossLineGeometry(1).getAttribute('position'));
+    //   const offsets: number[] = [];
+    //   const scales: number[] = [];
+    //   for (let i = 0; i < 1000; i++) {
+    //     const theta = customRandom.deterministic(i, 2) * Math.PI * 2;
+    //     const radius = customRandom.deterministic(i) * 8 + 5;
+    //     const x = sin(theta);
+    //     const z = cos(theta);
+    //     offsets.push(x * radius, 0, z * radius);
+    //     scales.push(0.1 + customRandom.deterministic(i) * 0.1);
+    //   }
 
-      g.setAttribute('offset', new InstancedBufferAttribute(new Float32Array(offsets), 3));
-      g.setAttribute('scale', new InstancedBufferAttribute(new Float32Array(scales), 1));
+    //   g.setAttribute('offset', new InstancedBufferAttribute(new Float32Array(offsets), 3));
+    //   g.setAttribute('scale', new InstancedBufferAttribute(new Float32Array(scales), 1));
 
-      const mat = new ShaderMaterial({
-        vertexShader: ParticleVert,
-        fragmentShader: ParticleFrag,
-        uniforms: {
-          u_time: {
-            value: 0,
-          }
-        }
-      })
-      const l = new Line(g, mat)
-      this.add(l);
-      elementsFolder.add(l, 'visible').name('Galaxy points');
-      this.galaxyPointsMat = mat;
-    })();
+    //   const mat = new ShaderMaterial({
+    //     vertexShader: ParticleVert,
+    //     fragmentShader: ParticleFrag,
+    //     uniforms: {
+    //       u_time: {
+    //         value: 0,
+    //       }
+    //     }
+    //   })
+    //   const l = new Line(g, mat)
+    //   this.add(l);
+    //   l.visible = settings.sceneElements.galaxyPoints;
+    //   this.galaxyPointsMat = mat;
+    // })();
 
     // Build render target and background
     setTimeout(() => {
@@ -331,17 +334,31 @@ export default class RadialSphere extends Object3D {
           m.position.y = -0.5;
           this.add(m);
           this.floor = m;
-          elementsFolder.add(m, 'visible').name('Reflection visible');
+          m.visible = settings.sceneElements.reflection;
         });
       })()
     }, 1000)
 
-    elementsFolder.add({ x: true}, 'x').name('Outlines').onChange(v => this.outlines.forEach(l => l.visible = v));
-    elementsFolder.add(this.barGraph, 'visible').name('Circumference')
-    elementsFolder.add(this.mainLine, 'visible').name('Main line')
-    elementsFolder.add({ x: false}, 'x').name('Secondary lines').onChange(v => this.extraLines.forEach(l => l.visible = v));
-    elementsFolder.add({ x: false}, 'x').name('Rings').onChange(v => this.rings.forEach(l => l.visible = v));
-    elementsFolder.add({ x: false}, 'x').name('Flags').onChange(v => this.flags.forEach(l => l.visible = v));
+    const updateVisibility = () => {
+      if (this.floor) {
+        this.floor.visible = settings.sceneElements.reflection;
+      }
+      this.outlines.forEach(o => o.visible = settings.sceneElements.outlines);
+      
+      this.mainLine.visible = settings.sceneElements.mainBezier;
+      this.extraLines.forEach(l => l.visible = settings.sceneElements.extraBeziers);
+      this.rings.forEach(r => r.visible = settings.sceneElements.rings);
+      this.flags.forEach(f => f.visible = settings.sceneElements.flags);
+      this.barGraph.visible = settings.sceneElements.circumferenceGraph;
+    }
+
+    elementsFolder.onChange(updateVisibility);
+    elementsFolder.add(settings.sceneElements, 'outlines').name('Outlines');
+    elementsFolder.add(settings.sceneElements, 'circumferenceGraph').name('Circumference Graph')
+    elementsFolder.add(settings.sceneElements, 'mainBezier').name('Main Bezier')
+    elementsFolder.add(settings.sceneElements, 'extraBeziers').name('Secondary Beziers');
+    elementsFolder.add(settings.sceneElements, 'rings').name('Rings');
+    elementsFolder.add(settings.sceneElements, 'flags').name('Flags');
   }
 
   update() {
@@ -352,7 +369,6 @@ export default class RadialSphere extends Object3D {
       const mat = (m.material as ShaderMaterial)
       mat.uniforms.u_cameraDirection.value = dir;
     });
-    this.galaxyPointsMat.uniforms.u_time.value += 0.1;
   }
 
   dispose() {
