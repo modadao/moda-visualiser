@@ -371,6 +371,7 @@ export default class RadialSphere extends Object3D {
     elementsFolder.add(settings.sceneElements, 'extraBeziers').name('Secondary Beziers');
     elementsFolder.add(settings.sceneElements, 'rings').name('Rings');
     elementsFolder.add(settings.sceneElements, 'flags').name('Flags');
+    elementsFolder.add(settings.sceneElements, 'reflection').name('Reflection');
   }
 
   update() {
