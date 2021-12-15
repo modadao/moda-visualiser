@@ -12,7 +12,8 @@
     "build": "webpack --env env=production && npm run build:clean-sourcemaps",
     "build:clean-sourcemaps": "rm ./dist/*.js.map",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "generate-https": "./scripts/generate_https_keys.sh"
+    "generate-https": "./scripts/generate_https_keys.sh",
+    "deploy": "yarn build && cd dist && mv index.html 200.html && surge"
   },
   "author": "Connor Meehan",
   "license": "ISC",
