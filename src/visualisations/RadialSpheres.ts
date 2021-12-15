@@ -1,6 +1,6 @@
 import { IDerivedFingerPrint } from "../types";
-import { bezierVector, buildAttribute, chunk, createShaderControls, customRandom, pickRandom, preProcessTexture } from "../utils";
-import { CatmullRomCurve3, Vector3, Mesh, Object3D, LineBasicMaterial, Scene, ShaderMaterial, SphereBufferGeometry, TextureLoader, BufferGeometry, Line, Vector2, BoxGeometry, BoxBufferGeometry, RepeatWrapping, SplineCurve, Camera, Shader, TubeGeometry, MeshBasicMaterial, CurvePath, QuadraticBezierCurve3, Curve, Float32BufferAttribute, Points, InstancedMesh, DynamicDrawUsage, InstancedBufferGeometry, InstancedBufferAttribute, IcosahedronBufferGeometry, Matrix4, TorusBufferGeometry, Quaternion, RawShaderMaterial, BackSide, MathUtils, CubicBezierCurve3, Vector, WebGLRenderer, WebGLRenderTarget, PlaneGeometry, OrthographicCamera, AdditiveBlending, Color } from "three";
+import { bezierVector, buildAttribute, chunk, createShaderControls, customRandom, debugLine, pickRandom, preProcessTexture } from "../utils";
+import { CatmullRomCurve3, Vector3, Mesh, Object3D, LineBasicMaterial, Scene, ShaderMaterial, SphereBufferGeometry, TextureLoader, BufferGeometry, Line, Vector2, BoxGeometry, BoxBufferGeometry, RepeatWrapping, SplineCurve, Camera, Shader, TubeGeometry, MeshBasicMaterial, CurvePath, QuadraticBezierCurve3, Curve, Float32BufferAttribute, Points, InstancedMesh, DynamicDrawUsage, InstancedBufferGeometry, InstancedBufferAttribute, IcosahedronBufferGeometry, Matrix4, TorusBufferGeometry, Quaternion, RawShaderMaterial, BackSide, MathUtils, CubicBezierCurve3, Vector, WebGLRenderer, WebGLRenderTarget, PlaneGeometry, OrthographicCamera, AdditiveBlending, Color, BufferAttribute } from "three";
 import FragShader from '../shaders/spheres_frag.glsl';
 import VertShader from '../shaders/spheres_vert.glsl';
 import RingFragShader from '../shaders/v1_rings_frag.glsl';
@@ -10,6 +10,8 @@ import CircleLineGeometry from '../helpers/CircleLineGeometry';
 import CrossLineGeometry from "../helpers/CrossLineGeometry";
 import RingBarGeometry from "../helpers/RingBarGeometry";
 import FlagMesh from "../helpers/FlagMesh";
+import TubeShaderFrag from '../shaders/tube_frag.glsl';
+import TubeShaderVert from '../shaders/tube_vert.glsl';
 import ParticleVert from '../shaders/particle_vert.glsl';
 import ParticleFrag from '../shaders/particle_frag.glsl';
 import BackgroundFloorVert from '../shaders/background_floor_vert.glsl';
@@ -35,7 +37,6 @@ export default class RadialSphere extends Object3D {
   barGraph: Line;
   floor: Mesh|undefined;
   folder: GUI;
-  galaxyPointsMat: ShaderMaterial;
   constructor(private scene: Scene, private camera: Camera, renderer: WebGLRenderer, private fingerprint: IDerivedFingerPrint, settings: ISettings) {
     super();
 
@@ -94,8 +95,6 @@ export default class RadialSphere extends Object3D {
     const { sin, cos, floor, max, pow } = Math;
     const [ width, height ] = fingerprint.shape;
 
-    const scale = (500 + max(-pow(height, 0.8), -pow(height, 0.7)-100, -pow(height, 0.6)-150)) / 400 * 0.15
-    console.log({scale})
     const g = new SphereBufferGeometry(1);
     const outlineM = new MeshBasicMaterial({
       color: 0xffffff,
@@ -103,7 +102,29 @@ export default class RadialSphere extends Object3D {
       depthWrite: false,
     })
 
-    for (const p of fingerprint.coords) {
+    const scale = (500 + max(-pow(height, 0.8), -pow(height, 0.7)-100, -pow(height, 0.6)-150)) / 400 * 0.15
+    const coords = fingerprint.coords.map(p => {
+      const theta = (p.x / height) * Math.PI * 2;
+      const x = sin(theta);
+      const z = cos(theta);
+      const step = floor(theta / (Math.PI * 2));
+      const amp = p.y / width * 2;
+      const r = step + 1.0 + amp;
+
+      const s = (Math.abs(p.g - 0.5) + scale) * scale;
+
+      const { baseVariation, velocityVariation } = settings.color;
+      const color = (fingerprint.floatHash + sin(theta) * baseVariation + p.g * velocityVariation) % 1;
+
+      return {
+        ...p,
+        theta,
+        pos: new Vector3(x * r, 0, z * r),
+        scale: s,
+        color,
+      }
+    })
+    for (const p of coords) {
       // Build geometry 
       const m = new ShaderMaterial({
         fragmentShader: FragShader,
@@ -128,19 +149,13 @@ export default class RadialSphere extends Object3D {
       outlineMesh.renderOrder = -1;
 
       // Position
-      const theta = (p.x / height) * Math.PI * 2;
-      const x = sin(theta);
-      const z = cos(theta);
-      const step = floor(theta / (Math.PI * 2));
-      const amp = p.y / width * 2;
-      const r = step + 1.0 + amp ;
-      mesh.position.set(x * r, 0, z * r);
-      outlineMesh.position.copy(mesh.position);
+      mesh.position.copy(p.pos);
+      outlineMesh.position.copy(p.pos);
 
       // Size
-      const d = (Math.abs(p.g - 0.5) + scale);
-      mesh.scale.setScalar(d * scale);
-      outlineMesh.scale.setScalar(d * scale + settings.featurePoints.outlineSize);
+      const { scale } = p;
+      mesh.scale.setScalar(scale);
+      outlineMesh.scale.setScalar(scale + settings.featurePoints.outlineSize);
       mesh.material.uniforms.u_innerColorMultiplier.value = 1.2 + p.featureLevel;
       if (p.featureLevel !== 0) {
         mesh.visible = true;
@@ -159,9 +174,7 @@ export default class RadialSphere extends Object3D {
       }
 
       // Colour
-      // const color = fingerprint.floatHash + sin(theta) * 0.15 + p.g * 0.3;
-      const { baseVariation, velocityVariation } = settings.color;
-      const color = (fingerprint.floatHash + sin(theta) * baseVariation + p.g * velocityVariation) % 1;
+      const { color } = p;
       m.uniforms.u_floatHash.value = color;
 
       mesh.layers.enable(1);
@@ -173,17 +186,8 @@ export default class RadialSphere extends Object3D {
     }
 
     // Bezier through feature points
-    const featurePoints = fingerprint.coords.filter(p => p.featureLevel !== 0);
-    const featurePositions = featurePoints.map(p => {
-      // Position
-      const theta = (p.x / height) * Math.PI * 2;
-      const x = sin(theta);
-      const z = cos(theta);
-      const step = floor(theta / (Math.PI * 2));
-      const amp = p.y / width * 2;
-      const r = step + 1.0 + amp ;
-      return new Vector3(x * r, 0, z * r);
-    });
+    const featurePoints = coords.filter(p => p.featureLevel !== 0);
+    const featurePositions = featurePoints.map(p => p.pos );
 
     // Generate main bezier
     const center = new Vector3();
@@ -199,7 +203,6 @@ export default class RadialSphere extends Object3D {
             return Math.abs(targetDist - cur.distanceTo(el)) < Math.abs(targetDist - cur.distanceTo(acc)) ? el : acc
           }, points[0])
       const remaining = points.filter(el => !el.equals(next));
-      console.log(points.length, next, remaining);
 
       const nextDir = isLast
         ? (firstDir as Vector3).multiplyScalar(-1)
@@ -222,7 +225,52 @@ export default class RadialSphere extends Object3D {
     }
     const curvePath = traverseBeziers(remainingPoints, firstPoint, firstDir, new CurvePath(), true);
     const tubeGeometry = new TubeGeometry( curvePath, 200, 0.01, 5, false );
-    const material = new MeshBasicMaterial( { color : 0xffffff, wireframe: false, } );
+
+    // Get array of colours, lerping between feature point colours
+    const points = curvePath.getPoints(20);
+    const colors = points.map(p => {
+      const distances = featurePoints.map((el) => {
+        return el.pos.distanceTo(p);
+      }, 0);
+      const maxDistance = distances.reduce((acc, el) => acc < el ? el : acc, 0);
+      const weights = distances.map(d => maxDistance - d);
+
+      let totalWeight = 0;
+      const weightedAverage = featurePoints.reduce((acc, el, i) => {
+        const weight = weights[i];
+        totalWeight += weight;
+        console.log(el.color, totalWeight);
+        return acc + el.color * weight;
+      }, 0);
+      return weightedAverage / totalWeight;
+      // const nearToFar = featurePoints.sort((a, b) => {
+      //   return a.pos.distanceTo(p) - b.pos.distanceTo(p);
+      // })
+      // const [closest] = nearToFar;
+      // this.add(dbgL);
+      // return closest.color;
+    })
+    console.log({points, colors});
+    const posAttributeLength = tubeGeometry.getAttribute('position').array.length
+    const colorsAttributeData = new Float32Array(posAttributeLength / 3);
+    console.log(posAttributeLength / 3, colorsAttributeData.length);
+    for (let i = 0; i < posAttributeLength / 3; i++) {
+      const thisProgress = i / colorsAttributeData.length;
+      const coloursIndex = Math.floor(thisProgress * colors.length);
+      colorsAttributeData[i] = colors[coloursIndex]; 
+    }
+    console.log({colorsAttributeData});
+    tubeGeometry.setAttribute('color', new BufferAttribute(colorsAttributeData, 1));
+
+    const material = new ShaderMaterial({
+      vertexShader: TubeShaderVert,
+      fragmentShader: TubeShaderFrag,
+      uniforms: {
+        u_colorScheme: {
+          value: ColorSchemeImg,
+        }
+      }
+    });
     const curveObject = new Mesh( tubeGeometry, material );
     this.add(curveObject);
     this.mainLine = curveObject;

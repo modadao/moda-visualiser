@@ -1,4 +1,4 @@
-import { BufferAttribute, MathUtils, ShaderMaterial, Texture, Vector, Vector2, WebGLRenderer, WebGLRenderTarget } from "three";
+import { BufferAttribute, BufferGeometry, Line, LineBasicMaterial, MathUtils, ShaderMaterial, Texture, Vector, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget } from "three";
 import { randFloat } from "three/src/math/MathUtils";
 import { ISettings } from "./App";
 import gui from "./helpers/gui";
@@ -199,4 +199,14 @@ export const preProcessTexture = (renderer: WebGLRenderer, tex: Texture, passes:
       res(composer.readBuffer.texture);
     }, 1000)
   })
+}
+
+const mat = new LineBasicMaterial({
+  color: 0xff0000,
+})
+export const debugLine = (v1: Vector3, v2: Vector3) => {
+  const points = [v1, v2];
+  const geo = new BufferGeometry().setFromPoints(points);
+  const l = new Line(geo, mat);
+  return l;
 }
