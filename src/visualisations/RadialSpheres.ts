@@ -1,4 +1,4 @@
-import { IDerivedFingerPrint } from "../types";
+import { ICoordinate, IDerivedFingerPrint } from "../types";
 import { bezierVector, buildAttribute, chunk, createShaderControls, customRandom, debugLine, pickRandom, preProcessTexture } from "../utils";
 import { CatmullRomCurve3, Vector3, Mesh, Object3D, LineBasicMaterial, Scene, ShaderMaterial, SphereBufferGeometry, TextureLoader, BufferGeometry, Line, Vector2, BoxGeometry, BoxBufferGeometry, RepeatWrapping, SplineCurve, Camera, Shader, TubeGeometry, MeshBasicMaterial, CurvePath, QuadraticBezierCurve3, Curve, Float32BufferAttribute, Points, InstancedMesh, DynamicDrawUsage, InstancedBufferGeometry, InstancedBufferAttribute, IcosahedronBufferGeometry, Matrix4, TorusBufferGeometry, Quaternion, RawShaderMaterial, BackSide, MathUtils, CubicBezierCurve3, Vector, WebGLRenderer, WebGLRenderTarget, PlaneGeometry, OrthographicCamera, AdditiveBlending, Color, BufferAttribute } from "three";
 import FragShader from '../shaders/spheres_frag.glsl';
@@ -30,7 +30,7 @@ const tl = new TextureLoader();
 export default class RadialSphere extends Object3D {
   points: Mesh[] = [];
   outlines: Mesh[] = [];
-  mainLine: Mesh;
+  mainLines: Mesh[] = [];
   flags: FlagMesh[] = [];
   extraLines: Mesh[] = [];
   rings: Line[] = [];
@@ -123,7 +123,8 @@ export default class RadialSphere extends Object3D {
         scale: s,
         color,
       }
-    })
+    });
+
     for (const p of coords) {
       // Build geometry 
       const m = new ShaderMaterial({
@@ -194,7 +195,7 @@ export default class RadialSphere extends Object3D {
     const firstDir = featurePositions[0].clone().sub(center).normalize().multiplyScalar(-1);
     const { flareOut, flareIn, angleRandomness, verticalAngleRandomness } = settings.beziers;
     const [firstPoint, ...remainingPoints] = featurePositions;
-    const traverseBeziers = (points: Vector3[], cur: Vector3, dir: Vector3, path: CurvePath<Vector3>, facingTowardsCenter: boolean, firstPoint?: Vector3, firstDir?: Vector3): CurvePath<Vector3> => {
+    const traverseBeziers = (points: Vector3[], cur: Vector3, dir: Vector3, facingTowardsCenter: boolean, curves: Curve<Vector3>[] = [], firstPoint?: Vector3, firstDir?: Vector3): Curve<Vector3>[] => {
       const isLast = points.length === 0;
       const targetDist = 2;
       const next = isLast 
@@ -215,52 +216,15 @@ export default class RadialSphere extends Object3D {
       const anchor1 = cur.clone().add(dir.clone().multiplyScalar(handleDist))
       const anchor2 = next.clone().add(nextDir.clone().multiplyScalar(handleDist));
       
-      path.add(new CubicBezierCurve3(cur, anchor1, anchor2, next));
+      curves.push(new CubicBezierCurve3(cur, anchor1, anchor2, next))
 
       if (isLast) {
-        return path;
+        return curves;
       } else {
-        return traverseBeziers(remaining, next, nextDir.multiplyScalar(-1), path, !facingTowardsCenter, firstPoint ?? cur, firstDir ?? dir);
+        return traverseBeziers(remaining, next, nextDir.multiplyScalar(-1), !facingTowardsCenter, curves, firstPoint ?? cur, firstDir ?? dir);
       }
     }
-    const curvePath = traverseBeziers(remainingPoints, firstPoint, firstDir, new CurvePath(), true);
-    const tubeGeometry = new TubeGeometry( curvePath, 200, 0.01, 5, false );
-
-    // Get array of colours, lerping between feature point colours
-    const points = curvePath.getPoints(20);
-    const colors = points.map(p => {
-      const distances = featurePoints.map((el) => {
-        return el.pos.distanceTo(p);
-      }, 0);
-      const maxDistance = distances.reduce((acc, el) => acc < el ? el : acc, 0);
-      const weights = distances.map(d => maxDistance - d);
-
-      let totalWeight = 0;
-      const weightedAverage = featurePoints.reduce((acc, el, i) => {
-        const weight = weights[i];
-        totalWeight += weight;
-        console.log(el.color, totalWeight);
-        return acc + el.color * weight;
-      }, 0);
-      return weightedAverage / totalWeight;
-      // const nearToFar = featurePoints.sort((a, b) => {
-      //   return a.pos.distanceTo(p) - b.pos.distanceTo(p);
-      // })
-      // const [closest] = nearToFar;
-      // this.add(dbgL);
-      // return closest.color;
-    })
-    console.log({points, colors});
-    const posAttributeLength = tubeGeometry.getAttribute('position').array.length
-    const colorsAttributeData = new Float32Array(posAttributeLength / 3);
-    console.log(posAttributeLength / 3, colorsAttributeData.length);
-    for (let i = 0; i < posAttributeLength / 3; i++) {
-      const thisProgress = i / colorsAttributeData.length;
-      const coloursIndex = Math.floor(thisProgress * colors.length);
-      colorsAttributeData[i] = colors[coloursIndex]; 
-    }
-    console.log({colorsAttributeData});
-    tubeGeometry.setAttribute('color', new BufferAttribute(colorsAttributeData, 1));
+    const curves = traverseBeziers(remainingPoints, firstPoint, firstDir, true);
 
     const material = new ShaderMaterial({
       vertexShader: TubeShaderVert,
@@ -271,37 +235,63 @@ export default class RadialSphere extends Object3D {
         }
       }
     });
-    const curveObject = new Mesh( tubeGeometry, material );
-    this.add(curveObject);
-    this.mainLine = curveObject;
-    this.mainLine.visible = settings.sceneElements.mainBezier;
 
+    const curvesToBezier = (curves: Curve<Vector3>[], featurePoints: any, segments: number, radius: number, radialSegments: number) => {
+      const retVal: Mesh[] = [];
+      curves.forEach((curve, i) => {
+        const tubeGeometry = new TubeGeometry( curve, segments, radius, radialSegments, false );
+        const points = curve.getPoints(20);
+        const curFeaturePoint = featurePoints[i];
+        const nextFeaturePoint = i === featurePoints.length - 1 ? featurePoints[0] : featurePoints[i + 1];
+        console.log(i, curFeaturePoint, nextFeaturePoint, featurePoints.length);
+        const colors = points.map((p, j) => {
+          return MathUtils.mapLinear(j, 0, points.length, curFeaturePoint.color, nextFeaturePoint.color);
+        })
 
-    // Generate random secondary beziers
-    const secondaryMat = new MeshBasicMaterial({ color: 0xcccccc })
-    const chunkedPoints = chunk(pickRandom(fingerprint.coords, 18), 6);
-    console.log(chunkedPoints);
-    chunkedPoints.forEach(points => {
-      if (points.length < 4) return;
-      const positions = points.map(p => {
-        // Position
-        const theta = (p.x / height) * Math.PI * 2;
-        const x = sin(theta);
-        const z = cos(theta);
-        const step = floor(theta / (Math.PI * 2));
-        const amp = p.y / width * 2;
-        const r = step + 1.0 + amp ;
-        return new Vector3(x * r, 0, z * r);
+        const posAttributeLength = tubeGeometry.getAttribute('position').array.length
+        const colorsAttributeData = new Float32Array(posAttributeLength / 3);
+        console.log(posAttributeLength / 3, colorsAttributeData.length);
+        for (let i = 0; i < posAttributeLength / 3; i++) {
+          const thisProgress = i / colorsAttributeData.length;
+          const coloursIndex = Math.floor(thisProgress * colors.length);
+          colorsAttributeData[i] = colors[coloursIndex]; 
+        }
+        console.log({colorsAttributeData});
+        tubeGeometry.setAttribute('color', new BufferAttribute(colorsAttributeData, 1));
+        const curveObject = new Mesh( tubeGeometry, material );
+        retVal.push(curveObject);
+      })
+      return retVal;
+    }
+    
+
+    const mainBezierCurves = curvesToBezier(curves, featurePoints, 50, 0.01, 5);
+    this.mainLines.push(...mainBezierCurves);
+    this.add(...mainBezierCurves);
+
+    // // Generate random secondary beziers
+    (() => {
+      const chunkedPoints = chunk(pickRandom(coords, 18), 6);
+      chunkedPoints.forEach(points => {
+        if (points.length < 4) return;
+        const positions = points.map(p => {
+          // Position
+          const theta = (p.x / height) * Math.PI * 2;
+          const x = sin(theta);
+          const z = cos(theta);
+          const step = floor(theta / (Math.PI * 2));
+          const amp = p.y / width * 2;
+          const r = step + 1.0 + amp ;
+          return new Vector3(x * r, 0, z * r);
+        });
+        const [firstPoint, ...remainingPoints] = positions;
+        const firstDir = positions[0].clone().sub(center).normalize().multiplyScalar(-1);
+        const curves = traverseBeziers(remainingPoints, firstPoint, firstDir, true)
+        const curvesMesh = curvesToBezier(curves, points, 50, 0.005, 3);
+        this.add(...curvesMesh);
+        this.extraLines.push(...curvesMesh);
       });
-      const [firstPoint, ...remainingPoints] = positions;
-      const firstDir = positions[0].clone().sub(center).normalize().multiplyScalar(-1);
-      const curvePath = traverseBeziers(remainingPoints, firstPoint, firstDir, new CurvePath(), true)
-      const geo = new TubeGeometry(curvePath, 200, 0.005, 3, false);
-      const mesh = new Mesh(geo, secondaryMat);
-      this.add(mesh);
-      mesh.visible = false;
-      this.extraLines.push(mesh);
-    });
+    })()
 
     // Build particle background
     // (() => {
@@ -393,12 +383,13 @@ export default class RadialSphere extends Object3D {
       }
       this.outlines.forEach(o => o.visible = settings.sceneElements.outlines);
       
-      this.mainLine.visible = settings.sceneElements.mainBezier;
+      this.mainLines.forEach(l => l.visible = settings.sceneElements.mainBezier);
       this.extraLines.forEach(l => l.visible = settings.sceneElements.extraBeziers);
       this.rings.forEach(r => r.visible = settings.sceneElements.rings);
       this.flags.forEach(f => f.visible = settings.sceneElements.flags);
       this.barGraph.visible = settings.sceneElements.circumferenceGraph;
     }
+    updateVisibility();
 
     elementsFolder.onChange(updateVisibility);
     elementsFolder.add(settings.sceneElements, 'outlines').name('Outlines');
