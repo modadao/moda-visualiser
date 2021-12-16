@@ -280,25 +280,23 @@ export default class RadialSphere extends Object3D {
         }
       });
 
-      const curvesToBezier = (curves: Curve<Vector3>[], featurePoints: any, segments: number, radius: number, radialSegments: number) => {
+      const curvesToBezier = (curves: Curve<Vector3>[], featurePoints: typeof coords, segments: number, radius: number, radialSegments: number) => {
         const retVal: Mesh[] = [];
         curves.forEach((curve, i) => {
           const tubeGeometry = new TubeGeometry( curve, segments, radius, radialSegments, false );
-          const points = curve.getPoints(20);
           const curFeaturePoint = featurePoints[i];
           const nextFeaturePoint = i === featurePoints.length - 1 ? featurePoints[0] : featurePoints[i + 1];
-          const colors = points.map((p, j) => {
-            return MathUtils.mapLinear(j, 0, points.length, curFeaturePoint.color, nextFeaturePoint.color);
-          })
 
           const posAttributeLength = tubeGeometry.getAttribute('position').array.length
-          const colorsAttributeData = new Float32Array(posAttributeLength / 3);
+          const colorsData: Array<number> = [];
+          const tempColor = new Color();
           for (let i = 0; i < posAttributeLength / 3; i++) {
-            const thisProgress = i / colorsAttributeData.length;
-            const coloursIndex = Math.floor(thisProgress * colors.length);
-            colorsAttributeData[i] = colors[coloursIndex]; 
+            const thisProgress = i / posAttributeLength / 3;
+            tempColor.copy(curFeaturePoint.color);
+            tempColor.lerp(nextFeaturePoint.color, thisProgress)
+            colorsData.push(...tempColor.toArray());
           }
-          tubeGeometry.setAttribute('color', new BufferAttribute(colorsAttributeData, 1));
+          tubeGeometry.setAttribute('color', new BufferAttribute(new Float32Array(colorsData), 3));
           const curveObject = new Mesh( tubeGeometry, material );
           retVal.push(curveObject);
         })
