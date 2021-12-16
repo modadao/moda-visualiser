@@ -51,7 +51,7 @@ export interface ISettings {
 const settings: ISettings = {
   points: {
     outlineSize: 0.007,
-    outlineAdd: 0.5,
+    outlineAdd: 0.65,
     outlineMultiplier: 1,
     innerGlow: 1,
   },
