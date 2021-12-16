@@ -1,5 +1,3 @@
-
-uniform sampler2D u_colorscheme;
 attribute vec3 color;
 varying vec4 vColor;
 void main() {

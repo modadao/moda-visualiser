@@ -31,6 +31,88 @@
   <meta name="twitter:creator" content="@eyejackapp">
   <meta name="twitter:image" content="https://webar.eyejackapp.com/nature-illuminated/social.jpg">
 
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background-color: #1B1D21;
+      font-family: sans-serif;
+    }
+    .wrapper {
+      height: 100vh;
+      padding-right: 260px;
+    }
+    #app {
+      width: 100%;
+      height: 800px;
+    }
+
+    #fingerprint {
+      width: 100%;
+      background-color: #35383f;
+      color: #6e727a;
+      border: none;
+      box-sizing: border-box;
+    }
+
+    .button-container {
+      display: flex;
+      align-items: stretch;
+      gap: 20px;
+      color: white;
+      margin-bottom: 10px;
+      padding: 10px;
+    }
+    .button-container h3, .button-container h5 {
+      margin: 5px;
+      align-self: center;
+    }
+    button {
+      background: #2b2c30;
+      color: white;
+      border: none;
+      padding: 5px 15px;
+    }
+    button:hover {
+      cursor: pointer;
+      background: #313236;
+    }
+
+    .dragoverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      font-family: sans-serif;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+
+      opacity: 0;
+      pointer-events: none;
+
+      transition: all 0.2s ease-in-out;
+    }
+    .dragoverlay.dragging {
+      opacity: 1;
+    }
+    .when-valid,.when-invalid {
+      display: none;
+    }
+    .dragoverlay.valid .when-valid {
+      display: block;
+    }
+    .dragoverlay:not(.valid) .when-invalid {
+      display: block;
+    }
+  </style>
 
 </head>
 <body>
@@ -40,14 +122,31 @@
       enabled. Please enable it to continue.</strong
     >
   </noscript>
-  <div id="app"></div>
-  <button class="example-button">Snare-y experimental</button>
-  <button class="example-button">Rock</button>
-  <button class="example-button">Disco-y</button>
-  <button class="example-button">Ambient Techno</button>
-  <textarea id="fingerprint">
+  <div class="wrapper">
+    <div class="content">
+      <div id="app"></div>
+      <div class="button-container">
+        <h3>Presets</h3>
+        <button class="example-button">Snare-y experimental</button>
+        <button class="example-button">Rock</button>
+        <button class="example-button">Disco-y</button>
+        <button class="example-button">Ambient Techno</button>
+        <h5>Or drag and drop JSON file</h5>
+      </div>
+      <textarea id="fingerprint">
+      </textarea>
+    </div>
+  </div>
 
-  </textarea>
+  <div id="dragoverlay" class="dragoverlay">
+    <h2 class="dragoverlay-title when-valid">Drop JSON file to visualise it!</h2>
+    <h2 class="dragoverlay-title when-invalid">This file is not valid</h2>
+    <p class="dragoverlay-text when-invalid">
+      Is the file a .json file?<br><br>
+      Are you dragging a file?
+    </p>
+  </div>
+
 </body>
 </html>
 

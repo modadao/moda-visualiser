@@ -1,6 +1,4 @@
 import App from './App'
-import example from './data/example.json';
-import exampleDebug from './data/example_test.json';
 import exampleFis from './data/example_fis.json';
 import exampleRock from './data/example_rock.json';
 import exampleSoftDisco from './data/example_softdisco.json';
@@ -135,12 +133,10 @@ gui.add(settings, 'update');
 let lastContent: undefined|IFingerprint;
 const textarea = document.getElementById('fingerprint');
 if (textarea) {
-  textarea.textContent = JSON.stringify(example);
   textarea.addEventListener('change', (ev) => {
     if (app && container && textarea.textContent !== null) {
       lastContent = JSON.parse(textarea.textContent) as IFingerprint;
-      app.dispose();
-      app = new App(container, lastContent, settings);
+      app.refresh(lastContent, settings);
     }
   })
 }
@@ -152,18 +148,84 @@ const lookup = {
   ['Ambient Techno'] : exampleAbientTechno,
 }
 
-document.querySelectorAll('.example-button').forEach(el => {
-  el.addEventListener('click', (e) => {
-    const d = lookup[el.innerHTML]
+const updateFingerprint = (fingerprintJson: string) => {
     if (textarea) {
-      textarea.innerText = JSON.stringify(d);
+      textarea.innerText = fingerprintJson;
       const event = new Event('change', { bubbles: true });
       textarea.dispatchEvent(event);
     }
+}
+updateFingerprint(JSON.stringify(exampleAbientTechno));
+
+document.querySelectorAll('.example-button').forEach(el => {
+  el.addEventListener('click', (e) => {
+    const d = lookup[el.innerHTML]
+    updateFingerprint(JSON.stringify(d));
   })
 })
 let app: App|undefined;
 if (container) {
   lastContent = exampleAbientTechno as unknown as IFingerprint;
   app = new App(container, lastContent, settings);
+}
+
+const dragOverlay = document.querySelector('#dragoverlay') as HTMLElement;
+let isDragging = true;
+let isDraggingValid = false;
+const updateDragOverlay = () => {
+  console.log(dragOverlay);
+  if ( isDragging ) dragOverlay.classList.add('dragging')
+  else dragOverlay.classList.remove('dragging');
+  if (isDraggingValid) dragOverlay.classList.add('valid')
+  else dragOverlay.classList.remove('valid');
+}
+
+const dragTarget = document.querySelector('body');
+if (dragTarget) {
+  dragTarget.addEventListener("dragenter", (e) => {
+    console.log('Drag over')
+    isDragging = true;
+    console.log(e.dataTransfer);
+    if (e.dataTransfer && e.dataTransfer.items.length > 0) {
+      const f = e.dataTransfer.items[0];
+      isDraggingValid = f.type.includes('json');
+    } else {
+      isDraggingValid = false;
+    }
+    updateDragOverlay();
+  }, false);
+  dragTarget.addEventListener('dragleave', () => {
+    console.log('dragleave')
+    isDraggingValid = false;
+    isDragging = false;
+    updateDragOverlay();
+  }, false)
+
+  dragTarget.addEventListener('dragover', e => e.preventDefault(), false);
+  dragTarget.addEventListener("drop", (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    console.log(e);
+    if (isDraggingValid) {
+      if (e.dataTransfer && e.dataTransfer.items.length > 0) {
+        const f = e.dataTransfer.items[0];
+        console.log('Getting file as string', f);
+        const file = f.getAsFile();
+        if (file) {
+          const fr = new FileReader();
+          fr.onload = () => {
+            console.log('file loaded')
+            const result = fr.result as string|null;
+            if (result)
+              updateFingerprint(result)
+          }
+          fr.readAsText(file);
+        }
+      }
+    }
+    isDraggingValid = false;
+    isDragging = false;
+    updateDragOverlay();
+  }, false)
 }
