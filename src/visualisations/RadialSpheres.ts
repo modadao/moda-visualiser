@@ -154,6 +154,7 @@ export default class RadialSphere extends Object3D {
         const rot = new Quaternion();
         const scale = new Vector3();
 
+        const { outlineSize, outlineMultiplier, outlineAdd, innerGlow } = settings.points;
         coords.forEach((p, i) => {
           // Set transform of point
           if (p.featureLevel === 0) {
@@ -162,16 +163,16 @@ export default class RadialSphere extends Object3D {
             scale.setScalar(scaleSize(p.featureLevel).y);
           }
           mat4.compose(p.pos, rot, scale);
-          mat4.elements[15] = p.featureLevel;
+          mat4.elements[15] = p.featureLevel * innerGlow;
           points.setMatrixAt(i, mat4);
           // Set transfomr of outline
-          scale.setScalar(scale.x + settings.featurePoints.outlineSize);
+          scale.setScalar(scale.x + outlineSize);
           mat4.compose(p.pos, rot, scale);
           outlines.setMatrixAt(i, mat4);
 
           // Set colour of point
           points.setColorAt(i, p.color);
-          outlines.setColorAt(i, p.color.clone().addScalar(0.5));
+          outlines.setColorAt(i, p.color.clone().multiplyScalar(outlineMultiplier).addScalar(outlineAdd));
         })
 
         this.points = points;

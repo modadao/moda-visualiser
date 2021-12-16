@@ -11,8 +11,13 @@ import gui from './helpers/gui';
 const container = document.getElementById('app');
 
 export interface ISettings {
-  featurePoints: {
+  points: {
     outlineSize: number,
+    outlineMultiplier: number,
+    outlineAdd: number,
+    innerGlow: number,
+  }
+  featurePoints: {
     count: number,
     extraPer: number,
     sizeSmall: number,
@@ -44,8 +49,13 @@ export interface ISettings {
   update: () => void,
 }
 const settings: ISettings = {
-  featurePoints: {
+  points: {
     outlineSize: 0.007,
+    outlineAdd: 0.5,
+    outlineMultiplier: 1,
+    innerGlow: 1,
+  },
+  featurePoints: {
     count: 7,
     extraPer: 3000,
     sizeSmall: 0.15,
@@ -81,8 +91,13 @@ const settings: ISettings = {
   }
 }
 
+const points = gui.addFolder('FeaturePoints');
+points.add(settings.points, 'outlineSize', 0, 0.05, 0.001);
+points.add(settings.points, 'outlineMultiplier', 0, 4, 0.01);
+points.add(settings.points, 'outlineAdd', -1, 1, 0.01);
+points.add(settings.points, 'innerGlow', 0, 2, 0.01);
+
 const featurePoints = gui.addFolder('FeaturePoints');
-featurePoints.add(settings.featurePoints, 'outlineSize', 0, 0.05, 0.001);
 featurePoints.add(settings.featurePoints, 'count', 0, 15, 1);
 featurePoints.add(settings.featurePoints, 'extraPer', 200, 5000, 1);
 featurePoints.add(settings.featurePoints, 'sizeSmall', 0, 1, 0.01);
@@ -109,6 +124,7 @@ const handleSettingsChange = () => {
   }, 50);
 }
 
+points.onChange(handleSettingsChange);
 bezierFolder.onChange(handleSettingsChange);
 colorFolder.onChange(handleSettingsChange);
 featurePoints.onChange(handleSettingsChange);
