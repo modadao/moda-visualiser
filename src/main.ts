@@ -41,8 +41,6 @@ export interface ISettings {
     mainBezier: boolean,
     extraBeziers: boolean,
     rings: boolean,
-    flags: boolean,
-    reflection: boolean,
   },
   update: () => void,
 }
@@ -79,8 +77,6 @@ const settings: ISettings = {
     mainBezier: true,
     extraBeziers: false,
     rings: true,
-    flags: false,
-    reflection: false,
   },
   update: () => {
     if (app && container && lastContent) {

@@ -9,7 +9,6 @@ import ColorSchemeImg from '../assets/color_scheme.jpg';
 import CircleLineGeometry from '../helpers/CircleLineGeometry';
 import CrossLineGeometry from "../helpers/CrossLineGeometry";
 import RingBarGeometry from "../helpers/RingBarGeometry";
-import FlagMesh from "../helpers/FlagMesh";
 import TubeShaderFrag from '../shaders/tube_frag.glsl';
 import TubeShaderVert from '../shaders/tube_vert.glsl';
 import ParticleVert from '../shaders/particle_vert.glsl';
@@ -31,9 +30,9 @@ export default class RadialSphere extends Object3D {
   points: Mesh|undefined;
   outlines: Mesh|undefined;
   mainLines: Mesh[] = [];
-  flags: FlagMesh[] = [];
   extraLines: Mesh[] = [];
   rings: Line[] = [];
+  innerRing: Line;
   barGraph: Line;
   floor: Mesh|undefined;
   folder: GUI;
@@ -64,9 +63,9 @@ export default class RadialSphere extends Object3D {
     const matGrey = new LineBasicMaterial({ color: 0x666666 });
     const matWhite = new LineBasicMaterial({ color: 0xdddddd });
     const l = new Line(geo, matWhite);
-    l.position.setY(-0.1);
+    this.innerRing = l;
     l.rotateX(Math.PI / 2)
-    l.scale.setScalar(0.9);
+    l.scale.setScalar(0.5);
     this.add(l);
 
     const ringBarGeo = new RingBarGeometry(3.22, fingerprint, 0.0013);
@@ -180,47 +179,6 @@ export default class RadialSphere extends Object3D {
         this.add(this.points, this.outlines);
         console.log(points, outlines)
       })();
-      // for (const p of coords) {
-      //   const mesh = new Mesh(g, m);
-      //   const outlineMesh = new Mesh(g, outlineM);
-      //   outlineMesh.renderOrder = -1;
-
-      //   // Position
-      //   mesh.position.copy(p.pos);
-      //   outlineMesh.position.copy(p.pos);
-
-      //   // Size
-      //   const { scale } = p;
-      //   mesh.scale.setScalar(scale);
-      //   outlineMesh.scale.setScalar(scale + settings.featurePoints.outlineSize);
-      //   mesh.material.uniforms.u_innerColorMultiplier.value = 1.2 + p.featureLevel;
-      //   if (p.featureLevel !== 0) {
-      //     mesh.visible = true;
-      //     mesh.scale.setScalar(scaleSize(p.featureLevel).y);
-      //     outlineMesh.scale.setScalar(scaleSize(p.featureLevel).y + settings.featurePoints.outlineSize);
-      //     // m.uniforms.u_innerColorMultiplier.value = p.featureLevel + 1;
-      //   }
-
-      //   // Orbit rings
-      //   if (p.featureLevel !== 0) {
-      //     const flag = new FlagMesh(10, 0.02, 0.3);
-      //     flag.position.set(0, scaleSize(p.featureLevel).y, 0);
-      //     this.flags.push(flag);
-      //     flag.visible = false;
-      //     mesh.add(flag);
-      //   }
-
-      //   // Colour
-      //   const { color } = p;
-      //   m.uniforms.u_floatHash.value = color;
-
-      //   mesh.layers.enable(1);
-      //   this.add(mesh);
-      //   this.add(outlineMesh);
-      //   this.points.push(mesh);
-      //   this.outlines.push(outlineMesh);
-      //   outlineMesh.visible = settings.sceneElements.outlines;
-      // }
 
       // Bezier through feature points
       const featurePoints = coords.filter(p => p.featureLevel !== 0);
@@ -334,66 +292,14 @@ export default class RadialSphere extends Object3D {
         });
       })()
 
-      // Build render target and background
-      setTimeout(() => {
-        (() => {
-          const rtCam = new OrthographicCamera(-4, 4, 4, -4, 0.001, 100);
-          rtCam.position.y = 10;
-          rtCam.lookAt(0, 0, 0);
-          rtCam.layers.enable(1)
-          rtCam.layers.disable(0)
-          const oldClearColor = new Color();
-          renderer.getClearColor(oldClearColor);
-          renderer.setClearColor(new Color(0x000000))
-
-          const size = new Vector2();
-          renderer.getSize(size);
-          const rt = new WebGLRenderTarget(size.width, size.height)
-          renderer.setRenderTarget(rt);
-          renderer.render(scene, rtCam);
-          renderer.setRenderTarget(null);
-          const t = rt.texture;
-          console.log(t);
-
-          renderer.setClearColor(oldClearColor);
-
-          preProcessTexture(renderer, t, [
-            new ShaderPass(HorizontalBlurShader),
-            new ShaderPass(VerticalBlurShader),
-          ]).then(bloomMap => {
-            const geo = new PlaneGeometry(8, 8)
-            const mat = new ShaderMaterial({
-              fragmentShader: BackgroundFloorFrag,
-              vertexShader: BackgroundFloorVert,
-              uniforms: {
-                tex0: {
-                  value: bloomMap,
-                }
-              },
-              depthWrite: false,
-              blending: AdditiveBlending,
-            })
-            const m = new Mesh(geo, mat);
-            m.rotateX(-Math.PI / 2)
-            m.position.y = -0.5;
-            this.add(m);
-            this.floor = m;
-            m.visible = settings.sceneElements.reflection;
-          });
-        })()
-      }, 1000)
-
       const updateVisibility = () => {
-        if (this.floor) {
-          this.floor.visible = settings.sceneElements.reflection;
-        }
         if (this.outlines)
           this.outlines.visible = settings.sceneElements.outlines;
         
         this.mainLines.forEach(l => l.visible = settings.sceneElements.mainBezier);
         this.extraLines.forEach(l => l.visible = settings.sceneElements.extraBeziers);
         this.rings.forEach(r => r.visible = settings.sceneElements.rings);
-        this.flags.forEach(f => f.visible = settings.sceneElements.flags);
+        this.innerRing.visible = settings.sceneElements.rings;
         this.barGraph.visible = settings.sceneElements.circumferenceGraph;
       }
       updateVisibility();
@@ -404,8 +310,6 @@ export default class RadialSphere extends Object3D {
       elementsFolder.add(settings.sceneElements, 'mainBezier').name('Main Bezier')
       elementsFolder.add(settings.sceneElements, 'extraBeziers').name('Secondary Beziers');
       elementsFolder.add(settings.sceneElements, 'rings').name('Rings');
-      elementsFolder.add(settings.sceneElements, 'flags').name('Flags');
-      elementsFolder.add(settings.sceneElements, 'reflection').name('Reflection');
     })()
   }
 
