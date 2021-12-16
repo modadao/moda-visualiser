@@ -247,3 +247,35 @@ export const debugLine = (v1: Vector3, v2: Vector3) => {
   const l = new Line(geo, mat);
   return l;
 }
+
+export class ImgSampler {
+  img: HTMLImageElement;
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D|undefined;
+  loading: Promise<void>|undefined;
+  constructor(src: string) {
+    this.img = new Image();
+    this.canvas = document.createElement('canvas');
+    this.loading = new Promise((res) => {
+      this.img.onload = () => {
+        this.canvas.width = this.img.width;
+        this.canvas.height = this.img.height;
+        this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
+        this.ctx.drawImage(this.img, 0, 0, this.img.width, this.img.height);
+        res();
+      }
+      this.img.src = src;
+    })
+    this.loading.then(() => {
+      this.loading = undefined;
+    })
+  }
+
+  getPixel(x: number, y: number) {
+    if (this.loading) throw new Error('Cant get pixel as image is still loading.');
+    if (!this.ctx) throw new Error('Image CTX not ready.')
+    const sx = Math.floor(x * this.img.width);
+    const sy = Math.floor(y * this.img.height);
+    return this.ctx.getImageData(sx, sy, 1, 1);
+  }
+}

@@ -1,5 +1,5 @@
 import { ICoordinate, IDerivedFingerPrint } from "../types";
-import { bezierVector, buildAttribute, chunk, createShaderControls, customRandom, debugLine, pickRandom, preProcessTexture } from "../utils";
+import { bezierVector, buildAttribute, chunk, createShaderControls, customRandom, debugLine, ImgSampler, pickRandom, preProcessTexture } from "../utils";
 import { CatmullRomCurve3, Vector3, Mesh, Object3D, LineBasicMaterial, Scene, ShaderMaterial, SphereBufferGeometry, TextureLoader, BufferGeometry, Line, Vector2, BoxGeometry, BoxBufferGeometry, RepeatWrapping, SplineCurve, Camera, Shader, TubeGeometry, MeshBasicMaterial, CurvePath, QuadraticBezierCurve3, Curve, Float32BufferAttribute, Points, InstancedMesh, DynamicDrawUsage, InstancedBufferGeometry, InstancedBufferAttribute, IcosahedronBufferGeometry, Matrix4, TorusBufferGeometry, Quaternion, RawShaderMaterial, BackSide, MathUtils, CubicBezierCurve3, Vector, WebGLRenderer, WebGLRenderTarget, PlaneGeometry, OrthographicCamera, AdditiveBlending, Color, BufferAttribute } from "three";
 import FragShader from '../shaders/spheres_frag.glsl';
 import VertShader from '../shaders/spheres_vert.glsl';
@@ -28,8 +28,8 @@ import { VerticalBlurShader } from 'three/examples/jsm/shaders/VerticalBlurShade
 
 const tl = new TextureLoader();
 export default class RadialSphere extends Object3D {
-  points: Mesh[] = [];
-  outlines: Mesh[] = [];
+  points: Mesh|undefined;
+  outlines: Mesh|undefined;
   mainLines: Mesh[] = [];
   flags: FlagMesh[] = [];
   extraLines: Mesh[] = [];
@@ -95,13 +95,6 @@ export default class RadialSphere extends Object3D {
     const { sin, cos, floor, max, pow } = Math;
     const [ width, height ] = fingerprint.shape;
 
-    const g = new SphereBufferGeometry(1);
-    const outlineM = new MeshBasicMaterial({
-      color: 0xffffff,
-      side: BackSide,
-      depthWrite: false,
-    })
-
     const scale = (500 + max(-pow(height, 0.8), -pow(height, 0.7)-100, -pow(height, 0.6)-150)) / 400 * 0.15
     const coords = fingerprint.coords.map(p => {
       const theta = (p.x / height) * Math.PI * 2;
@@ -125,66 +118,103 @@ export default class RadialSphere extends Object3D {
       }
     });
 
-    for (const p of coords) {
+    // Build main points, feature points, outlines
+    (async () => {
+      console.log(' ~~~ Building main points + outlines ~~~')
+      const outlineM = new MeshBasicMaterial({
+        color: 0xffffff,
+        side: BackSide,
+        depthWrite: false,
+      })
+
       // Build geometry 
+      const g = new SphereBufferGeometry(1);
       const m = new ShaderMaterial({
         fragmentShader: FragShader,
         vertexShader: VertShader,
         uniforms: {
-          u_colorscheme: { value: colorSchemeTexture },
-          u_hash: { value: fingerprint.hash },
-          u_floatHash: { value: fingerprint.floatHash },
-          u_noiseLambda: { value: 5 },
-          u_noiseAlpha: { value: 0 },
-          u_distMult: { value: 10 },
-          u_distAdd: { value: 1 },
-          u_logMult: { value: 0.5 },
-          u_logAdd: { value: 0.2 },
-          u_innerColorMultiplier: { value: 1.0, },
+          u_innerColorMultiplier: { value: 2.0, },
           u_outerColorMultiplier: { value: 1, },
           u_cameraDirection: { value: new Vector3() },
         }
       })
-      const mesh = new Mesh(g, m);
-      const outlineMesh = new Mesh(g, outlineM);
-      outlineMesh.renderOrder = -1;
 
-      // Position
-      mesh.position.copy(p.pos);
-      outlineMesh.position.copy(p.pos);
+      const points = new InstancedMesh(g, m, coords.length);
+      const outlines = new InstancedMesh(g, outlineM, coords.length);
 
-      // Size
-      const { scale } = p;
-      mesh.scale.setScalar(scale);
-      outlineMesh.scale.setScalar(scale + settings.featurePoints.outlineSize);
-      mesh.material.uniforms.u_innerColorMultiplier.value = 1.2 + p.featureLevel;
-      if (p.featureLevel !== 0) {
-        mesh.visible = true;
-        mesh.scale.setScalar(scaleSize(p.featureLevel).y);
-        outlineMesh.scale.setScalar(scaleSize(p.featureLevel).y + settings.featurePoints.outlineSize);
-        // m.uniforms.u_innerColorMultiplier.value = p.featureLevel + 1;
-      }
+      const mat4 = new Matrix4();
+      const rot = new Quaternion();
+      const scale = new Vector3();
+      const colorSampler = new ImgSampler(ColorSchemeImg);
+      await colorSampler.loading;
 
-      // Orbit rings
-      if (p.featureLevel !== 0) {
-        const flag = new FlagMesh(10, 0.02, 0.3);
-        flag.position.set(0, scaleSize(p.featureLevel).y, 0);
-        this.flags.push(flag);
-        flag.visible = false;
-        mesh.add(flag);
-      }
+      coords.forEach((p, i) => {
+        // Set transform of point
+        if (p.featureLevel === 0) {
+          scale.setScalar(p.scale);
+        } else {
+          scale.setScalar(scaleSize(p.featureLevel).y);
+        }
+        mat4.compose(p.pos, rot, scale);
+        points.setMatrixAt(i, mat4);
+        // Set transfomr of outline
+        scale.setScalar(scale.x + settings.featurePoints.outlineSize);
+        mat4.compose(p.pos, rot, scale);
+        outlines.setMatrixAt(i, mat4);
 
-      // Colour
-      const { color } = p;
-      m.uniforms.u_floatHash.value = color;
+        // Set colour of point
+        const c = colorSampler.getPixel(p.color, 0.5);
+        const pixels = Float32Array.from(c.data).map(v => v/255);
+        points.setColorAt(i, new Color(...pixels));
+        outlines.setColorAt(i, new Color(...pixels).multiplyScalar(2.5));
+      })
 
-      mesh.layers.enable(1);
-      this.add(mesh);
-      this.add(outlineMesh);
-      this.points.push(mesh);
-      this.outlines.push(outlineMesh);
-      outlineMesh.visible = settings.sceneElements.outlines;
-    }
+      this.points = points;
+      this.outlines = outlines;
+      this.add(this.points, this.outlines);
+      console.log(points, outlines)
+    })();
+    // for (const p of coords) {
+    //   const mesh = new Mesh(g, m);
+    //   const outlineMesh = new Mesh(g, outlineM);
+    //   outlineMesh.renderOrder = -1;
+
+    //   // Position
+    //   mesh.position.copy(p.pos);
+    //   outlineMesh.position.copy(p.pos);
+
+    //   // Size
+    //   const { scale } = p;
+    //   mesh.scale.setScalar(scale);
+    //   outlineMesh.scale.setScalar(scale + settings.featurePoints.outlineSize);
+    //   mesh.material.uniforms.u_innerColorMultiplier.value = 1.2 + p.featureLevel;
+    //   if (p.featureLevel !== 0) {
+    //     mesh.visible = true;
+    //     mesh.scale.setScalar(scaleSize(p.featureLevel).y);
+    //     outlineMesh.scale.setScalar(scaleSize(p.featureLevel).y + settings.featurePoints.outlineSize);
+    //     // m.uniforms.u_innerColorMultiplier.value = p.featureLevel + 1;
+    //   }
+
+    //   // Orbit rings
+    //   if (p.featureLevel !== 0) {
+    //     const flag = new FlagMesh(10, 0.02, 0.3);
+    //     flag.position.set(0, scaleSize(p.featureLevel).y, 0);
+    //     this.flags.push(flag);
+    //     flag.visible = false;
+    //     mesh.add(flag);
+    //   }
+
+    //   // Colour
+    //   const { color } = p;
+    //   m.uniforms.u_floatHash.value = color;
+
+    //   mesh.layers.enable(1);
+    //   this.add(mesh);
+    //   this.add(outlineMesh);
+    //   this.points.push(mesh);
+    //   this.outlines.push(outlineMesh);
+    //   outlineMesh.visible = settings.sceneElements.outlines;
+    // }
 
     // Bezier through feature points
     const featurePoints = coords.filter(p => p.featureLevel !== 0);
@@ -251,20 +281,17 @@ export default class RadialSphere extends Object3D {
         const points = curve.getPoints(20);
         const curFeaturePoint = featurePoints[i];
         const nextFeaturePoint = i === featurePoints.length - 1 ? featurePoints[0] : featurePoints[i + 1];
-        console.log(i, curFeaturePoint, nextFeaturePoint, featurePoints.length);
         const colors = points.map((p, j) => {
           return MathUtils.mapLinear(j, 0, points.length, curFeaturePoint.color, nextFeaturePoint.color);
         })
 
         const posAttributeLength = tubeGeometry.getAttribute('position').array.length
         const colorsAttributeData = new Float32Array(posAttributeLength / 3);
-        console.log(posAttributeLength / 3, colorsAttributeData.length);
         for (let i = 0; i < posAttributeLength / 3; i++) {
           const thisProgress = i / colorsAttributeData.length;
           const coloursIndex = Math.floor(thisProgress * colors.length);
           colorsAttributeData[i] = colors[coloursIndex]; 
         }
-        console.log({colorsAttributeData});
         tubeGeometry.setAttribute('color', new BufferAttribute(colorsAttributeData, 1));
         const curveObject = new Mesh( tubeGeometry, material );
         retVal.push(curveObject);
@@ -354,7 +381,8 @@ export default class RadialSphere extends Object3D {
       if (this.floor) {
         this.floor.visible = settings.sceneElements.reflection;
       }
-      this.outlines.forEach(o => o.visible = settings.sceneElements.outlines);
+      if (this.outlines)
+        this.outlines.visible = settings.sceneElements.outlines;
       
       this.mainLines.forEach(l => l.visible = settings.sceneElements.mainBezier);
       this.extraLines.forEach(l => l.visible = settings.sceneElements.extraBeziers);
@@ -378,10 +406,8 @@ export default class RadialSphere extends Object3D {
     const dir = new Vector3();
     this.camera.updateMatrixWorld();
     this.camera.getWorldDirection(dir);
-    this.points.forEach(m => {
-      const mat = (m.material as ShaderMaterial)
-      mat.uniforms.u_cameraDirection.value = dir;
-    });
+    if (this.points)
+      (this.points.material as ShaderMaterial).uniforms.u_cameraDirection.value = dir;
   }
 
   dispose() {

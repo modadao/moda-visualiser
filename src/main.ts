@@ -148,6 +148,6 @@ document.querySelectorAll('.example-button').forEach(el => {
 })
 let app: App|undefined;
 if (container) {
-  lastContent = exampleFis as unknown as IFingerprint;
+  lastContent = exampleAbientTechno as unknown as IFingerprint;
   app = new App(container, lastContent, settings);
 }

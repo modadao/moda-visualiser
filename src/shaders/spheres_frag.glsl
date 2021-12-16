@@ -4,7 +4,6 @@ uniform vec3 u_cameraDirection;
 varying vec3 vNormal;
 varying vec3 vColor;
 varying vec3 vColor2;
-varying vec3 vPosition;
 
 void main() {
   vec3 dir = normalize(cameraPosition - u_cameraDirection);
