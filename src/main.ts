@@ -5,6 +5,8 @@ import exampleSoftDisco from './data/example_softdisco.json';
 import exampleAbientTechno from './data/example_ambient_techno.json';
 import { IFingerprint } from './types';
 import gui from './helpers/gui';
+import { GUI } from 'dat.gui';
+import GradientController from './helpers/GradientController';
 
 const container = document.getElementById('app');
 
@@ -24,6 +26,8 @@ export interface ISettings {
     sizeLarge: number,
   },
   color: {
+    useCustomColorGradient: false,
+    custom: Record<string, string>,
     baseVariation: number,
     velocityVariation: number,
   },
@@ -60,6 +64,13 @@ const settings: ISettings = {
     sizeLarge: 0.5,
   },
   color: {
+    useCustomColorGradient: false,
+    custom: {
+      '1': '#FF2F42',
+      '2': '#FFA71F',
+      '3': '#00F5C4',
+      '4': '#B44CF8',
+    },
     baseVariation: 0.2,
     velocityVariation: 0.3,
   },
@@ -85,7 +96,7 @@ const settings: ISettings = {
   }
 }
 
-const points = gui.addFolder('FeaturePoints');
+const points = gui.addFolder('Points');
 points.add(settings.points, 'outlineSize', 0, 0.05, 0.001);
 points.add(settings.points, 'outlineMultiplier', 0, 4, 0.01);
 points.add(settings.points, 'outlineAdd', -1, 1, 0.01);
@@ -100,8 +111,38 @@ featurePoints.add(settings.featurePoints, 'sizeMdLg', 0, 1, 0.01);
 featurePoints.add(settings.featurePoints, 'sizeLarge', 0, 1, 0.01);
 
 const colorFolder = gui.addFolder('Color');
+// @ts-ignore
 colorFolder.add(settings.color, 'baseVariation', 0, 1, 0.01);
 colorFolder.add(settings.color, 'velocityVariation', 0, 1, 0.01);
+
+let customGradientFolder = colorFolder.addFolder('Custom Gradient');
+const customGradientControls = {
+  add: () => {
+    const n = Object.values(settings.color.custom).length;
+    settings.color.custom[(n + 1).toString(10)] = '#FFFFFF';
+    rebuildGradientFolder();
+  },
+  deleteLast: () => {
+    const n = Object.values(settings.color.custom).length;
+    if (n > 2) {
+
+    }
+    delete settings.color.custom[(n).toString(10)];
+    rebuildGradientFolder();
+  }
+}
+const rebuildGradientFolder = () => {
+  customGradientFolder.destroy();
+  customGradientFolder = colorFolder.addFolder('Custom Gradient');
+
+  customGradientFolder.add(settings.color, 'useCustomColorGradient')
+  Object.keys(settings.color.custom).forEach(k => {
+    customGradientFolder.addColor(settings.color.custom, k);
+  })
+  customGradientFolder.add(customGradientControls, 'add');
+  customGradientFolder.add(customGradientControls, 'deleteLast');
+}
+rebuildGradientFolder();
 
 const bezierFolder = gui.addFolder('Beziers');
 bezierFolder.add(settings.beziers, 'flareOut', 0, 5, 0.01);

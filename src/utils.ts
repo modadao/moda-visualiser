@@ -1,4 +1,4 @@
-import { BufferAttribute, BufferGeometry, Line, LineBasicMaterial, MathUtils, ShaderMaterial, Texture, Vector, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget } from "three";
+import { BufferAttribute, BufferGeometry, Color, Line, LineBasicMaterial, MathUtils, ShaderMaterial, Texture, Vector, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget } from "three";
 import { randFloat } from "three/src/math/MathUtils";
 import { ISettings } from "./App";
 import gui from "./helpers/gui";
@@ -275,7 +275,28 @@ export class ImgSampler {
     if (this.loading) throw new Error('Cant get pixel as image is still loading.');
     if (!this.ctx) throw new Error('Image CTX not ready.')
     const sx = Math.floor(x * this.img.width);
+    console.log(`Scaling ${x} between ${0}, ${this.img.width}, sx: ${sx}`);
     const sy = Math.floor(y * this.img.height);
-    return this.ctx.getImageData(sx, sy, 1, 1);
+    const d = this.ctx.getImageData(sx, sy, 1, 1);
+    const pixels = Float32Array.from(d.data).map(v => v/255);
+    return new Color(...pixels);
+  }
+}
+
+export class GradientSampler {
+  colours: Color[];
+  constructor(srcGradient: Record<string,string>) {
+    this.colours = Object.values(srcGradient).map(c => new Color(c));
+  }
+
+  getPixel(x: number, y: number) {
+    const wrappedColours = this.colours.map(v => v);
+    wrappedColours.push(wrappedColours[0]);
+    let scaledX = (x % 1);
+    scaledX *= wrappedColours.length - 1;
+    const lowerIndex = Math.floor( scaledX );
+    const upperIndex = lowerIndex + 1;
+    const mix = MathUtils.mapLinear(scaledX, lowerIndex, upperIndex, 0, 1);
+    return wrappedColours[lowerIndex].clone().lerp(wrappedColours[upperIndex], mix);
   }
 }

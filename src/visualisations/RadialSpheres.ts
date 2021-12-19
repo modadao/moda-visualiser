@@ -1,5 +1,5 @@
 import { ICoordinate, IDerivedFingerPrint } from "../types";
-import { bezierVector, buildAttribute, chunk, createShaderControls, customRandom, debugLine, ImgSampler, pickRandom, preProcessTexture } from "../utils";
+import { bezierVector, buildAttribute, chunk, createShaderControls, customRandom, debugLine, GradientSampler, ImgSampler, pickRandom, preProcessTexture } from "../utils";
 import { CatmullRomCurve3, Vector3, Mesh, Object3D, LineBasicMaterial, Scene, ShaderMaterial, SphereBufferGeometry, TextureLoader, BufferGeometry, Line, Vector2, BoxGeometry, BoxBufferGeometry, RepeatWrapping, SplineCurve, Camera, Shader, TubeGeometry, MeshBasicMaterial, CurvePath, QuadraticBezierCurve3, Curve, Float32BufferAttribute, Points, InstancedMesh, DynamicDrawUsage, InstancedBufferGeometry, InstancedBufferAttribute, IcosahedronBufferGeometry, Matrix4, TorusBufferGeometry, Quaternion, RawShaderMaterial, BackSide, MathUtils, CubicBezierCurve3, Vector, WebGLRenderer, WebGLRenderTarget, PlaneGeometry, OrthographicCamera, AdditiveBlending, Color, BufferAttribute } from "three";
 import FragShader from '../shaders/spheres_frag.glsl';
 import VertShader from '../shaders/spheres_vert.glsl';
@@ -93,10 +93,11 @@ export default class RadialSphere extends Object3D {
 
     const { sin, cos, floor, max, pow } = Math;
     const [ width, height ] = fingerprint.shape;
-    const colorSampler = new ImgSampler(ColorSchemeImg);
+    const colorSampler = settings.color.useCustomColorGradient ? new GradientSampler(settings.color.custom) : new ImgSampler(ColorSchemeImg);
     (async () => {
 
-      await colorSampler.loading;
+      if (colorSampler instanceof ImgSampler)
+        await colorSampler.loading;
 
       const scale = (500 + max(-pow(height, 0.8), -pow(height, 0.7)-100, -pow(height, 0.6)-150)) / 400 * 0.15
       const coords = fingerprint.coords.map(p => {
@@ -112,8 +113,7 @@ export default class RadialSphere extends Object3D {
         const { baseVariation, velocityVariation } = settings.color;
         const smoothhash = (fingerprint.floatHash + sin(theta) * baseVariation + p.g * velocityVariation) % 1;
 
-        const c = colorSampler.getPixel(smoothhash, 0.5);
-        const pixels = Float32Array.from(c.data).map(v => v/255);
+        const color = colorSampler.getPixel(smoothhash, 0.5);
 
         return {
           ...p,
@@ -121,7 +121,7 @@ export default class RadialSphere extends Object3D {
           pos: new Vector3(x * r, 0, z * r),
           scale: s,
           smoothhash,
-          color: new Color(...pixels),
+          color,
         }
       });
 
