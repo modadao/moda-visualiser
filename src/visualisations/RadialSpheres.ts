@@ -101,6 +101,7 @@ export default class RadialSphere extends Object3D {
     const { baseVariation, velocityVariation } = settings.color;
     const variationScalar = baseVariation * fingerprintBaseVariation;
     const velocityScalar = velocityVariation * fingerprintVelocityVariation;
+    const velocityDirection = fingerprint.floatHash % 0.1 > 0.05 ? -1 : 1;
     (async () => {
 
       if (colorSampler instanceof ImgSampler)
@@ -117,7 +118,7 @@ export default class RadialSphere extends Object3D {
 
         const s = (Math.abs(p.g - 0.5) + scale) * scale;
 
-        const smoothhash = (fingerprint.floatHash + sin(theta + fingerprint.floatHash * Math.PI) * variationScalar + p.g * velocityScalar) % 1;
+        const smoothhash = (fingerprint.floatHash + sin(theta + fingerprint.floatHash * Math.PI) * variationScalar + p.g * velocityScalar * velocityDirection) % 1;
 
         const color = colorSampler.getPixel(smoothhash, 0.5);
 
