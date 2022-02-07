@@ -294,7 +294,7 @@ export class GradientSampler {
   }
 
   getPixel(x: number, y: number) {
-    const wrappedColours = this.colours.map(v => v);
+    const wrappedColours = this.colours.map(v => v.clone());
     wrappedColours.push(wrappedColours[0]);
     let scaledX = (x % 1);
     scaledX *= wrappedColours.length - 1;

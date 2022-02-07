@@ -18,12 +18,6 @@ import BackgroundFloorFrag from '../shaders/background_floor_frag.glsl';
 import { ISettings } from "@/main";
 import gui from "../helpers/gui";
 import GUI from "lil-gui";
-import { GlitchPass } from 'three/examples/jsm/postprocessing/GlitchPass';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
-import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
-import { ToonShader1 } from 'three/examples/jsm/shaders/ToonShader';
-import { HorizontalBlurShader } from 'three/examples/jsm/shaders/HorizontalBlurShader';
-import { VerticalBlurShader } from 'three/examples/jsm/shaders/VerticalBlurShader';
 
 const tl = new TextureLoader();
 export default class RadialSphere extends Object3D {
@@ -101,13 +95,12 @@ export default class RadialSphere extends Object3D {
     const { baseVariation, velocityVariation } = settings.color;
     const variationScalar = baseVariation * fingerprintBaseVariation;
     const velocityScalar = velocityVariation * fingerprintVelocityVariation;
-    const velocityDirection = fingerprint.floatHash % 0.1 > 0.05 ? -1 : 1;
+    const velocityDirection = 1;
     (async () => {
-
       if (colorSampler instanceof ImgSampler)
         await colorSampler.loading;
 
-      const scale = (500 + max(-pow(height, 0.8), -pow(height, 0.7)-100, -pow(height, 0.6)-150)) / 400 * 0.15
+      const scale = (500 + max(-pow(height, 0.8), -pow(height, 0.7)-100, -pow(height, 0.6)-160)) / 400 * 0.15
       const coords = fingerprint.coords.map(p => {
         const theta = (p.x / height) * Math.PI * 2;
         const x = sin(theta);
