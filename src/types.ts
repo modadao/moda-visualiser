@@ -1,18 +1,23 @@
-export interface ICoordinate {
-  x: number,
-  y: number,
-}
-export interface IFingerprint {
-  shape: [number, number];
-  coords: ICoordinate[],
+export interface IPayloadCoordinates {
+  x: number[],
+  y: number[],
 }
 
-export interface IDerivedCoordinate extends ICoordinate {
+export interface IFingerprint {
+  shape: [number, number];
+  coords: IPayloadCoordinates,
+}
+
+export interface IDerivedCoordinate {
+  x: number,
+  y: number,
   g: number,
   smoothed: number,
   featureLevel: number,
 };
-export interface IDerivedFingerPrint extends IFingerprint {
+
+export interface IDerivedFingerPrint {
+  shape: [number, number],
   coords: IDerivedCoordinate[],
   hash: number,
   floatHash: number,

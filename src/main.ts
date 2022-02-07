@@ -1,12 +1,7 @@
 import App from './App'
-import exampleFis from './data/example_fis.json';
-import exampleRock from './data/example_rock.json';
-import exampleSoftDisco from './data/example_softdisco.json';
 import exampleAbientTechno from './data/example_ambient_techno.json';
 import { IFingerprint } from './types';
 import gui from './helpers/gui';
-import { GUI } from 'dat.gui';
-import GradientController from './helpers/GradientController';
 
 const container = document.getElementById('app');
 
@@ -179,9 +174,6 @@ if (textarea) {
 }
 
 const lookup = {
-  ['Snare-y experimental'] : exampleFis,
-  ['Rock'] : exampleRock,
-  ['Disco-y'] : exampleSoftDisco,
   ['Ambient Techno'] : exampleAbientTechno,
 }
 

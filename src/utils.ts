@@ -50,14 +50,15 @@ export const customRandom = {
 
 export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDerivedFingerPrint => {
   console.log('Deriving data from fingerprint')
+  const coords = fingerprint.coords.x.map((x, i) => ({ x, y: fingerprint.coords.y[i] }))
   // Generate smoothed data
   const SMOOTH_RANGE = 40;
-  const smoothedValues = fingerprint.coords.map((c, i) => {
+  const smoothedValues = coords.map((c, i) => {
     const startIndex = Math.max(0, i - SMOOTH_RANGE);
-    const endIndex = Math.min(fingerprint.coords.length, i + SMOOTH_RANGE);
+    const endIndex = Math.min(coords.length, i + SMOOTH_RANGE);
     let v = 0;
     for (let j = startIndex; j < endIndex; j++) {
-      v += fingerprint.coords[j].y;
+      v += coords[j].y;
     }
     v /= endIndex - startIndex;
     return v;
@@ -65,14 +66,14 @@ export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDer
 
   // Get raw gradient
   let gradients = [] as number[];
-  console.log(Array(fingerprint.coords.length -1).keys())
-  for (const i of Array(fingerprint.coords.length).keys()) {
-    if (i === fingerprint.coords.length - 1) {
+  console.log(Array(coords.length -1).keys())
+  for (const i of Array(coords.length).keys()) {
+    if (i === coords.length - 1) {
       gradients.push(0);
       break;
     }
-    const el = fingerprint.coords[i];
-    const nel = fingerprint.coords[i+1]; // Next element
+    const el = coords[i];
+    const nel = coords[i+1]; // Next element
     const dy = (el.y - nel.y)
     const dx = el.x - nel.x
     if (dx !== 0 && dy !== 0) {
@@ -94,13 +95,13 @@ export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDer
 
   // Create a hashed value
   let hash = 0;
-  for (const el of fingerprint.coords) {
+  for (const el of coords) {
     hash = ((hash<<5)-hash)+ el.x - el.y;
     hash = hash & hash; // Convert to 32bit integer
   }
   const floatHash = (hash / 2_147_483_647) * 0.5 + 0.5;
 
-  const targetNumberOfFeatures = settings.featurePoints.count + Math.floor(fingerprint.coords.length / settings.featurePoints.extraPer);
+  const targetNumberOfFeatures = settings.featurePoints.count + Math.floor(coords.length / settings.featurePoints.extraPer);
   console.log({targetNumberOfFeatures})
   let features: number[] = [];
   let featureLevels: number[] = [];
@@ -110,7 +111,7 @@ export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDer
     // Regenerate targetFeatureIndex until it's unique
     do {
       j += 1;
-      targetFeatureIndex = Math.floor(customRandom.deterministic(i, floatHash, j) * fingerprint.coords.length);
+      targetFeatureIndex = Math.floor(customRandom.deterministic(i, floatHash, j) * coords.length);
     } while(features.includes(targetFeatureIndex))
 
     // Push 
@@ -121,8 +122,9 @@ export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDer
   // Split the coords into segments
   const [height, width] = fingerprint.shape;
   const segmentSize = Math.floor(width / targetNumberOfFeatures + 1);
+  console.log(segmentSize)
   const segmentedPoints: Array<Array<ICoordinate>> = new Array(targetNumberOfFeatures).fill(0).map(() => []);
-  fingerprint.coords.forEach(el => {
+  coords.forEach(el => {
     const bucketIndex = Math.floor(el.x / segmentSize);
     segmentedPoints[bucketIndex].push(el);
   });
@@ -132,7 +134,8 @@ export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDer
   }
   // Find the densest coord in each segment
   const maxDist = Math.max(segmentSize, height);
-  console.log(segmentedPoints.length);
+  console.log(segmentedPoints);
+  let offset = 0;
   let mostDenseCoords = segmentedPoints.map(( points, i ) => {
     console.log(`Bucket ${i} has ${points.length} points`)
     const densities = points.map(p => {
@@ -145,9 +148,9 @@ export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDer
     const mostDense = Math.max(...densities);
     const mostDenseIndex = densities.findIndex(el => el === mostDense);
     console.log(`\tMaking the most dense point ${mostDenseIndex} at ${mostDense}`);
-    const globalMostDenseIndex = Math.floor(i * segmentSize + mostDenseIndex);
-    console.log(`\tThe global most dense index is ${globalMostDenseIndex}`);
-    return { index: globalMostDenseIndex, density: mostDense }
+    const res = { index: offset + mostDenseIndex, density: mostDense }
+    offset += points.length;
+    return res;
   });
   const minDense = Math.min(...mostDenseCoords.map(c => c.density));
   const maxDense = Math.max(...mostDenseCoords.map(c => c.density));
@@ -157,10 +160,12 @@ export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDer
       density: MathUtils.mapLinear(c.density, minDense, maxDense, 0.05, 1),
     }
   })
+  console.log(mostDenseCoords);
+  console.log(coords.length);
 
   const result =  { ...fingerprint,
-    coords: fingerprint.coords.map((el, i) => {
-      const featurePoint = mostDenseCoords.find(el => el.index === i);
+    coords: coords.map((el, i) => {
+      const featurePoint = mostDenseCoords.find(dc => dc.index === i);
       return {
         x: el.x,
         y: el.y,
