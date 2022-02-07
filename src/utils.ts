@@ -280,6 +280,7 @@ export class ImgSampler {
     if (this.loading) throw new Error('Cant get pixel as image is still loading.');
     if (!this.ctx) throw new Error('Image CTX not ready.')
     const sx = Math.floor(x * this.img.width);
+    console.log(sx);
     const sy = Math.floor(y * this.img.height);
     const d = this.ctx.getImageData(sx, sy, 1, 1);
     const pixels = Float32Array.from(d.data).map(v => v/255);

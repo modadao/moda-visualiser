@@ -54,12 +54,12 @@ export default class RadialSphere extends Object3D {
 
     // Add rings for flare
     const geo = new CircleLineGeometry(1, 512, fingerprint);
-    const matGrey = new LineBasicMaterial({ color: 0x666666 });
+    // const matGrey = new LineBasicMaterial({ color: 0x666666 });
     const matWhite = new LineBasicMaterial({ color: 0xdddddd });
     const l = new Line(geo, matWhite);
     this.innerRing = l;
     l.rotateX(Math.PI / 2)
-    l.scale.setScalar(0.5);
+    l.scale.setScalar(1.2);
     this.add(l);
 
     const ringBarGeo = new RingBarGeometry(3.22, fingerprint, 0.0013);
@@ -95,7 +95,6 @@ export default class RadialSphere extends Object3D {
     const { baseVariation, velocityVariation } = settings.color;
     const variationScalar = baseVariation * fingerprintBaseVariation;
     const velocityScalar = velocityVariation * fingerprintVelocityVariation;
-    const velocityDirection = 1;
     (async () => {
       if (colorSampler instanceof ImgSampler)
         await colorSampler.loading;
@@ -106,12 +105,13 @@ export default class RadialSphere extends Object3D {
         const x = sin(theta);
         const z = cos(theta);
         const step = floor(theta / (Math.PI * 2));
-        const amp = p.y / width * 2;
-        const r = step + 1.0 + amp;
+        const amp = p.y / width * 1.5;
+        const r = step + 1.5 + amp;
 
         const s = (Math.abs(p.g - 0.5) + scale) * scale;
 
-        const smoothhash = (fingerprint.floatHash + sin(theta + fingerprint.floatHash * Math.PI) * variationScalar + p.g * velocityScalar * velocityDirection) % 1;
+        let smoothhash = (fingerprint.floatHash + sin(theta + fingerprint.floatHash * Math.PI) * variationScalar + p.g * velocityScalar) % 1;
+        while(smoothhash < 0) smoothhash += 1;
 
         const color = colorSampler.getPixel(smoothhash, 0.5);
 
@@ -239,11 +239,13 @@ export default class RadialSphere extends Object3D {
         curves.forEach((curve, i) => {
           const tubeGeometry = new TubeGeometry( curve, segments, radius, radialSegments, false );
           const startPoint = curve.getPoint(0);
-          const curFeaturePoint = featurePoints.find(fp => fp.pos.equals(startPoint));
+          const curFeaturePoint = featurePoints.find(fp => fp.pos.equals(startPoint)) ?? featurePoints
+            .reduce((acc, cur) => cur.pos.distanceTo(startPoint) < acc.pos.distanceTo(startPoint) ? cur : acc, featurePoints[0] );
           const endPoint = curve.getPoint(1);
-          const nextFeaturePoint = featurePoints.find(fp => fp.pos.equals(endPoint));
+          const nextFeaturePoint = featurePoints.find(fp => fp.pos.equals(endPoint)) ?? featurePoints
+            .reduce((acc, cur) => cur.pos.distanceTo(startPoint) < acc.pos.distanceTo(endPoint) ? cur : acc, featurePoints[0] );
           if (!curFeaturePoint || !nextFeaturePoint) {
-            throw new Error('');
+            throw new Error(`Could not find startPoint ${startPoint.toArray()} or endPoint ${endPoint.toArray()}`);
           }
 
           const posAttributeLength = tubeGeometry.getAttribute('position').array.length
@@ -270,8 +272,9 @@ export default class RadialSphere extends Object3D {
 
       // // Generate random secondary beziers
       (() => {
-        const chunkedPoints = chunk(pickRandom(coords, 18), 6);
+        const chunkedPoints = chunk(pickRandom(coords, Math.min(10, coords.length)), 5);
         chunkedPoints.forEach(points => {
+          console.log('Generating bezier on points', points)
           if (points.length < 4) return;
           const positions = points.map(p => {
             // Position
@@ -301,6 +304,7 @@ export default class RadialSphere extends Object3D {
         this.rings.forEach(r => r.visible = settings.sceneElements.rings);
         this.innerRing.visible = settings.sceneElements.rings;
         this.barGraph.visible = settings.sceneElements.circumferenceGraph;
+        console.log(this);
       }
       updateVisibility();
 

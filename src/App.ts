@@ -16,6 +16,9 @@ export default class App {
   orbitControls: OrbitControls;
 
   radialSpheres: RadialSphere;
+
+  shouldExport: boolean;
+  exportDimensions: number;
   constructor(public element: HTMLElement, fingerprint: IFingerprint, settings: ISettings) {
     this.renderer = new WebGLRenderer({
       antialias: true,
@@ -51,8 +54,19 @@ export default class App {
 
   update() {
     this.orbitControls.update()
-    this.renderer.render(this.scene, this.camera);
     this.radialSpheres.update();
+    this.renderer.render(this.scene, this.camera);
+
+    if (this.shouldExport) {
+      const link = document.createElement("a");
+      link.download = "Export.png";
+      link.href = this.renderer.domElement.toDataURL("image/png", 1);
+      link.target = "_blank";
+      link.click();
+      this.handleResize(); // Return to default resolution
+      this.shouldExport = false;
+      console.log('Exporting done')
+    }
     window.requestAnimationFrame(this.update);
   }
 
@@ -71,11 +85,13 @@ export default class App {
   }
 
   resizeTimeout: number|undefined;
-  handleResize() {
+  handleResize(overrideBounds: DOMRect|undefined) {
     if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
 
     this.resizeTimeout = setTimeout(() => {
-      const bounds = this.element.getBoundingClientRect();
+      console.log(overrideBounds);
+      const bounds = overrideBounds || this.element.getBoundingClientRect();
+      console.log(`Resizing to ${bounds.width}x${bounds.height}`);
       const aspect = bounds.width / bounds.height;
       console.log(aspect);
       this.camera.left = -aspect * halfDims.x;
@@ -88,5 +104,19 @@ export default class App {
       this.renderer.setSize(bounds.width, bounds.height);
       this.resizeTimeout = undefined;
     }, 200)
+  }
+
+  getExportFunction() {
+    return this.export.bind(this)
+  }
+
+  export(dimensions: number) {
+    const dpr = window.devicePixelRatio;
+    const bounds = new DOMRect(0, 0, dimensions / dpr, dimensions / dpr);
+    this.handleResize(bounds);
+    setTimeout(() => {
+      this.shouldExport = true;
+    }, 300)
+    // Rest handled in the `update` loop.
   }
 }

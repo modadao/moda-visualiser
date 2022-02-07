@@ -1,5 +1,9 @@
 import App from './App'
 import exampleAbientTechno from './data/example_ambient_techno.json';
+import exampleRock from './data/example_rock.json';
+import example1Min from './data/example_1_min.json';
+import example1MinNoGap from './data/example_1_min_no_gap.json';
+import example2Min from './data/example_2_min.json';
 import { IFingerprint } from './types';
 import gui from './helpers/gui';
 
@@ -42,6 +46,11 @@ export interface ISettings {
     rings: boolean,
   },
   update: () => void,
+  export: {
+    dimensions: number,
+    _exportFunction: ((dimensions: number) => void)|undefined,
+    export: () => void,
+  }
 }
 const settings: ISettings = {
   points: {
@@ -53,10 +62,10 @@ const settings: ISettings = {
   featurePoints: {
     count: 7,
     extraPer: 3000,
-    sizeSmall: 0.15,
-    sizeMed: 0.2,
-    sizeMdLg: 0.3,
-    sizeLarge: 0.5,
+    sizeSmall: 0.25,
+    sizeMed: 0.3,
+    sizeMdLg: 0.4,
+    sizeLarge: 0.6,
   },
   color: {
     useCustomColorGradient: false,
@@ -87,6 +96,15 @@ const settings: ISettings = {
   update: () => {
     if (app && container && lastContent) {
       app.refresh(lastContent, settings);
+    }
+  },
+  export: {
+    dimensions: 1024,
+    _exportFunction: undefined,
+    export: () => {
+      if (settings.export._exportFunction) {
+        settings.export._exportFunction(settings.export.dimensions);
+      }
     }
   }
 }
@@ -161,41 +179,16 @@ featurePoints.onChange(handleSettingsChange);
 
 gui.add(settings, 'update');
 
+const exportFolder = gui.addFolder('Export');
+exportFolder.add(settings.export, 'dimensions', 256, 4096, 256);
+exportFolder.add(settings.export, 'export');
 
 let lastContent: undefined|IFingerprint;
-const textarea = document.getElementById('fingerprint');
-if (textarea) {
-  textarea.addEventListener('change', (ev) => {
-    if (app && container && textarea.textContent !== null) {
-      lastContent = JSON.parse(textarea.textContent) as IFingerprint;
-      app.refresh(lastContent, settings);
-    }
-  })
-}
-
-const lookup = {
-  ['Ambient Techno'] : exampleAbientTechno,
-}
-
-const updateFingerprint = (fingerprintJson: string) => {
-    if (textarea) {
-      textarea.innerText = fingerprintJson;
-      const event = new Event('change', { bubbles: true });
-      textarea.dispatchEvent(event);
-    }
-}
-updateFingerprint(JSON.stringify(exampleAbientTechno));
-
-document.querySelectorAll('.example-button').forEach(el => {
-  el.addEventListener('click', (e) => {
-    const d = lookup[el.innerHTML]
-    updateFingerprint(JSON.stringify(d));
-  })
-})
 let app: App|undefined;
 if (container) {
   lastContent = exampleAbientTechno as unknown as IFingerprint;
   app = new App(container, lastContent, settings);
+  settings.export._exportFunction = app.getExportFunction();
 }
 
 const dragOverlay = document.querySelector('#dragoverlay') as HTMLElement;
@@ -258,3 +251,37 @@ if (dragTarget) {
     updateDragOverlay();
   }, false)
 }
+
+const textarea = document.getElementById('fingerprint');
+if (textarea) {
+  textarea.addEventListener('change', (ev) => {
+    if (app && container && textarea.textContent !== null) {
+      lastContent = JSON.parse(textarea.textContent) as IFingerprint;
+      app.refresh(lastContent, settings);
+    }
+  })
+}
+
+const lookup = {
+  ['Matt\'s Sample'] : exampleAbientTechno,
+  ['DDT'] : exampleRock,
+  ['1 Min (with silence)'] : example1Min,
+  ['1 Min'] : example1MinNoGap,
+  ['2 Min'] : example2Min,
+}
+
+const updateFingerprint = (fingerprintJson: string) => {
+    if (textarea) {
+      textarea.innerText = fingerprintJson;
+      const event = new Event('change', { bubbles: true });
+      textarea.dispatchEvent(event);
+    }
+}
+updateFingerprint(JSON.stringify(exampleAbientTechno));
+
+document.querySelectorAll('.example-button').forEach(el => {
+  el.addEventListener('click', (e) => {
+    const d = lookup[el.innerHTML]
+    updateFingerprint(JSON.stringify(d));
+  })
+})
