@@ -127,7 +127,6 @@ export default class RadialSphere extends Object3D {
 
       // Build main points, feature points, outlines
       (async () => {
-        console.log(' ~~~ Building main points + outlines ~~~')
         const outlineM = new MeshBasicMaterial({
           color: 0xffffff,
           side: BackSide,
@@ -177,7 +176,6 @@ export default class RadialSphere extends Object3D {
         this.points = points;
         this.outlines = outlines;
         this.add(this.points, this.outlines);
-        console.log(points, outlines)
       })();
 
       // Bezier through feature points
@@ -257,7 +255,6 @@ export default class RadialSphere extends Object3D {
             tempColor.lerp(nextFeaturePoint.color, thisProgress)
             colorsData.push(...tempColor.toArray());
           }
-          console.log(posAttributeLength, colorsData.length);
           tubeGeometry.setAttribute('color', new BufferAttribute(new Float32Array(colorsData), 3));
           const curveObject = new Mesh( tubeGeometry, material );
           retVal.push(curveObject);
@@ -274,7 +271,6 @@ export default class RadialSphere extends Object3D {
       (() => {
         const chunkedPoints = chunk(pickRandom(coords, Math.min(10, coords.length)), 5);
         chunkedPoints.forEach(points => {
-          console.log('Generating bezier on points', points)
           if (points.length < 4) return;
           const positions = points.map(p => {
             // Position
@@ -304,7 +300,6 @@ export default class RadialSphere extends Object3D {
         this.rings.forEach(r => r.visible = settings.sceneElements.rings);
         this.innerRing.visible = settings.sceneElements.rings;
         this.barGraph.visible = settings.sceneElements.circumferenceGraph;
-        console.log(this);
       }
       updateVisibility();
 

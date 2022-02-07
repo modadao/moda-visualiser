@@ -128,13 +128,13 @@ export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDer
     const bucketIndex = Math.floor(el.x / segmentSize);
     segmentedPoints[bucketIndex].push(el);
   });
+  console.log(segmentedPoints);
 
   const distance2d = (v1: {x: number, y:number}, v2: {x: number, y: number}) => {
     return Math.sqrt(Math.pow(v1.x - v2.x, 2) + Math.pow(v1.y - v2.y, 2));
   }
   // Find the densest coord in each segment
   const maxDist = Math.max(segmentSize, height);
-  console.log(segmentedPoints);
   let offset = 0;
   let mostDenseCoords = segmentedPoints.map(( points, i ) => {
     console.log(`Bucket ${i} has ${points.length} points`)
@@ -151,7 +151,9 @@ export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDer
     const res = { index: offset + mostDenseIndex, density: mostDense }
     offset += points.length;
     return res;
-  });
+  }).filter(c => Number.isFinite(c.density)); // Filter out invalid points 
+
+  // Normalize it between 0 and 1
   const minDense = Math.min(...mostDenseCoords.map(c => c.density));
   const maxDense = Math.max(...mostDenseCoords.map(c => c.density));
   mostDenseCoords = mostDenseCoords.map(c => {
@@ -160,8 +162,6 @@ export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDer
       density: MathUtils.mapLinear(c.density, minDense, maxDense, 0.05, 1),
     }
   })
-  console.log(mostDenseCoords);
-  console.log(coords.length);
 
   const result =  { ...fingerprint,
     coords: coords.map((el, i) => {
@@ -178,7 +178,6 @@ export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDer
     floatHash,
   }
 
-  console.log('Derived data result: ', result);
   return result;
 }
 
@@ -280,7 +279,6 @@ export class ImgSampler {
     if (this.loading) throw new Error('Cant get pixel as image is still loading.');
     if (!this.ctx) throw new Error('Image CTX not ready.')
     const sx = Math.floor(x * this.img.width);
-    console.log(sx);
     const sy = Math.floor(y * this.img.height);
     const d = this.ctx.getImageData(sx, sy, 1, 1);
     const pixels = Float32Array.from(d.data).map(v => v/255);
