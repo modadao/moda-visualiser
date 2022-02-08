@@ -113,6 +113,8 @@ export default class App {
   export(dimensions: number) {
     const dpr = window.devicePixelRatio;
     const bounds = new DOMRect(0, 0, dimensions / dpr, dimensions / dpr);
+    this.camera.zoom = 0.45;
+    this.camera.position.set(0, 50, 0);
     this.handleResize(bounds);
     setTimeout(() => {
       this.shouldExport = true;
