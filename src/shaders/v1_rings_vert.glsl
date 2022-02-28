@@ -21,7 +21,6 @@ float atan2(in float y, in float x)
 }
 
 void main() {
-  vColor = vec3(0.5, 0.5, 0.5);
 
   vec4 mPosition = modelMatrix * vec4( position, 1.0 );
   vec3 alteredPos = mPosition.xyz;
@@ -29,6 +28,8 @@ void main() {
   float l = length(alteredPos);
   // float n = (amplitude) * clamp(l - 4., 0., 10.) / 10.;
   float n = (amplitude) * clamp(distance(l, 4.), 0., 2.) / 2.;
+  float lumin = 0.5 + (n * 0.3);
+  vColor = vec3(lumin);
 
   gl_Position = projectionMatrix * viewMatrix * vec4(alteredPos + vec3(0., n, 0.), 1.);
 
