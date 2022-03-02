@@ -1,0 +1,33 @@
+{
+  "name": "moda-visualiser",
+  "private": true,
+  "version": "0.0.1",
+  "files": [
+    "dist"
+  ],
+  "types": "./dist/types.d.ts",
+  "module": "./dist/moda-visualiser.es.js",
+  "exports": {
+    ".": {
+      "import": "./dist/moda-visualiser.es.js"
+    }
+  },
+  "scripts": {
+    "dev": "nodemon --config nodemon.json",
+    "build": "tsc && vite build",
+    "build:bundle-types": "dts-bundle-generator -o dist/types.d.ts dist/src/main.d.ts",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@types/three": "^0.137.0",
+    "dts-bundle-generator": "^6.5.0",
+    "nodemon": "^2.0.15",
+    "typescript": "^4.5.4",
+    "vite": "^2.8.0",
+    "vite-plugin-dts": "^0.9.9",
+    "vite-plugin-glsl": "^0.0.9"
+  },
+  "dependencies": {
+    "three": "^0.138.1"
+  }
+}
