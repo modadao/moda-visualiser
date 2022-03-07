@@ -7,7 +7,7 @@ function App() {
   console.log('app component')
 
   // Mount/dispose and remove visualiser on mount/unmount
-  let visualiser: ModaVisualiser|undefined;
+  let visualiser: ModaVisualiser|undefined = undefined;
   useEffect(() => {
     if (container.current) {
       visualiser = new ModaVisualiser(container.current);
@@ -20,6 +20,12 @@ function App() {
       }
     }
   }, [])
+
+  const handleExport = () => {
+    if (visualiser) {
+        (visualiser as ModaVisualiser).export(1024);
+      }
+  }
 
   // Form state and submit to update visualiser
   const [address, setAddress] = useState('0x79c73e62a810cc47f83de3b43a7b09daa1731bab');
@@ -48,6 +54,9 @@ function App() {
           <button type="submit">Fetch data</button>
         </div>
       </form>
+      <div>
+        <button onClick={handleExport}>Export</button>  
+      </div>
     </div>
   )
 }
