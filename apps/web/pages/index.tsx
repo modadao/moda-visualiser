@@ -11,7 +11,7 @@ function App() {
   useEffect(() => {
     if (container.current) {
       visualiser = new ModaVisualiser(container.current);
-      // visualiser.updateFingerprint(TestFingerprint);
+      visualiser.updateFingerprint(TestFingerprint);
     }
     return () => {
       if (visualiser) {

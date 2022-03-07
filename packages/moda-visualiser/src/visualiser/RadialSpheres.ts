@@ -1,5 +1,5 @@
 import { IDerivedFingerPrint } from "../types";
-import { bezierVector, chunk, customRandom, GradientSampler, pickRandom } from "../utils";
+import { bezierVector, chunk, customRandom, GradientSampler, ImgSampler, pickRandom } from "../utils";
 import { Vector3, Mesh, Object3D, LineBasicMaterial, ShaderMaterial, SphereBufferGeometry, Line, Vector2, Camera, TubeGeometry, MeshBasicMaterial, Curve, InstancedMesh, Matrix4, Quaternion, BackSide, MathUtils, CubicBezierCurve3, Color, BufferAttribute } from "three";
 import FragShader from '../shaders/spheres_frag.glsl';
 import VertShader from '../shaders/spheres_vert.glsl';
@@ -73,8 +73,7 @@ export default class RadialSphere extends Object3D {
 
     const { sin, cos, floor, max, pow } = Math;
     const [ width, height ] = fingerprint.shape;
-    // const colorSampler = settings.color.useCustomColorGradient ? new GradientSampler(settings.color.custom) : new ImgSampler(ColorSchemeImg);
-    const colorSampler = new GradientSampler(settings.color.custom);
+    const colorSampler = settings.color.useCustomColorGradient ? new GradientSampler(settings.color.custom) : new ImgSampler(settings.color.colorTextureSrc);
 
     const fingerprintBaseVariation = MathUtils.mapLinear(sin(fingerprint.floatHash), 0, 1, 0.7, 1.2);
     const fingerprintVelocityVariation = MathUtils.mapLinear(sin(fingerprint.floatHash), 0, 1, 0.7, 1.2);
@@ -83,8 +82,8 @@ export default class RadialSphere extends Object3D {
     const variationScalar = baseVariation * fingerprintBaseVariation;
     const velocityScalar = velocityVariation * fingerprintVelocityVariation;
     (async () => {
-      // if (colorSampler instanceof ImgSampler)
-      //   await colorSampler.loading;
+      if (colorSampler instanceof ImgSampler)
+        await colorSampler.loading;
 
       const scale = (500 + max(-pow(height, 0.8), -pow(height, 0.7)-100, -pow(height, 0.6)-160)) / 400 * 0.15
       const coords = fingerprint.coords.map(p => {
