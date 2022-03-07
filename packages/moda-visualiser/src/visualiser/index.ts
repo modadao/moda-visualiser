@@ -23,7 +23,7 @@ export interface ISettings {
     sizeLarge: number,
   },
   color: {
-    useCustomColorGradient: false,
+    colorschemeMethod: 'gradient'|'texture',
     colorTextureSrc: string,
     custom: Record<string, string>,
     baseVariation: number,
@@ -62,7 +62,7 @@ const defaults: ISettings = {
     sizeLarge: 0.6,
   },
   color: {
-    useCustomColorGradient: false,
+    colorschemeMethod: 'texture',
     colorTextureSrc: COLOR_SCHEME_IMG,
     custom: {
       '1': '#FF2F42',
@@ -270,14 +270,31 @@ export default class ModaVisualiser {
   }
 
   /**
+   * @param  method Sets the colorscheme method to source colours from either a texture (setColorsTexture) or an array of colors (setColors).
+   * @default 'texture'
+   */
+  setColorschemeMethod(method: 'texture'|'gradient') {
+    this.settings.color.colorschemeMethod = method;
+    this.updateSettings(this.settings);
+  }
+
+  /**
    * @description Set a custom colour scheme using an array of hex strings.
    */
-  setColours(colors = ['#ff2f42', '#ffa71f', '#00f5c4', '#b44cf8']) {
+  setColors(colors = ['#ff2f42', '#ffa71f', '#00f5c4', '#b44cf8']) {
     const custom = colors.reduce((acc: Record<string, string>, el: string, i: number) => {
       acc[i.toString()] = el;
       return acc;
     }, {} as Record<string, string>);
     this.settings.color.custom = custom;
+    this.updateSettings(this.settings);
+  }
+
+  /**
+   * @description Use a texture as a colour gradient.  Only enabled when setColorschemeMethod is 'texture'.
+   */
+  setColorsTexture(src: string) {
+    this.settings.color.colorTextureSrc = src;
     this.updateSettings(this.settings);
   }
 

@@ -73,7 +73,7 @@ export default class RadialSphere extends Object3D {
 
     const { sin, cos, floor, max, pow } = Math;
     const [ width, height ] = fingerprint.shape;
-    const colorSampler = settings.color.useCustomColorGradient ? new GradientSampler(settings.color.custom) : new ImgSampler(settings.color.colorTextureSrc);
+    const colorSampler = settings.color.colorschemeMethod === 'gradient' ? new GradientSampler(settings.color.custom) : new ImgSampler(settings.color.colorTextureSrc);
 
     const fingerprintBaseVariation = MathUtils.mapLinear(sin(fingerprint.floatHash), 0, 1, 0.7, 1.2);
     const fingerprintVelocityVariation = MathUtils.mapLinear(sin(fingerprint.floatHash), 0, 1, 0.7, 1.2);
