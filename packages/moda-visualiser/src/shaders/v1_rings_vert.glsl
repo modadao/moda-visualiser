@@ -29,8 +29,7 @@ void main() {
   // float n = (amplitude) * clamp(l - 4., 0., 10.) / 10.;
   float n = (amplitude) * clamp(distance(l, 4.), 0., 2.) / 2.;
   float lumin = 0.5 + (n * 0.3);
-  vColor = vec3(lumin);
+  vColor = vec3(0.6, 0.6, 0.6);
 
   gl_Position = projectionMatrix * viewMatrix * vec4(alteredPos + vec3(0., n, 0.), 1.);
-
 }
