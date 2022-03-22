@@ -24,6 +24,9 @@
     "@types/react": "17.0.37",
     "typescript": "^4.5.3"
   },
+  "bundledDependencies": [
+    "moda-visualiser"
+  ],
   "resolutions": {
     "@types/react": "^17.0.37"
   }

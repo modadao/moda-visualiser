@@ -4,7 +4,7 @@ export interface IPayloadCoordinates {
 }
 
 export interface IFingerprint {
-  shape: [number, number];
+  shape: number[];
   coords: IPayloadCoordinates,
 }
 

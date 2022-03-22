@@ -10,7 +10,7 @@ module.exports = defineConfig({
   build: {
     minify: true,
     lib: {
-      entry: path.resolve(__dirname, 'src/main.ts'),
+      entry: path.resolve(__dirname, 'src/index.ts'),
       name: 'ModaVisualiser',
       fileName: (format) => `moda-visualiser.${format}.js`
     },

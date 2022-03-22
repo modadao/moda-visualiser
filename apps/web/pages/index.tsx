@@ -1,5 +1,5 @@
 import React, { FormEventHandler, useEffect, useRef, useState } from 'react'
-import ModaVisualiser from 'moda-visualiser';
+import ModaVisualiser, { IFingerprint } from 'moda-visualiser';
 import TestFingerprint from '../data/test.json';
 
 function App() {
@@ -11,7 +11,7 @@ function App() {
   useEffect(() => {
     if (container.current) {
       visualiser = new ModaVisualiser(container.current);
-      visualiser.updateFingerprint(TestFingerprint);
+      visualiser.updateFingerprint(TestFingerprint as IFingerprint);
     }
     return () => {
       if (visualiser) {

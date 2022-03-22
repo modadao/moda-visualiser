@@ -164,7 +164,8 @@ export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDer
     }
   })
 
-  const result =  { ...fingerprint,
+  const result: IDerivedFingerPrint =  { ...fingerprint,
+    shape: fingerprint.shape as [number, number],
     coords: coords.map((el, i) => {
       const featurePoint = mostDenseCoords.find(dc => dc.index === i);
       return {
