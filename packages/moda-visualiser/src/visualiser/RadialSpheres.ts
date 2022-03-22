@@ -87,11 +87,11 @@ export default class RadialSphere extends Object3D {
 
       const scale = (500 + max(-pow(height, 0.8), -pow(height, 0.7)-100, -pow(height, 0.6)-160)) / 400 * 0.15
       const coords = fingerprint.coords.map(p => {
-        const theta = (p.x / height) * Math.PI * 2;
+        const theta = (p.x / width) * Math.PI * 2;
         const x = sin(theta);
         const z = cos(theta);
         const step = floor(theta / (Math.PI * 2));
-        const amp = p.y / width * 1.5;
+        const amp = p.y / height * 1.5;
         const r = step + 1.5 + amp;
 
         const s = (Math.abs(p.g - 0.5) + scale) * scale;

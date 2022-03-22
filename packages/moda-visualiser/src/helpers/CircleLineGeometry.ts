@@ -13,7 +13,7 @@ export default class CircleLineGeometry extends BufferGeometry {
     this.setAttribute( 'position', new BufferAttribute( verts, 3 ) );
 
     if (fingerprint) {
-      const [width] = fingerprint.shape;
+      const [_, width] = fingerprint.shape;
       const dist = (v1: number, v2: number) => Math.abs(v1 - v2);
       const amplitudes = new Array(segments).fill(0).map((_, i) => {
         const alpha = MathUtils.mapLinear(i, 0, segments, 0, width)

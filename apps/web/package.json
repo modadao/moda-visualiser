@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && next export",
     "start": "next start",
     "lint": "next lint"
   },
@@ -12,7 +12,6 @@
     "next": "12.0.8",
     "react": "17.0.2",
     "react-dom": "17.0.2",
-    "ui": "*",
     "moda-visualiser": "*"
   },
   "devDependencies": {
@@ -24,9 +23,6 @@
     "@types/react": "17.0.37",
     "typescript": "^4.5.3"
   },
-  "bundledDependencies": [
-    "moda-visualiser"
-  ],
   "resolutions": {
     "@types/react": "^17.0.37"
   }

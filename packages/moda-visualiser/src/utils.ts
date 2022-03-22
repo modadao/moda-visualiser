@@ -118,14 +118,14 @@ export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDer
   }
 
   // Split the coords into segments
-  const height = Math.max(...fingerprint.coords.y);
-  const width = Math.max(...fingerprint.coords.x);
+  const [ width, height ] = fingerprint.shape;
   console.log(width, height);
   const segmentSize = Math.floor(width / targetNumberOfFeatures + 1);
   console.log(segmentSize)
   const segmentedPoints: Array<Array<{x: number, y:number}>> = new Array(targetNumberOfFeatures).fill(0).map(() => []);
   coords.forEach(el => {
     const bucketIndex = Math.floor(el.x / segmentSize);
+    console.log(el.x, width)
     console.log(`${bucketIndex} / ${segmentedPoints.length}`)
     segmentedPoints[bucketIndex].push(el);
   });
