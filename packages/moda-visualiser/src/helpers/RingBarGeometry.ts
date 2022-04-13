@@ -9,7 +9,6 @@ export default class RingBarGeometry extends BufferGeometry {
     const points = fingerprint.coords.map((p, i) => {
       if (i % skip !== 0) return [];
       const theta = (p.x / width) * Math.PI * 2;
-      console.log(`t: ${theta}, i: ${i} ${p.x}/${width-1}`)
       const tx = sin(theta);
       const ty = cos(theta);
       return [

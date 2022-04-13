@@ -47,7 +47,6 @@ export const customRandom = {
 }
 
 export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDerivedFingerPrint => {
-  console.log('Deriving data from fingerprint')
   const coords = fingerprint.coords.x.map((x, i) => ({ x, y: fingerprint.coords.y[i] }))
   // Generate smoothed data
   const SMOOTH_RANGE = 40;
@@ -100,9 +99,8 @@ export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDer
   const floatHash = (hash / 2_147_483_647) * 0.5 + 0.5;
 
   const targetNumberOfFeatures = settings.featurePoints.count + Math.floor(coords.length / settings.featurePoints.extraPer);
-  console.log({targetNumberOfFeatures})
-  let features: number[] = [];
-  let featureLevels: number[] = [];
+  const features: number[] = [];
+  const featureLevels: number[] = [];
   for (let i = 0; i < targetNumberOfFeatures; i++) {
     let targetFeatureIndex = 0;
     let j = 0;
@@ -119,17 +117,12 @@ export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDer
 
   // Split the coords into segments
   const [ width, height ] = fingerprint.shape;
-  console.log(width, height);
   const segmentSize = Math.floor(width / targetNumberOfFeatures + 1);
-  console.log(segmentSize)
   const segmentedPoints: Array<Array<{x: number, y:number}>> = new Array(targetNumberOfFeatures).fill(0).map(() => []);
   coords.forEach(el => {
     const bucketIndex = Math.floor(el.x / segmentSize);
-    console.log(el.x, width)
-    console.log(`${bucketIndex} / ${segmentedPoints.length}`)
     segmentedPoints[bucketIndex].push(el);
   });
-  console.log(segmentedPoints);
 
   const distance2d = (v1: {x: number, y:number}, v2: {x: number, y: number}) => {
     return Math.sqrt(Math.pow(v1.x - v2.x, 2) + Math.pow(v1.y - v2.y, 2));
@@ -203,12 +196,18 @@ export const bezierVector = <T extends Vector>(A: T, B: T, C: T, D: T, t: number
   return tv1.clone() as T;
 }
 
+/**
+ * @template T - Type of array
+ * @param arr - Array that you'd like chunked
+ * @param size - The max size of each chunk
+ * @returns 2d chunked array.
+ */
 export const chunk = <T,>(arr: T[], size: number): T[][] => (
   arr.reduce((acc, e, i) => (i % size ? acc[acc.length - 1].push(e) : acc.push([e]), acc), [] as T[][])
 );
 
 export const pickRandom = <T>(arr: T[], count: number) => {
-  let indices = [] as number[];
+  const indices = [] as number[];
   for (let i = 0; i < count; i++) {
     let j = 0;
     let index = 0;
