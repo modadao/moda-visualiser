@@ -340,7 +340,6 @@ export default class ModaVisualiser {
 
   /**
    * @description Exports the next frame at a given dimension.
-   * @returns {any}
    */
   export(dimensions: number) {
     const dpr = window.devicePixelRatio;

@@ -3,20 +3,19 @@ import { bezierVector, chunk, customRandom, GradientSampler, ImgSampler, pickRan
 import { Vector3, Mesh, Object3D, LineBasicMaterial, ShaderMaterial, SphereBufferGeometry, Line, Vector2, Camera, TubeGeometry, MeshBasicMaterial, Curve, InstancedMesh, Matrix4, Quaternion, BackSide, MathUtils, CubicBezierCurve3, Color, BufferAttribute } from "three";
 import FragShader from '../shaders/spheres_frag.glsl';
 import VertShader from '../shaders/spheres_vert.glsl';
-import RingFragShader from '../shaders/v1_rings_frag.glsl';
-import RingVertShader from '../shaders/v1_rings_vert.glsl';
 import CircleLineGeometry from '../helpers/CircleLineGeometry';
 import RingBarGeometry from "../helpers/RingBarGeometry";
 import TubeShaderFrag from '../shaders/tube_frag.glsl';
 import TubeShaderVert from '../shaders/tube_vert.glsl';
 import { ISettings } from "../visualiser";
+import Rings from "./Rings";
 
 export default class RadialSphere extends Object3D {
   points: Mesh|undefined;
   outlines: Mesh|undefined;
   mainLines: Mesh[] = [];
   extraLines: Mesh[] = [];
-  rings: Line[] = [];
+  rings: Rings;
   innerRing: Line;
   barGraph: Line;
   floor: Mesh|undefined;
@@ -55,21 +54,10 @@ export default class RadialSphere extends Object3D {
     this.barGraph = ringBarLine;
     this.barGraph.visible = settings.sceneElements.circumferenceGraph;
 
-
-    const greyRing = l.clone();
-    const ringShaderMat = new ShaderMaterial({
-      vertexShader: RingVertShader,
-      fragmentShader: RingFragShader,
-    })
-    // @ts-ignore
-    greyRing.material = ringShaderMat;
-    new Array(20).fill(0).forEach((_, i) => {
-      const ring = greyRing.clone()
-      ring.scale.setScalar(4.0 + i * 0.3);
-      this.add(ring);
-      ring.visible = settings.sceneElements.rings;
-      this.rings.push(ring);
-    })
+    // Outer rings 
+    this.rings = new Rings(fingerprint, settings);
+    this.rings.rotateX(Math.PI / 2);
+    this.add(this.rings);
 
     const { sin, cos, floor, max, pow } = Math;
     const [ width, height ] = fingerprint.shape;
@@ -181,8 +169,8 @@ export default class RadialSphere extends Object3D {
         const next = isLast 
           ? firstPoint as Vector3 
           : points.reduce((acc, el) => {
-              return Math.abs(targetDist - cur.distanceTo(el)) < Math.abs(targetDist - cur.distanceTo(acc)) ? el : acc
-            }, points[0])
+            return Math.abs(targetDist - cur.distanceTo(el)) < Math.abs(targetDist - cur.distanceTo(acc)) ? el : acc
+          }, points[0])
         const remaining = points.filter(el => !el.equals(next));
 
         const nextDir = isLast
@@ -283,7 +271,7 @@ export default class RadialSphere extends Object3D {
         
         this.mainLines.forEach(l => l.visible = settings.sceneElements.mainBezier);
         this.extraLines.forEach(l => l.visible = settings.sceneElements.extraBeziers);
-        this.rings.forEach(r => r.visible = settings.sceneElements.rings);
+        this.rings.visible = settings.sceneElements.rings;
         this.innerRing.visible = settings.sceneElements.rings;
         this.barGraph.visible = settings.sceneElements.circumferenceGraph;
       }
