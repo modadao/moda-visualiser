@@ -22,6 +22,7 @@ export const buildAttribute = (length: number, itemSize: number, predicate: (i: 
   }
   return new BufferAttribute(array, itemSize);
 }
+
 export const customRandom = {
   seed: 49734321,
   setSeed(seed: number) {
@@ -46,6 +47,11 @@ export const customRandom = {
   },
 }
 
+/**
+  * @param fingerprint - The fingerprint from the MODA API
+  * @param settings - Settings object
+  * @returns A fingerprint with derived data
+  */
 export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDerivedFingerPrint => {
   const coords = fingerprint.coords.x.map((x, i) => ({ x, y: fingerprint.coords.y[i] }))
   // Generate smoothed data

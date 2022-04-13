@@ -1,45 +1,36 @@
-import { IDerivedFingerPrint } from "../types";
-import { bezierVector, chunk, customRandom, GradientSampler, ImgSampler, pickRandom } from "../utils";
-import { Vector3, Mesh, Object3D, LineBasicMaterial, ShaderMaterial, SphereBufferGeometry, Line, Vector2, Camera, TubeGeometry, MeshBasicMaterial, Curve, InstancedMesh, Matrix4, Quaternion, BackSide, MathUtils, CubicBezierCurve3, Color, BufferAttribute } from "three";
-import FragShader from '../shaders/spheres_frag.glsl';
-import VertShader from '../shaders/spheres_vert.glsl';
+import { IDerivedCoordinate, IDerivedFingerPrint } from "../types";
+import { chunk, customRandom, GradientSampler, ImgSampler, pickRandom } from "../utils";
+import { Vector3, Mesh, Object3D, LineBasicMaterial, ShaderMaterial, Line, Camera, TubeGeometry, Curve, Color, CubicBezierCurve3, BufferAttribute, MathUtils } from "three";
 import CircleLineGeometry from '../helpers/CircleLineGeometry';
-import RingBarGeometry from "../helpers/RingBarGeometry";
 import TubeShaderFrag from '../shaders/tube_frag.glsl';
 import TubeShaderVert from '../shaders/tube_vert.glsl';
 import { ISettings } from "../visualiser";
 import Rings from "./Rings";
+import RingBar from "./RingBar";
+import Spheres from "./Spheres";
+
+export interface IVisualiserCoordinate extends IDerivedCoordinate {
+  theta: number,
+  pos: Vector3,
+  scale: number,
+  smoothhash: number,
+  color: Color,
+}
 
 export default class RadialSphere extends Object3D {
-  points: Mesh|undefined;
+  points: Spheres|undefined;
   outlines: Mesh|undefined;
   mainLines: Mesh[] = [];
   extraLines: Mesh[] = [];
   rings: Rings;
   innerRing: Line;
-  barGraph: Line;
+  barGraph: RingBar;
   floor: Mesh|undefined;
   constructor(private camera: Camera, fingerprint: IDerivedFingerPrint, settings: ISettings) {
     super();
 
-    // const elementsFolder = gui.addFolder('Scene Elements');
-    // this.folder = elementsFolder;
-
-    const { sizeSmall, sizeMed, sizeMdLg, sizeLarge } = settings.featurePoints
-    const sizeBezierPoints = [
-      new Vector2(0, sizeSmall),
-      new Vector2(0.25, sizeMed),
-      new Vector2(0.5, sizeMdLg),
-      new Vector2(1, sizeLarge),
-    ];
-    const scaleSize = (t: number) => {
-      const [a, b, c, d] = sizeBezierPoints;
-      return bezierVector(a,b,c,d,t)
-    }
-
     // Add rings for flare
     const geo = new CircleLineGeometry(1, 512, fingerprint);
-    // const matGrey = new LineBasicMaterial({ color: 0x666666 });
     const matWhite = new LineBasicMaterial({ color: 0xdddddd });
     const l = new Line(geo, matWhite);
     this.innerRing = l;
@@ -47,110 +38,24 @@ export default class RadialSphere extends Object3D {
     l.scale.setScalar(1.2);
     this.add(l);
 
-    const ringBarGeo = new RingBarGeometry(3.22, fingerprint, 0.0013);
-    const ringBarLine = new Line(ringBarGeo, matWhite);
-    ringBarLine.rotateX(Math.PI / 2);
-    this.add(ringBarLine);
-    this.barGraph = ringBarLine;
+    // Inner bar graph
+    this.barGraph = new RingBar(fingerprint);
     this.barGraph.visible = settings.sceneElements.circumferenceGraph;
+    this.add(this.barGraph);
 
     // Outer rings 
     this.rings = new Rings(fingerprint, settings);
     this.rings.rotateX(Math.PI / 2);
     this.add(this.rings);
 
-    const { sin, cos, floor, max, pow } = Math;
-    const [ width, height ] = fingerprint.shape;
+    const [width, height] = fingerprint.shape;
+    const { sin, cos, floor } = Math;
     const colorSampler = settings.color.colorschemeMethod === 'gradient' ? new GradientSampler(settings.color.custom) : new ImgSampler(settings.color.colorTextureSrc);
-
-    const fingerprintBaseVariation = MathUtils.mapLinear(sin(fingerprint.floatHash), 0, 1, 0.7, 1.2);
-    const fingerprintVelocityVariation = MathUtils.mapLinear(sin(fingerprint.floatHash), 0, 1, 0.7, 1.2);
-
-    const { baseVariation, velocityVariation } = settings.color;
-    const variationScalar = baseVariation * fingerprintBaseVariation;
-    const velocityScalar = velocityVariation * fingerprintVelocityVariation;
     (async () => {
-      if (colorSampler instanceof ImgSampler)
-        await colorSampler.loading;
+      const coords = await this.calculateCoords(fingerprint, settings, colorSampler);
 
-      const scale = (500 + max(-pow(height, 0.8), -pow(height, 0.7)-100, -pow(height, 0.6)-160)) / 400 * 0.15
-      const coords = fingerprint.coords.map(p => {
-        const theta = (p.x / width) * Math.PI * 2;
-        const x = sin(theta);
-        const z = cos(theta);
-        const step = floor(theta / (Math.PI * 2));
-        const amp = p.y / height * 1.5;
-        const r = step + 1.5 + amp;
-
-        const s = (Math.abs(p.g - 0.5) + scale) * scale;
-
-        let smoothhash = (fingerprint.floatHash + sin(theta + fingerprint.floatHash * Math.PI) * variationScalar + p.g * velocityScalar) % 1;
-        while(smoothhash < 0) smoothhash += 1;
-
-        const color = colorSampler.getPixel(smoothhash);
-
-        return {
-          ...p,
-          theta,
-          pos: new Vector3(x * r, 0, z * r),
-          scale: s,
-          smoothhash,
-          color,
-        }
-      });
-
-      // Build main points, feature points, outlines
-      (async () => {
-        const outlineM = new MeshBasicMaterial({
-          color: 0xffffff,
-          side: BackSide,
-          depthWrite: false,
-        })
-
-        // Build geometry 
-        const g = new SphereBufferGeometry(1);
-        const m = new ShaderMaterial({
-          fragmentShader: FragShader,
-          vertexShader: VertShader,
-          uniforms: {
-            u_innerColorMultiplier: { value: 2.0, },
-            u_outerColorMultiplier: { value: 1, },
-            u_cameraDirection: { value: new Vector3() },
-          }
-        })
-
-        const points = new InstancedMesh(g, m, coords.length);
-        const outlines = new InstancedMesh(g, outlineM, coords.length);
-
-        const mat4 = new Matrix4();
-        const rot = new Quaternion();
-        const scale = new Vector3();
-
-        const { outlineSize, outlineMultiplier, outlineAdd, innerGlow } = settings.points;
-        coords.forEach((p, i) => {
-          // Set transform of point
-          if (p.featureLevel === 0) {
-            scale.setScalar(p.scale);
-          } else {
-            scale.setScalar(scaleSize(p.featureLevel).y);
-          }
-          mat4.compose(p.pos, rot, scale);
-          mat4.elements[15] = p.featureLevel * innerGlow;
-          points.setMatrixAt(i, mat4);
-          // Set transfomr of outline
-          scale.setScalar(scale.x + outlineSize);
-          mat4.compose(p.pos, rot, scale);
-          outlines.setMatrixAt(i, mat4);
-
-          // Set colour of point
-          points.setColorAt(i, p.color);
-          outlines.setColorAt(i, p.color.clone().multiplyScalar(outlineMultiplier).addScalar(outlineAdd));
-        })
-
-        this.points = points;
-        this.outlines = outlines;
-        this.add(this.points, this.outlines);
-      })();
+      this.points = new Spheres(fingerprint, settings, coords);
+      this.add(this, this.points);
 
       // Bezier through feature points
       const featurePoints = coords.filter(p => p.featureLevel !== 0);
@@ -290,8 +195,48 @@ export default class RadialSphere extends Object3D {
     const dir = new Vector3();
     this.camera.updateMatrixWorld();
     this.camera.getWorldDirection(dir);
-    if (this.points)
-      (this.points.material as ShaderMaterial).uniforms.u_cameraDirection.value = dir;
+    if (this.points) this.points.setCameraDirection(dir);
+  }
+
+  private async calculateCoords(fingerprint: IDerivedFingerPrint, settings: ISettings, colorSampler: ImgSampler|GradientSampler): Promise<IVisualiserCoordinate[]> {
+    const { sin, cos, floor, max, pow } = Math;
+    const [ width, height ] = fingerprint.shape;
+
+    const fingerprintBaseVariation = MathUtils.mapLinear(sin(fingerprint.floatHash), 0, 1, 0.7, 1.2);
+    const fingerprintVelocityVariation = MathUtils.mapLinear(sin(fingerprint.floatHash), 0, 1, 0.7, 1.2);
+
+    const { baseVariation, velocityVariation } = settings.color;
+    const variationScalar = baseVariation * fingerprintBaseVariation;
+    const velocityScalar = velocityVariation * fingerprintVelocityVariation;
+    if (colorSampler instanceof ImgSampler)
+      await colorSampler.loading;
+
+    const scale = (500 + max(-pow(height, 0.8), -pow(height, 0.7)-100, -pow(height, 0.6)-160)) / 400 * 0.15
+    const coords = fingerprint.coords.map(p => {
+      const theta = (p.x / width) * Math.PI * 2;
+      const x = sin(theta);
+      const z = cos(theta);
+      const step = floor(theta / (Math.PI * 2));
+      const amp = p.y / height * 1.5;
+      const r = step + 1.5 + amp;
+
+      const s = (Math.abs(p.g - 0.5) + scale) * scale;
+
+      let smoothhash = (fingerprint.floatHash + sin(theta + fingerprint.floatHash * Math.PI) * variationScalar + p.g * velocityScalar) % 1;
+      while(smoothhash < 0) smoothhash += 1;
+
+      const color = colorSampler.getPixel(smoothhash);
+
+      return {
+        ...p,
+        theta,
+        pos: new Vector3(x * r, 0, z * r),
+        scale: s,
+        smoothhash,
+        color,
+      }
+    })
+    return coords;
   }
 
   dispose() {
