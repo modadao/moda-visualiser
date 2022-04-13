@@ -1,5 +1,6 @@
 import React, { FormEventHandler, useEffect, useRef, useState } from 'react'
 import ModaVisualiser, { IFingerprint } from 'moda-visualiser';
+import Song from '../data/midtown.mp3';
 
 function App() {
   const container = useRef(null);
@@ -28,13 +29,15 @@ function App() {
   // Form state and submit to update visualiser
   const [address, setAddress] = useState('0x79c73e62a810cc47f83de3b43a7b09daa1731bab');
   const [id, setId] = useState('0xd7a297382315cb9e956ee85d078619899e6c72e87038a53715bf5d91319b279e');
-  const handleSubmit = (e?: React.FormEvent<HTMLFormElement>) => {
-    console.log('Handling form submit')
-    if (visualiser) {
-      visualiser.updateFingerprintFromApi(address, id);
-    }
+  const handleSubmit = async (e?: React.FormEvent<HTMLFormElement>) => {
     if (e)
       e.preventDefault();
+    console.log('Handling form submit')
+    if (visualiser) {
+      const response = await fetch(`http://206.189.47.33/?address=${address}&id=${id}`)
+      const data = await response.json() as IFingerprint;
+      visualiser.updateFingerprint(data, Song);
+    }
   }
   return (
     <div className="App">

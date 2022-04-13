@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 import { IDerivedFingerPrint, IFingerprint } from "../types";
 import { deriveData } from "../utils";
+import AudioManager from "./AudioAnalyser";
 import RadialSphere from "./RadialSpheres";
 
 const COLOR_SCHEME_IMG = ' data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/4gIoSUNDX1BST0ZJTEUAAQEAAAIYAAAAAAQwAABtbnRyUkdCIFhZWiAAAAAAAAAAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAAHRyWFlaAAABZAAAABRnWFlaAAABeAAAABRiWFlaAAABjAAAABRyVFJDAAABoAAAAChnVFJDAAABoAAAAChiVFJDAAABoAAAACh3dHB0AAAByAAAABRjcHJ0AAAB3AAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAFgAAAAcAHMAUgBHAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFhZWiAAAAAAAABvogAAOPUAAAOQWFlaIAAAAAAAAGKZAAC3hQAAGNpYWVogAAAAAAAAJKAAAA+EAAC2z3BhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABYWVogAAAAAAAA9tYAAQAAAADTLW1sdWMAAAAAAAAAAQAAAAxlblVTAAAAIAAAABwARwBvAG8AZwBsAGUAIABJAG4AYwAuACAAMgAwADEANv/bAEMACgcHCAcGCggICAsKCgsOGBAODQ0OHRUWERgjHyUkIh8iISYrNy8mKTQpISIwQTE0OTs+Pj4lLkRJQzxINz0+O//bAEMBCgsLDg0OHBAQHDsoIig7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7O//AABEIAAoAgAMBIgACEQEDEQH/xAAYAAEBAQEBAAAAAAAAAAAAAAAEAwUBAv/EACAQAAIBAwUBAQAAAAAAAAAAAAABMQIDBAUREiEyQYH/xAAWAQEBAQAAAAAAAAAAAAAAAAAFBgT/xAAcEQACAwADAQAAAAAAAAAAAAAAMQIDBAEFM0H/2gAMAwEAAhEDEQA/APAqxKBi7Eonri8mjWxktkMoS5A8aENtz+BVoVaxVkuoIWS6gKmwDaRuB6pEXA9UmmhkppZyiS7S4EKPRaryWvW/A2LA5aXEwM1Sb+X5ZgZv0tMiNlLMTIQXbsXkegrkcgiiyGlp67G1g9OgZWBdz4SKTH68H//Z'
@@ -107,6 +108,8 @@ export default class ModaVisualiser {
   shouldExport = false;
   exportDimensions = 0;
 
+  audioManager: AudioManager;
+
   constructor(public element: HTMLElement) {
     this.renderer = new WebGLRenderer({
       antialias: true,
@@ -125,6 +128,8 @@ export default class ModaVisualiser {
 
     this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
 
+    this.audioManager = new AudioManager(this.camera, this.scene);
+
     this.startAnimation();
   }
 
@@ -142,8 +147,13 @@ export default class ModaVisualiser {
 
   private update() {
     this.orbitControls.update()
-    if (this.radialSpheres)
+
+    const audioFrame = this.audioManager.getAudioFrame();
+    if (this.radialSpheres) {
+      if (audioFrame.ready) this.radialSpheres.handleAudio(audioFrame);
       this.radialSpheres.update();
+    }
+
     this.renderer.render(this.scene, this.camera);
 
     if (this.shouldExport) {
@@ -184,23 +194,13 @@ export default class ModaVisualiser {
   /**
    * @description Updates the visualisation with a new fingerprint
    */
-  updateFingerprint(fingerprint: IFingerprint) {
+  updateFingerprint(fingerprint: IFingerprint, audioPath: string) {
     this.scene.clear();
     if (this.radialSpheres)
       this.radialSpheres.dispose();
     const derivedFingerprint = deriveData(fingerprint, this.settings);
     this.buildScene(derivedFingerprint, this.settings);
-  }
-
-  /**
-   * @description Fetches the data from the MODA api and updates the visualisation.
-   */
-  async updateFingerprintFromApi(address: string, id: string) {
-    console.log('updating figerprint')
-    const response = await fetch(`http://206.189.47.33/?address=${address}&id=${id}`)
-    const data = await response.json() as IFingerprint;
-    console.log(data);
-    this.updateFingerprint(data);
+    this.audioManager.load(audioPath);
   }
 
   /**

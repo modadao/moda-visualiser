@@ -1,6 +1,7 @@
 import { Line, LineBasicMaterial, Object3D } from "three"
 import RingBarGeometry from "../helpers/RingBarGeometry";
 import { IDerivedFingerPrint } from "../types";
+import { IAudioFrame } from "./AudioAnalyser";
 import IAudioReactive from "./ReactiveObject";
 
 export default class RingBar extends Object3D implements IAudioReactive {
@@ -14,7 +15,7 @@ export default class RingBar extends Object3D implements IAudioReactive {
     this.add(ringBarLine);
   }
 
-  handleAudio() {
-    console.log('handling audio')
-  }
+  // @ts-expect-error;
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  handleAudio(frame: IAudioFrame) { }
 }

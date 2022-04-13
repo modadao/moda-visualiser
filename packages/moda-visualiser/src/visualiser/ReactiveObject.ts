@@ -1,4 +1,5 @@
+import { IAudioFrame } from "./AudioAnalyser";
 
 export default interface IAudioReactive {
-  handleAudio(): void
+  handleAudio(frame: IAudioFrame): void
 }

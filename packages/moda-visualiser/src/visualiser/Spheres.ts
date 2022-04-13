@@ -6,6 +6,7 @@ import FragShader from '../shaders/spheres_frag.glsl';
 import VertShader from '../shaders/spheres_vert.glsl';
 import { IVisualiserCoordinate } from "./RadialSpheres";
 import { bezierVector } from "../utils";
+import { IAudioFrame } from "./AudioAnalyser";
 
 export default class Spheres extends Object3D implements IAudioReactive {
   points: InstancedMesh;
@@ -78,7 +79,9 @@ export default class Spheres extends Object3D implements IAudioReactive {
     (this.points.material as ShaderMaterial).uniforms.u_cameraDirection.value = v;
   }
 
-  handleAudio() {
-    console.log('handling audio')
+  // @ts-expect-error; 
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  handleAudio(frame: IAudioFrame) {
+    console.log(frame)
   }
 }

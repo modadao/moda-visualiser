@@ -4,6 +4,7 @@ import CircleLineGeometry from "../helpers/CircleLineGeometry";
 import RingFragShader from '../shaders/v1_rings_frag.glsl';
 import RingVertShader from '../shaders/v1_rings_vert.glsl';
 import { IDerivedFingerPrint } from "../types";
+import { IAudioFrame } from "./AudioAnalyser";
 import IAudioReactive from "./ReactiveObject";
 
 export default class Rings extends Object3D implements IAudioReactive {
@@ -25,7 +26,7 @@ export default class Rings extends Object3D implements IAudioReactive {
     })
   }
 
-  handleAudio() {
-    console.log('handling audio')
-  }
+  // @ts-expect-error; 
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  handleAudio(frame: IAudioFrame) { }
 }

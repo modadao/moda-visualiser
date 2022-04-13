@@ -7,6 +7,10 @@ module.exports = withTM({
       test: /\.glsl/,
       type: "asset/source",
     })
+    config.module.rules.push({
+      test: /\.mp3/,
+      type: "asset/resource",
+    })
     return config
   },
 });
