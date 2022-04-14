@@ -16,7 +16,8 @@ export default class AudioManager {
   analyser: AudioAnalyser|undefined;
   constructor(
     public camera: Camera,
-    public scene: Scene
+    public scene: Scene,
+    public fftSize = 64
   ) {
     document.body.addEventListener('click', () => {
       console.log('Creating audio listener')
@@ -25,8 +26,11 @@ export default class AudioManager {
       this.camera.add(this.listener);
       this.scene.add(this.song);
     }, { once: true })
+
+    this.fft = new Uint8Array(fftSize).fill(0);
   }
 
+  interval: number|undefined;
   load(path: string) {
     if (!this.listener || !this.song) {
       console.warn('click on page first')
@@ -45,8 +49,12 @@ export default class AudioManager {
       if (!this.song) throw new Error('song audio object not initialised');
       this.song.setMediaElementSource(audio);
 
-      this.analyser = new AudioAnalyser(this.song, 128);
+      this.analyser = new AudioAnalyser(this.song, this.fftSize * 2);
       audio.play();
+      if (this.interval) window.clearInterval(this.interval);
+      this.interval = window.setInterval(() => {
+        this.handleAudioFrame();
+      }, 5);
     })
     audio.addEventListener('error', (e: ErrorEvent) => {
       console.error('Error loading audio: ', e)
@@ -57,9 +65,26 @@ export default class AudioManager {
     audio.src = path;
   }
 
+  framesSinceGet = 0;
+  fft: Uint8Array;
+  handleAudioFrame() {
+    this.framesSinceGet = 1;
+    const newFFt = (this.analyser as AudioAnalyser).getFrequencyData();
+    this.fft = this.fft.map((v, i) => Math.max(v, newFFt[i]));
+  }
+
   getAudioFrame(): IAudioFrame {
     const ready = this.analyser !== undefined;
-    const fft = this.analyser ? this.analyser.getFrequencyData() : new Uint8Array();
+    if (this.framesSinceGet < 0) return {
+      ready: false,
+      fft: this.fft,
+      avgFrequency: -1,
+      power: -1,
+      progress: -1,
+    };
+    const fft = this.fft.map((v) => v / this.framesSinceGet);
+    this.framesSinceGet = 0;
+    this.fft.fill(0);
     const avgFrequency = this.analyser ? this.analyser.getAverageFrequency() : -1;
     // @ts-expect-error; Incomplete types
     const power = fft.length > 0 ? (fft as Array<number>).reduce((acc: number, el: number) => acc + el, 0) : -1;

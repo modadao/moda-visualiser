@@ -9,6 +9,7 @@ import Spheres from "./Spheres";
 import FeatureBeziers from "./FeatureBeziers";
 import IAudioReactive from "./ReactiveObject";
 import { IAudioFrame } from "./AudioAnalyser";
+import PlaybackHead from "./PlaybackHead";
 
 export interface IVisualiserCoordinate extends IDerivedCoordinate {
   theta: number,
@@ -26,6 +27,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   innerRing: Line;
   barGraph: RingBar;
   floor: Mesh|undefined;
+  playbackHead: PlaybackHead;
 
   constructor(private camera: Camera, fingerprint: IDerivedFingerPrint, settings: ISettings) {
     super();
@@ -48,6 +50,9 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     this.rings = new Rings(fingerprint, settings);
     this.rings.rotateX(Math.PI / 2);
     this.add(this.rings);
+
+    this.playbackHead = new PlaybackHead();
+    this.add(this.playbackHead)
 
     const colorSampler = settings.color.colorschemeMethod === 'gradient' ? new GradientSampler(settings.color.custom) : new ImgSampler(settings.color.colorTextureSrc);
     (async () => {
@@ -84,7 +89,6 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   }
 
   update() {
-
     const dir = new Vector3();
     this.camera.updateMatrixWorld();
     this.camera.getWorldDirection(dir);
@@ -135,6 +139,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   handleAudio(frame: IAudioFrame): void {
     this.rings.handleAudio(frame);
     this.barGraph.handleAudio(frame);
+    this.playbackHead.handleAudio(frame);
     if (this.points) this.points.handleAudio(frame);
     if (this.mainBezier) this.mainBezier.handleAudio(frame);
     if (this.secondaryBeziers.length) this.secondaryBeziers.forEach((se) => se.handleAudio(frame));
