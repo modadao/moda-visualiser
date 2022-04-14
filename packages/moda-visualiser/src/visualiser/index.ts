@@ -110,6 +110,8 @@ export default class ModaVisualiser {
 
   audioManager: AudioManager;
 
+  stopped = false;
+
   constructor(public element: HTMLElement) {
     this.renderer = new WebGLRenderer({
       antialias: true,
@@ -166,7 +168,7 @@ export default class ModaVisualiser {
       this.shouldExport = false;
       console.log('Exporting done')
     }
-    window.requestAnimationFrame(this.update);
+    if (!this.stopped) window.requestAnimationFrame(this.update);
   }
 
   resizeTimeout: number|undefined;
@@ -334,6 +336,8 @@ export default class ModaVisualiser {
     this.scene.clear();
     this.renderer.dispose();
     this.renderer.domElement.parentElement?.removeChild(this.renderer.domElement);
+    this.stopped = true;
+    this.audioManager.dispose();
     if (this.radialSpheres)
       this.radialSpheres.dispose();
   }

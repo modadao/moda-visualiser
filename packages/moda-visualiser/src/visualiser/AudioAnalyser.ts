@@ -103,4 +103,13 @@ export default class AudioManager {
       progress,
     }
   }
+
+  dispose() {
+    if (AudioManager.audio) {
+      AudioManager.audio.pause();
+      document.body.removeChild(AudioManager.audio);
+      AudioManager.audio = undefined;
+    }
+    if (this.interval) window.clearInterval(this.interval);
+  }
 }
