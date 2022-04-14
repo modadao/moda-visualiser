@@ -1,4 +1,4 @@
-import { Color, OrthographicCamera, Scene, Vector2, WebGLRenderer } from "three";
+import { Clock, Color, OrthographicCamera, Scene, Vector2, WebGLRenderer } from "three";
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 import { IDerivedFingerPrint, IFingerprint } from "../types";
@@ -111,6 +111,7 @@ export default class ModaVisualiser {
   audioManager: AudioManager;
 
   stopped = false;
+  clock: Clock;
 
   constructor(public element: HTMLElement) {
     this.renderer = new WebGLRenderer({
@@ -131,6 +132,7 @@ export default class ModaVisualiser {
     this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
 
     this.audioManager = new AudioManager(this.camera, this.scene);
+    this.clock = new Clock(true);
 
     this.startAnimation();
   }
@@ -148,9 +150,10 @@ export default class ModaVisualiser {
   }
 
   private update() {
+    const deltaTime = this.clock.getDelta();
     this.orbitControls.update()
 
-    const audioFrame = this.audioManager.getAudioFrame();
+    const audioFrame = this.audioManager.getAudioFrame(deltaTime);
     if (this.radialSpheres) {
       if (audioFrame.ready) this.radialSpheres.handleAudio(audioFrame);
       this.radialSpheres.update();

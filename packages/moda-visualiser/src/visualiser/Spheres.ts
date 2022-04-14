@@ -81,7 +81,5 @@ export default class Spheres extends Object3D implements IAudioReactive {
 
   // @ts-expect-error; 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  handleAudio(frame: IAudioFrame) {
-    console.log(frame)
-  }
+  handleAudio(frame: IAudioFrame) { }
 }

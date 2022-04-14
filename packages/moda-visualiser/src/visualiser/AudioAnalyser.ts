@@ -2,7 +2,7 @@ import { Camera, Scene, AudioListener, Audio, AudioAnalyser } from "three";
 
 export interface IAudioFrame {
   ready: boolean,
-  fft: Uint8Array,
+  fft: number[],
   avgFrequency: number,
   power: number,
   progress: number,
@@ -28,6 +28,8 @@ export default class AudioManager {
     }, { once: true })
 
     this.fft = new Uint8Array(fftSize).fill(0);
+    this.minFft = new Array(fftSize).fill(100);
+    this.maxFft = new Array(fftSize).fill(200);
   }
 
   interval: number|undefined;
@@ -50,6 +52,7 @@ export default class AudioManager {
       this.song.setMediaElementSource(audio);
 
       this.analyser = new AudioAnalyser(this.song, this.fftSize * 2);
+      console.log( this.analyser.analyser);
       audio.play();
       if (this.interval) window.clearInterval(this.interval);
       this.interval = window.setInterval(() => {
@@ -65,29 +68,47 @@ export default class AudioManager {
     audio.src = path;
   }
 
-  framesSinceGet = 0;
+  fftNormalizeRate = 2;
+  hasNewAudioFrame = false;
+  minFft: number[];
+  maxFft: number[];
   fft: Uint8Array;
+  avgFrequency = 0;
   handleAudioFrame() {
-    this.framesSinceGet = 1;
-    const newFFt = (this.analyser as AudioAnalyser).getFrequencyData();
+    this.hasNewAudioFrame = true;
+    const analyser = this.analyser as AudioAnalyser;
+    const newFFt = analyser.getFrequencyData();
+    this.avgFrequency = analyser.getAverageFrequency();
     this.fft = this.fft.map((v, i) => Math.max(v, newFFt[i]));
   }
 
-  getAudioFrame(): IAudioFrame {
-    const ready = this.analyser !== undefined;
-    if (this.framesSinceGet < 0) return {
-      ready: false,
-      fft: this.fft,
-      avgFrequency: -1,
-      power: -1,
-      progress: -1,
-    };
-    const fft = this.fft.map((v) => v / this.framesSinceGet);
-    this.framesSinceGet = 0;
+  getAudioFrame(deltaTime: number): IAudioFrame {
+    if (!this.hasNewAudioFrame || this.analyser === undefined) {
+      return {
+        ready: false,
+        fft: [],
+        avgFrequency: -1,
+        power: -1,
+        progress: -1,
+      };
+    }
+    const decay = this.fftNormalizeRate * deltaTime;
+    this.minFft = this.minFft.map((el, i) => {
+      return Math.min(el + decay, this.fft[i])
+    })
+    this.maxFft = this.maxFft.map((el, i) => {
+      return Math.max(el - decay, this.fft[i], 1)
+    })
+    const fft = Array.from(this.fft).map((v, i) => {
+      const upper = this.maxFft[i];
+      const lower = this.minFft[i];
+      const scaled = (v- lower) / (upper - lower);
+      return scaled;
+    });
+
+    this.hasNewAudioFrame = false;
     this.fft.fill(0);
-    const avgFrequency = this.analyser ? this.analyser.getAverageFrequency() : -1;
-    // @ts-expect-error; Incomplete types
-    const power = fft.length > 0 ? (fft as Array<number>).reduce((acc: number, el: number) => acc + el, 0) : -1;
+    const power = (fft as Array<number>).reduce((acc: number, el: number) => acc + el, 0) / this.fftSize;
     let progress = -1;
     if (AudioManager.audio) {
       AudioManager.audio.currentTime
@@ -96,9 +117,9 @@ export default class AudioManager {
     }
 
     return {
-      ready,
+      ready: true,
       fft,
-      avgFrequency,
+      avgFrequency: this.avgFrequency,
       power,
       progress,
     }
@@ -111,5 +132,6 @@ export default class AudioManager {
       AudioManager.audio = undefined;
     }
     if (this.interval) window.clearInterval(this.interval);
+    if (this.song) this.song.disconnect();
   }
 }
