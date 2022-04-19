@@ -29,7 +29,7 @@ export default class PlaybackHead extends Object3D implements IAudioReactive {
   }
 
   handleAudio(frame: IAudioFrame): void {
-    this.needle.rotation.z = frame.progress * Math.PI * 2;
+    this.needle.rotation.z = -frame.progress * Math.PI * 2;
     this.needle.scale.x = frame.power;
     (this.needle.material as ShaderMaterial).uniforms.buffer.value = frame.fft;
   }

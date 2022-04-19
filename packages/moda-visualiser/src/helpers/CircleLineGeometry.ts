@@ -12,6 +12,9 @@ export default class CircleLineGeometry extends BufferGeometry {
     const verts = new Float32Array(([] as number[]).concat(...points));
     this.setAttribute( 'position', new BufferAttribute( verts, 3 ) );
 
+    const thetas = new Float32Array(segments).fill(0).map((_, i) => i / segments);
+    this.setAttribute( 'normalizedTheta', new BufferAttribute(thetas, 1));
+
     if (fingerprint) {
       const [width] = fingerprint.shape;
       const dist = (v1: number, v2: number) => Math.abs(v1 - v2);
