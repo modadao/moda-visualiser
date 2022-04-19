@@ -125,6 +125,18 @@ export default class AudioManager {
     }
   }
 
+  play() {
+    if (AudioManager.audio) {
+      AudioManager.audio.play();
+    }
+  }
+
+  pause() {
+    if (AudioManager.audio) {
+      AudioManager.audio.pause();
+    }
+  }
+
   dispose() {
     if (AudioManager.audio) {
       AudioManager.audio.pause();

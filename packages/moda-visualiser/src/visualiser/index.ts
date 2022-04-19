@@ -359,4 +359,12 @@ export default class ModaVisualiser {
     }, 300)
     // Rest handled in the `update` loop.
   }
+
+  play() {
+    this.audioManager.play();
+  }
+
+  pause() {
+    this.audioManager.pause();
+  }
 }

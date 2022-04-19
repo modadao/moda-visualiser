@@ -58,6 +58,10 @@ function App() {
       <div>
         <button onClick={handleExport}>Export</button>  
       </div>
+      <div>
+        <button onClick={() => visualiser && visualiser.play()}>Play</button>
+        <button onClick={() => visualiser && visualiser.pause()}>Pause</button>
+      </div>
     </div>
   )
 }
