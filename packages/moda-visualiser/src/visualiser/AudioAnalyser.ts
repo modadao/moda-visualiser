@@ -6,6 +6,8 @@ export interface IAudioFrame {
   avgFrequency: number,
   power: number,
   progress: number,
+  _rawFFt: number[],
+  _maxFft: number[],
 }
 
 export default class AudioManager {
@@ -68,7 +70,7 @@ export default class AudioManager {
     audio.src = path;
   }
 
-  fftNormalizeRate = 2;
+  fftNormalizeRate = 30;
   hasNewAudioFrame = false;
   minFft: number[];
   maxFft: number[];
@@ -90,22 +92,21 @@ export default class AudioManager {
         avgFrequency: -1,
         power: -1,
         progress: -1,
+        _rawFFt: [],
+        _maxFft: [],
       };
     }
     const decay = this.fftNormalizeRate * deltaTime;
-    this.minFft = this.minFft.map((el, i) => {
-      return Math.min(el + decay, this.fft[i])
-    })
     this.maxFft = this.maxFft.map((el, i) => {
       return Math.max(el - decay, this.fft[i], 1)
     })
     const fft = Array.from(this.fft).map((v, i) => {
       const upper = this.maxFft[i];
-      const lower = this.minFft[i];
-      const scaled = (v- lower) / (upper - lower);
+      const scaled = (v) / (upper);
       return scaled;
     });
 
+    const _rawFFt = Array.from(this.fft);
     this.hasNewAudioFrame = false;
     this.fft.fill(0);
     const power = (fft as Array<number>).reduce((acc: number, el: number) => acc + el, 0) / this.fftSize;
@@ -122,6 +123,8 @@ export default class AudioManager {
       avgFrequency: this.avgFrequency,
       power,
       progress,
+      _rawFFt,
+      _maxFft: this.maxFft,
     }
   }
 

@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@types/p5": "^1.4.2",
     "@types/three": "^0.137.0",
     "dts-bundle-generator": "^6.5.0",
     "nodemon": "^2.0.15",
@@ -22,6 +23,9 @@
     "vite-plugin-glsl": "^0.0.9"
   },
   "dependencies": {
+    "lil-gui": "^0.16.1",
+    "p5": "^1.4.1",
+    "p5js-wrapper": "^1.2.3",
     "three": "^0.138.1"
   }
 }
