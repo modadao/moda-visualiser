@@ -44,7 +44,6 @@ export default class Rings extends Object3D implements IAudioReactive {
     this.leftBuffer[currentIndex] += frame.power;
     this.rightBuffer[currentIndex] += frame.power;
 
-    console.log(frame.power);
     (() => {
       let prevVal = this.leftBuffer[0] * 0.99;
       for (let i = 1; i < this.leftBuffer.length; i++) {
@@ -63,14 +62,12 @@ export default class Rings extends Object3D implements IAudioReactive {
         prevVal = thisVal * 0.990;
       }
       this.rightBuffer[511] = prevVal;
-      console.log(this.rightBuffer[0])
     })();
 
     const data = new Uint8ClampedArray(512);
     for (let i = 0; i < data.length; i++) {
       data[i] = (this.leftBuffer[i] + this.rightBuffer[i]) * 128;
     }
-    console.log(data);
     this.bufferTexture.image = {
       data,
       width: 512,

@@ -1,7 +1,9 @@
 import { Camera, Scene, AudioListener, Audio, AudioAnalyser } from "three";
+import gui from "./gui";
 
 export interface IAudioFrame {
   ready: boolean,
+  trigger: boolean,
   fft: number[],
   avgFrequency: number,
   power: number,
@@ -32,6 +34,9 @@ export default class AudioManager {
     this.fft = new Uint8Array(fftSize).fill(0);
     this.minFft = new Array(fftSize).fill(100);
     this.maxFft = new Array(fftSize).fill(200);
+    gui.add(this, 'fftNormalizeRate', 0, 100);
+    gui.add(this, 'triggerThreshold', 0, 1, 0.01);
+    gui.add(this, 'useMedian');
   }
 
   interval: number|undefined;
@@ -70,12 +75,16 @@ export default class AudioManager {
     audio.src = path;
   }
 
+  useMedian = false;
+  triggerThreshold = 0.5;
+  private hasTriggered = false
   fftNormalizeRate = 30;
   hasNewAudioFrame = false;
   minFft: number[];
   maxFft: number[];
   fft: Uint8Array;
   avgFrequency = 0;
+
   handleAudioFrame() {
     this.hasNewAudioFrame = true;
     const analyser = this.analyser as AudioAnalyser;
@@ -88,6 +97,7 @@ export default class AudioManager {
     if (!this.hasNewAudioFrame || this.analyser === undefined) {
       return {
         ready: false,
+        trigger: false,
         fft: [],
         avgFrequency: -1,
         power: -1,
@@ -110,6 +120,18 @@ export default class AudioManager {
     this.hasNewAudioFrame = false;
     this.fft.fill(0);
     const power = (fft as Array<number>).reduce((acc: number, el: number) => acc + el, 0) / this.fftSize;
+
+    const shouldTrigger = this.useMedian 
+      ? fft.filter((v) => v > this.triggerThreshold).length > fft.length / 2
+      : power > this.triggerThreshold;
+
+    let trigger = false;
+    if (!this.hasTriggered && shouldTrigger) {
+      trigger = true;
+      this.hasTriggered = true;
+    } else if (this.hasTriggered && !shouldTrigger) {
+      this.hasTriggered = false;
+    }
     let progress = -1;
     if (AudioManager.audio) {
       AudioManager.audio.currentTime
@@ -120,6 +142,7 @@ export default class AudioManager {
     return {
       ready: true,
       fft,
+      trigger,
       avgFrequency: this.avgFrequency,
       power,
       progress,

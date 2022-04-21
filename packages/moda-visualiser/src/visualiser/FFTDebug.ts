@@ -1,4 +1,5 @@
 import { IAudioFrame } from "./AudioAnalyser";
+import gui from "./gui";
 import IAudioReactive from "./ReactiveObject";
 
 type HistoryEl = {
@@ -11,6 +12,7 @@ export default class FFTDebug implements IAudioReactive {
   ctx: CanvasRenderingContext2D;
   height = 200;
   historyHeight = 100;
+  triggerThreshold = 0.5;
   constructor() {
     this.canvas = document.createElement('canvas');
     this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
@@ -18,6 +20,8 @@ export default class FFTDebug implements IAudioReactive {
     this.canvas.style.position = 'fixed';
     this.canvas.style.right = '0';
     this.canvas.style.bottom = '0';
+
+    gui.add(this, 'triggerThreshold', 0, 1, 0.01);
   }
 
   history = new Array<HistoryEl>(64);
@@ -52,19 +56,19 @@ export default class FFTDebug implements IAudioReactive {
       ctx.fillRect(i * barWidth-1, top - 4, barWidth-1, 4);
     })
 
-    if (frame.power > 0.5) {
+    if (frame.power > this.triggerThreshold) {
       ctx.fillStyle = 'green';
       ctx.fillRect(this.canvas.width - 20, 0, 20, 20);
     }
 
-    this.history.push({ power: frame.power, trigger: frame.power > 0.4 });
+    this.history.push({ power: frame.power, trigger: frame.trigger });
     if (this.history.length > 64) {
       this.history.splice(0, 1)
     }
 
     this.history.forEach((v, i) => {
       const top = this.height + this.historyHeight - v.power * this.historyHeight;
-      if (v.trigger) ctx.fillStyle = 'green';
+      if ( v.trigger) ctx.fillStyle = 'green';
       else ctx.fillStyle = 'red';
       ctx.fillRect(i * barWidth-1, top - 4, barWidth-1, 4);
     })

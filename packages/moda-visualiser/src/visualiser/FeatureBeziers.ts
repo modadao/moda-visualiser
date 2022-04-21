@@ -1,4 +1,4 @@
-import { BufferAttribute, Color, CubicBezierCurve3, Curve, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, Object3D, Quaternion, ShaderMaterial, SphereBufferGeometry, TubeGeometry, Vector2, Vector3 } from "three"
+import { BufferAttribute, Color, CubicBezierCurve3, Curve, Mesh, Object3D, ShaderMaterial, TubeGeometry, Vector3 } from "three"
 import { ISettings } from ".";
 import { IDerivedFingerPrint } from "../types";
 import IAudioReactive from "./ReactiveObject";
@@ -6,6 +6,7 @@ import { IVisualiserCoordinate } from "./RadialSpheres";
 import { customRandom } from "../utils";
 import TubeShaderFrag from '../shaders/tube_frag.glsl';
 import TubeShaderVert from '../shaders/tube_vert.glsl';
+import { IAudioFrame } from "./AudioAnalyser";
 
 export interface IFeatureBezierOptions {
   segments: number;
