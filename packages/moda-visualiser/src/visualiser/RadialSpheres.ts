@@ -31,7 +31,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   floor: Mesh|undefined;
   playbackHead: PlaybackHead;
   progressRing: ProgressRing;
-  bezierSpringPhysicsTextureManager = new SpringPhysicsTextureManager(512);
+  bezierSpringPhysicsTextureManager = new SpringPhysicsTextureManager(512, 0.3, 0.5);
 
   constructor(private camera: Camera, fingerprint: IDerivedFingerPrint, settings: ISettings) {
     super();
@@ -73,6 +73,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
       // Generate main bezier
       this.mainBezier = new FeatureBeziers(fingerprint, settings, featurePoints, this.bezierSpringPhysicsTextureManager);
       this.add(this.mainBezier);
+      console.log('Added main bezier')
 
       
       // // Generate random secondary beziers
@@ -92,7 +93,10 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
         this.barGraph.visible = settings.sceneElements.circumferenceGraph;
       }
       updateVisibility();
-    })()
+    })().then(() => {
+      this.bezierSpringPhysicsTextureManager.build();
+    })
+
   }
 
   update() {
@@ -100,6 +104,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     this.camera.updateMatrixWorld();
     this.camera.getWorldDirection(dir);
     if (this.points) this.points.setCameraDirection(dir);
+    if (this.mainBezier) this.mainBezier.update();
   }
 
   private async calculateCoords(fingerprint: IDerivedFingerPrint, settings: ISettings, colorSampler: ImgSampler|GradientSampler): Promise<IVisualiserCoordinate[]> {
@@ -145,6 +150,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
 
   rotationalVelocity = 0;
   handleAudio(frame: IAudioFrame): void {
+    this.bezierSpringPhysicsTextureManager.handleAudio(frame);
     this.rings.handleAudio(frame);
     this.barGraph.handleAudio(frame);
     this.playbackHead.handleAudio(frame);

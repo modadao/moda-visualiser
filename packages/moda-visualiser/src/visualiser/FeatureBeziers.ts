@@ -1,4 +1,4 @@
-import { BufferAttribute, Color, CubicBezierCurve3, Curve, Mesh, Object3D, ShaderMaterial, TubeGeometry, Vector3 } from "three"
+import { BufferAttribute, Color, CubicBezierCurve3, Curve, Mesh, Object3D, ShaderMaterial, Texture, TubeGeometry, Vector3 } from "three"
 import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils";
 import { ISettings } from ".";
 import { IDerivedFingerPrint } from "../types";
@@ -17,7 +17,7 @@ export interface IFeatureBezierOptions {
 }
 
 const defaultOptions: IFeatureBezierOptions = {
-  segments: 50,
+  segments: 20,
   radius: 0.01,
   radialSegments: 5,
 }
@@ -30,16 +30,20 @@ type GenerateCurvesResult = {
 
 export default class FeatureBeziers extends Object3D implements IAudioReactive {
   material: ShaderMaterial;
-  constructor(_fingerprint: IDerivedFingerPrint, public settings: ISettings, coords: IVisualiserCoordinate[], springPhysTextureManager: SpringPhysicsTextureManager, options?: Partial<IFeatureBezierOptions>) {
+  uniformsSet = false;
+  constructor(_fingerprint: IDerivedFingerPrint, public settings: ISettings, coords: IVisualiserCoordinate[], public springPhysTextureManager: SpringPhysicsTextureManager, options?: Partial<IFeatureBezierOptions>) {
     super();
 
     const opts = Object.assign({}, defaultOptions, options ?? {}) as IFeatureBezierOptions;
     this.material = new ShaderMaterial({
       vertexShader: TubeShaderVert,
       fragmentShader: TubeShaderFrag,
+      uniforms: {
+        springTexture: { value: Texture.DEFAULT_IMAGE },
+        springTextureHeight: { value: 0 },
+      }
     });
 
-    const y = springPhysTextureManager.registerSpringPhysicsElement();
 
     const center = new Vector3();
     const { verticalIncidence } = settings.beziers;
@@ -50,7 +54,8 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
 
     const curves = this.generateCurves(remainingPoints, firstCoord, firstDir, true, []);
 
-    const mainBezierCurves = this.generateTube(curves, opts.segments, opts.radius, opts.radialSegments);
+    const y = springPhysTextureManager.registerSpringPhysicsElement();
+    const mainBezierCurves = this.generateTube(curves, opts.segments, opts.radius, opts.radialSegments, y);
     this.add(mainBezierCurves);
   }
 
@@ -115,22 +120,30 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
    * @param radialSegments - Number of radial segments 
    * @returns 
    */
-  private generateTube (curves: GenerateCurvesResult, segments: number, radius: number, radialSegments: number) {
+  private generateTube (curves: GenerateCurvesResult, segments: number, radius: number, radialSegments: number, springTextureIndex: number) {
     const tempColor = new Color();
-    const geometries = curves.map((el) => {
+    const geometries = curves.map((el, i) => {
       const { cur, next, curve } = el;
-      const tubeGeometry = new TubeGeometry(curve, segments, radius, radialSegments, false );
+      const scaledSegments = Math.floor(curve.getLength() / 5 * segments);
+      const tubeGeometry = new TubeGeometry(curve, scaledSegments, radius, radialSegments, false );
 
       const posAttributeLength = tubeGeometry.getAttribute('position').array.length
       const nVerts = posAttributeLength / 3;
       const colorsData: Array<number> = [];
+      const progressAttribute = [];
+      const baseProgress = i / (curves.length);
+      const progressLength = 1 / (curves.length);
       for (let i = 0; i < nVerts; i++) {
-        const thisProgress = i / nVerts;
+        const thisProgress = Math.floor(i/radialSegments) / Math.floor(nVerts / radialSegments);
         tempColor.copy(cur.color);
         tempColor.lerp(next.color, thisProgress)
         colorsData.push(...tempColor.toArray());
+
+        progressAttribute.push(baseProgress + thisProgress * progressLength);
       }
       tubeGeometry.setAttribute('color', new BufferAttribute(new Float32Array(colorsData), 3));
+      tubeGeometry.setAttribute('springTextureIndex', new BufferAttribute(new Float32Array(progressAttribute.length).fill(springTextureIndex), 1));
+      tubeGeometry.setAttribute('progress', new BufferAttribute(new Float32Array(progressAttribute), 1));
       return tubeGeometry;
     })
     const geometry = BufferGeometryUtils.mergeBufferGeometries([...geometries]);
@@ -138,6 +151,14 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
     return tubeMesh;
   }
 
+  update() {
+    if (!this.uniformsSet && this.springPhysTextureManager.dataTexture) {
+      this.material.uniforms.springTexture.value = this.springPhysTextureManager.dataTexture;
+      this.material.uniforms.springTextureHeight.value = this.springPhysTextureManager.height;
+      this.material.needsUpdate = true;
+      this.uniformsSet = true;
+    }
+  }
   // @ts-expect-error; 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   handleAudio(frame: IAudioFrame) { }

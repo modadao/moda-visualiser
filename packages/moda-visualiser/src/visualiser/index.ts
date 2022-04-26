@@ -159,6 +159,7 @@ export default class ModaVisualiser {
 
     const audioFrame = this.audioManager.getAudioFrame(deltaTime);
     if (this.radialSpheres) {
+      this.radialSpheres.update();
       if (audioFrame.ready) this.radialSpheres.handleAudio(audioFrame);
     }
     this.fftDebug.handleAudio(audioFrame);
