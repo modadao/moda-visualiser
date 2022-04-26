@@ -1,4 +1,5 @@
 import { BufferAttribute, Color, CubicBezierCurve3, Curve, Mesh, Object3D, ShaderMaterial, TubeGeometry, Vector3 } from "three"
+import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils";
 import { ISettings } from ".";
 import { IDerivedFingerPrint } from "../types";
 import IAudioReactive from "./ReactiveObject";
@@ -7,6 +8,7 @@ import { customRandom } from "../utils";
 import TubeShaderFrag from '../shaders/tube_frag.glsl';
 import TubeShaderVert from '../shaders/tube_vert.glsl';
 import { IAudioFrame } from "./AudioAnalyser";
+import SpringPhysicsTextureManager from "./SpringPhysicsTextureManager";
 
 export interface IFeatureBezierOptions {
   segments: number;
@@ -20,9 +22,15 @@ const defaultOptions: IFeatureBezierOptions = {
   radialSegments: 5,
 }
 
+type GenerateCurvesResult = {
+  curve: Curve<Vector3>,
+  cur: IVisualiserCoordinate,
+  next: IVisualiserCoordinate,
+}[]
+
 export default class FeatureBeziers extends Object3D implements IAudioReactive {
   material: ShaderMaterial;
-  constructor(_fingerprint: IDerivedFingerPrint, public settings: ISettings, coords: IVisualiserCoordinate[], options?: Partial<IFeatureBezierOptions>) {
+  constructor(_fingerprint: IDerivedFingerPrint, public settings: ISettings, coords: IVisualiserCoordinate[], springPhysTextureManager: SpringPhysicsTextureManager, options?: Partial<IFeatureBezierOptions>) {
     super();
 
     const opts = Object.assign({}, defaultOptions, options ?? {}) as IFeatureBezierOptions;
@@ -31,18 +39,19 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
       fragmentShader: TubeShaderFrag,
     });
 
+    const y = springPhysTextureManager.registerSpringPhysicsElement();
+
     const center = new Vector3();
     const { verticalIncidence } = settings.beziers;
-    const points = coords.map(c => c.pos);
     const firstDir = verticalIncidence 
       ? new Vector3(0, 1, 0)
-      : points[0].clone().sub(center).normalize().multiplyScalar(-1);
-    const [firstPoint, ...remainingPoints] = points;
+      : coords[0].pos.clone().sub(center).normalize().multiplyScalar(-1);
+    const [firstCoord, ...remainingPoints] = coords;
 
-    const curves = this.traverseBeziers(remainingPoints, firstPoint, firstDir, true);
+    const curves = this.generateCurves(remainingPoints, firstCoord, firstDir, true, []);
 
-    const mainBezierCurves = this.curvesToBezier(curves, coords, opts.segments, opts.radius, opts.radialSegments);
-    this.add(...mainBezierCurves);
+    const mainBezierCurves = this.generateTube(curves, opts.segments, opts.radius, opts.radialSegments);
+    this.add(mainBezierCurves);
   }
 
   /**
@@ -51,21 +60,21 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
    * @param cur - Current / starting point
    * @param dir - Current / starting direction
    * @param facingTowardsCenter - Flag that flip flops to create the weaving style
-   * @param curves - Return value that gets recursively appended to
+   * @param result - Return value that gets recursively appended to
    * @param firstPoint - Starting point, used to connect final bezier back to beginning
    * @param firstDir - Starting direction, used to connect final bezier back to beginning
    */
-  private traverseBeziers (points: Vector3[], cur: Vector3, dir: Vector3, facingTowardsCenter: boolean, curves: Curve<Vector3>[] = [], firstPoint?: Vector3, firstDir?: Vector3): Curve<Vector3>[] {
+  private generateCurves (points: IVisualiserCoordinate[], cur: IVisualiserCoordinate, dir: Vector3, facingTowardsCenter: boolean, result: GenerateCurvesResult, firstPoint?: IVisualiserCoordinate, firstDir?: Vector3): GenerateCurvesResult {
     const center = new Vector3();
     const { flareOut, flareIn, angleRandomness, verticalAngleRandomness, verticalIncidence } = this.settings.beziers;
     const isLast = points.length === 0;
     const targetDist = 2;
     const next = isLast 
-      ? firstPoint as Vector3 
+      ? firstPoint as IVisualiserCoordinate
       : points.reduce((acc, el) => {
-        return Math.abs(targetDist - cur.distanceTo(el)) < Math.abs(targetDist - cur.distanceTo(acc)) ? el : acc
+        return Math.abs(targetDist - cur.pos.distanceTo(el.pos)) < Math.abs(targetDist - cur.pos.distanceTo(acc.pos)) ? el : acc
       }, points[0])
-    const remaining = points.filter(el => !el.equals(next));
+    const remaining = points.filter(el => !el.pos.equals(next.pos));
 
     const nextDir = isLast
       ? (firstDir as Vector3).multiplyScalar(-1)
@@ -73,28 +82,32 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
         ? (facingTowardsCenter ? new Vector3(0, 1, 0) : new Vector3(0, -1, 0))
           .applyAxisAngle(new Vector3(0, 0, 1), customRandom.deterministic(cur.x, cur.y) * angleRandomness - angleRandomness / 2)
           .applyAxisAngle(new Vector3(1, 0, 0), customRandom.deterministic(cur.x, cur.y) * verticalAngleRandomness - verticalAngleRandomness / 2)
-        : next.clone().sub(center).normalize()
+        : next.pos.clone().sub(center).normalize()
           .applyAxisAngle(new Vector3(0, 1, 0), customRandom.deterministic(cur.x, cur.y) * angleRandomness - angleRandomness / 2)
           .applyAxisAngle(new Vector3(1, 0, 0), customRandom.deterministic(cur.x, cur.y) * verticalAngleRandomness - verticalAngleRandomness / 2);
     if (facingTowardsCenter && !isLast) nextDir.multiplyScalar(-1);
-    const dist = cur.distanceTo(next);
+    const dist = cur.pos.distanceTo(next.pos);
     const handleDist = verticalIncidence
       ? flareOut * 2 + dist
       : facingTowardsCenter ? dist * flareIn : dist * flareOut;
-    const anchor1 = cur.clone().add(dir.clone().multiplyScalar(handleDist))
-    const anchor2 = next.clone().add(nextDir.clone().multiplyScalar(handleDist));
+    const anchor1 = cur.pos.clone().add(dir.clone().multiplyScalar(handleDist))
+    const anchor2 = next.pos.clone().add(nextDir.clone().multiplyScalar(handleDist));
         
-    curves.push(new CubicBezierCurve3(cur, anchor1, anchor2, next))
+    result.push({
+      curve: new CubicBezierCurve3(cur.pos, anchor1, anchor2, next.pos),
+      next,
+      cur,
+    });
 
     if (isLast) {
-      return curves;
+      return result;
     } else {
-      return this.traverseBeziers(remaining, next, nextDir.multiplyScalar(-1), !facingTowardsCenter, curves, firstPoint ?? cur, firstDir ?? dir);
+      return this.generateCurves(remaining, next, nextDir.multiplyScalar(-1), !facingTowardsCenter, result, firstPoint ?? cur, firstDir ?? dir);
     }
   }
 
   /**
-   * @description Converts the Curve objects from traverseBeziers into threejs meshs 
+   * @description Converts the Curve objects from generateCurves into threejs meshs 
    * @param curves - Curve object
    * @param featurePoints - Points used to colourise the beziers
    * @param segments - Number of segmeents per section
@@ -102,35 +115,27 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
    * @param radialSegments - Number of radial segments 
    * @returns 
    */
-  private curvesToBezier (curves: Curve<Vector3>[], featurePoints: IVisualiserCoordinate[], segments: number, radius: number, radialSegments: number) {
-    const retVal: Mesh[] = [];
+  private generateTube (curves: GenerateCurvesResult, segments: number, radius: number, radialSegments: number) {
     const tempColor = new Color();
-    curves.forEach((curve) => {
-      const tubeGeometry = new TubeGeometry( curve, segments, radius, radialSegments, false );
-      const startPoint = curve.getPoint(0);
-      const curFeaturePoint = featurePoints.find(fp => fp.pos.equals(startPoint)) ?? featurePoints
-        .reduce((acc, cur) => cur.pos.distanceTo(startPoint) < acc.pos.distanceTo(startPoint) ? cur : acc, featurePoints[0] );
-      const endPoint = curve.getPoint(1);
-      const nextFeaturePoint = featurePoints.find(fp => fp.pos.equals(endPoint)) ?? featurePoints
-        .reduce((acc, cur) => cur.pos.distanceTo(startPoint) < acc.pos.distanceTo(endPoint) ? cur : acc, featurePoints[0] );
-      if (!curFeaturePoint || !nextFeaturePoint) {
-        throw new Error(`Could not find startPoint ${startPoint.toArray()} or endPoint ${endPoint.toArray()}`);
-      }
+    const geometries = curves.map((el) => {
+      const { cur, next, curve } = el;
+      const tubeGeometry = new TubeGeometry(curve, segments, radius, radialSegments, false );
 
       const posAttributeLength = tubeGeometry.getAttribute('position').array.length
       const nVerts = posAttributeLength / 3;
       const colorsData: Array<number> = [];
       for (let i = 0; i < nVerts; i++) {
         const thisProgress = i / nVerts;
-        tempColor.copy(curFeaturePoint.color);
-        tempColor.lerp(nextFeaturePoint.color, thisProgress)
+        tempColor.copy(cur.color);
+        tempColor.lerp(next.color, thisProgress)
         colorsData.push(...tempColor.toArray());
       }
       tubeGeometry.setAttribute('color', new BufferAttribute(new Float32Array(colorsData), 3));
-      const curveObject = new Mesh( tubeGeometry, this.material );
-      retVal.push(curveObject);
+      return tubeGeometry;
     })
-    return retVal;
+    const geometry = BufferGeometryUtils.mergeBufferGeometries([...geometries]);
+    const tubeMesh = new Mesh(geometry, this.material);
+    return tubeMesh;
   }
 
   // @ts-expect-error; 

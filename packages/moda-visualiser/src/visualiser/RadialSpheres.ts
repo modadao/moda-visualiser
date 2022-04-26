@@ -11,6 +11,7 @@ import IAudioReactive from "./ReactiveObject";
 import { IAudioFrame } from "./AudioAnalyser";
 import PlaybackHead from "./PlaybackHead";
 import ProgressRing from "./ProgressRing";
+import SpringPhysicsTextureManager from "./SpringPhysicsTextureManager";
 
 export interface IVisualiserCoordinate extends IDerivedCoordinate {
   theta: number,
@@ -30,6 +31,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   floor: Mesh|undefined;
   playbackHead: PlaybackHead;
   progressRing: ProgressRing;
+  bezierSpringPhysicsTextureManager = new SpringPhysicsTextureManager(512);
 
   constructor(private camera: Camera, fingerprint: IDerivedFingerPrint, settings: ISettings) {
     super();
@@ -69,7 +71,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
       // Bezier through feature points
       const featurePoints = coords.filter(p => p.featureLevel !== 0);
       // Generate main bezier
-      this.mainBezier = new FeatureBeziers(fingerprint, settings, featurePoints);
+      this.mainBezier = new FeatureBeziers(fingerprint, settings, featurePoints, this.bezierSpringPhysicsTextureManager);
       this.add(this.mainBezier);
 
       
@@ -77,7 +79,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
       const chunkedPoints = chunk(pickRandom(coords, Math.min(10, coords.length)), 5);
       chunkedPoints.forEach(points => {
         if (points.length < 4) return;
-        const secondaryBeziers = new FeatureBeziers(fingerprint, settings, points);
+        const secondaryBeziers = new FeatureBeziers(fingerprint, settings, points, this.bezierSpringPhysicsTextureManager);
         this.add(secondaryBeziers);
         this.secondaryBeziers.push(secondaryBeziers);
       });
@@ -141,6 +143,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     return coords;
   }
 
+  rotationalVelocity = 0;
   handleAudio(frame: IAudioFrame): void {
     this.rings.handleAudio(frame);
     this.barGraph.handleAudio(frame);
