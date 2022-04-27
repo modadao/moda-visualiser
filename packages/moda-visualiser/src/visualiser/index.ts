@@ -87,7 +87,7 @@ const defaults: ISettings = {
     outlines: true,
     circumferenceGraph: true,
     mainBezier: true,
-    extraBeziers: false,
+    extraBeziers: true,
     rings: true,
   }
 }
@@ -154,6 +154,8 @@ export default class ModaVisualiser {
   }
 
   private update() {
+    if (this.stopped) return;
+
     const deltaTime = this.clock.getDelta();
     this.orbitControls.update()
 
@@ -341,6 +343,7 @@ export default class ModaVisualiser {
    * @returns
    */
   dispose() {
+    this.stopped = true;
     this.scene.clear();
     this.renderer.dispose();
     this.renderer.domElement.parentElement?.removeChild(this.renderer.domElement);

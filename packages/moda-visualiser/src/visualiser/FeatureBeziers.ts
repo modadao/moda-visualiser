@@ -17,7 +17,7 @@ export interface IFeatureBezierOptions {
 }
 
 const defaultOptions: IFeatureBezierOptions = {
-  segments: 20,
+  segments: 40,
   radius: 0.01,
   radialSegments: 5,
 }
@@ -43,7 +43,6 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
         springTextureHeight: { value: 0 },
       }
     });
-
 
     const center = new Vector3();
     const { verticalIncidence } = settings.beziers;
@@ -153,8 +152,10 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
 
   update() {
     if (!this.uniformsSet && this.springPhysTextureManager.dataTexture) {
+      console.log('Setting uniforms on featurebeziers')
       this.material.uniforms.springTexture.value = this.springPhysTextureManager.dataTexture;
       this.material.uniforms.springTextureHeight.value = this.springPhysTextureManager.height;
+      console.log(this.springPhysTextureManager.height)
       this.material.needsUpdate = true;
       this.uniformsSet = true;
     }

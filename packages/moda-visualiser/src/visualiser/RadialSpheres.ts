@@ -31,7 +31,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   floor: Mesh|undefined;
   playbackHead: PlaybackHead;
   progressRing: ProgressRing;
-  bezierSpringPhysicsTextureManager = new SpringPhysicsTextureManager(512, 0.3, 0.5);
+  bezierSpringPhysicsTextureManager = new SpringPhysicsTextureManager(512, 0.1, 0.9);
 
   constructor(private camera: Camera, fingerprint: IDerivedFingerPrint, settings: ISettings) {
     super();
@@ -76,11 +76,12 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
       console.log('Added main bezier')
 
       
-      // // Generate random secondary beziers
-      const chunkedPoints = chunk(pickRandom(coords, Math.min(10, coords.length)), 5);
-      chunkedPoints.forEach(points => {
-        if (points.length < 4) return;
-        const secondaryBeziers = new FeatureBeziers(fingerprint, settings, points, this.bezierSpringPhysicsTextureManager);
+      // Generate random secondary beziers
+      new Array(20).fill(0).forEach(() => {
+        const secondaryBeziers = new FeatureBeziers(fingerprint, settings, featurePoints, this.bezierSpringPhysicsTextureManager, {
+          radialSegments: 3,
+          radius: 0.01
+        });
         this.add(secondaryBeziers);
         this.secondaryBeziers.push(secondaryBeziers);
       });
@@ -105,6 +106,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     this.camera.getWorldDirection(dir);
     if (this.points) this.points.setCameraDirection(dir);
     if (this.mainBezier) this.mainBezier.update();
+    this.secondaryBeziers.forEach(b => b.update());
   }
 
   private async calculateCoords(fingerprint: IDerivedFingerPrint, settings: ISettings, colorSampler: ImgSampler|GradientSampler): Promise<IVisualiserCoordinate[]> {
