@@ -7,8 +7,7 @@ varying vec4 vColor;
 void main() {
   vec3 newPos = position;
   vec4 c = texture2D(springTexture, vec2(progress, springTextureIndex / springTextureHeight));
-  float v = (c.r - 0.5) * 5.;
-  newPos.y += v;
+  newPos.xyz += (vec3(-0.5, -0.5, -0.5) + c.xyz) * 2.;
   vec4 mPosition = modelViewMatrix * vec4( newPos, 1.0 );
   gl_Position = projectionMatrix * mPosition;
 

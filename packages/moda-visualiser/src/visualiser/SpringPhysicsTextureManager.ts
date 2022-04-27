@@ -10,7 +10,7 @@ export default class SpringPhysicsTextureManager implements IAudioReactive {
   imageData!: Uint8ClampedArray;
 
   impactRadius = 0.01;
-  impactForce = 0.2;
+  impactForce = 1.2;
   impactWaveFrequency = 8;
   constructor(public width: number, public springConstant: number, public inertia: number) {
     
@@ -33,7 +33,7 @@ export default class SpringPhysicsTextureManager implements IAudioReactive {
   canvas!: HTMLCanvasElement;
   ctx!: CanvasRenderingContext2D;
   build() {
-    this.data = new Float32Array(new Array(this.width * this.height * 4).fill(1));
+    this.data = new Float32Array(new Array(this.width * this.height * 6).fill(1));
     this.dataTexture = new DataTexture(null, this.width, this.height, RGBAFormat, UnsignedByteType);
     this.dataTexture.needsUpdate = true;
     console.log('Building spring physics texture manager', this.width, this.height);
@@ -51,33 +51,51 @@ export default class SpringPhysicsTextureManager implements IAudioReactive {
     // When frame triggers, apply a force to a section of the bezier
     if (frame.trigger) {
       const radius = this.impactRadius * this.data.length;
-      const targetPos = Math.floor(Math.random() * this.width * 4);
-      const impactForce = Math.random() * 2 - 1;
+      const targetPos = Math.floor(Math.random() * this.width * 6);
       // const targetPos = 200;
+      const arrWidth = this.width * 6;
       for (let y = 0; y < this.height; y++) {
         const offset = Math.random() * 0.1 - 0.05;
-        for (let x = 0; x < this.width * 4; x += 4) {
+        const impactForceX = Math.random() * 2 - 1;
+        const impactForceY = Math.random() * 2 - 1;
+        const impactForceZ = Math.random() * 2 - 1;
+        for (let x = 0; x < arrWidth; x += 6) {
           const distance = offset + Math.abs(MathUtils.clamp(MathUtils.mapLinear(targetPos - x/2, -radius, radius, -1, 1), -1, 1));
           const impact = Math.cos(distance * this.impactWaveFrequency);
-          this.data[y * this.width * 4 + x + 1] += (1 - distance) * impact * impactForce * frame.power * this.impactForce;
-          this.data[y * this.width * 4 + x + 1] += (1 - distance) * impact * impactForce * frame.power * this.impactForce;
+          this.data[y * arrWidth + x + 3] += (1 - distance) * impact * impactForceX * frame.power * this.impactForce;
+          this.data[y * arrWidth + x + 4] += (1 - distance) * impact * impactForceY * frame.power * this.impactForce;
+          this.data[y * arrWidth + x + 5] += (1 - distance) * impact * impactForceZ * frame.power * this.impactForce;
         }
       }
     }
 
     // Update the spring physics bounce each frame
-    for (let i = 0; i < this.data.length; i += 4) {
-      const p = this.data[i];
-      this.data[i + 1] = this.data[i + 1] * this.inertia + -p * this.springConstant;
-      this.data[i] += this.data[i + 1];
+    for (let i = 0; i < this.data.length; i += 6) {
+      const x = this.data[i];
+      const y = this.data[i + 1];
+      const z = this.data[i + 2];
+      this.data[i+3] = this.data[i+3] * this.inertia + -x * this.springConstant; 
+      this.data[i+4] = this.data[i+4] * this.inertia + -y * this.springConstant; 
+      this.data[i+5] = this.data[i+5] * this.inertia + -z * this.springConstant; 
+      this.data[i] += this.data[i+3];
+      this.data[i+1] += this.data[i+4];
+      this.data[i+2] += this.data[i+5];
     }
 
-    console.log(this.data[0].toFixed(2));
-    const data = new Uint8ClampedArray(this.data.length);
-    for (let i = 0; i < this.data.length; i+=4 ) {
-      const v = this.data[i] * 127;
-      data[i] = Math.floor(v + 127);
-      data[i + 3] = 255;
+    console.log(this.data.slice(0, 6))
+
+    // Convert Float32Array to Uint8ClampedArray, with center point at 127
+    const data = new Uint8ClampedArray(this.width * this.height * 4);
+    for (let i = 0; i < this.width * this.height; i++) {
+      const sourceIndex = i * 6;
+      const outputIndex = i * 4;
+      const x = this.data[sourceIndex] * 127;
+      const y = this.data[sourceIndex + 1] * 127;
+      const z = this.data[sourceIndex + 2] * 127;
+      data[outputIndex] = Math.floor(x + 127);
+      data[outputIndex+1] = Math.floor(y + 127);
+      data[outputIndex+2] = Math.floor(z + 127);
+      data[outputIndex + 3] = 255;
     }
     console.log(data.slice(0, 4).toString())
     this.dataTexture.image = new ImageData(data, this.width, this.height);
