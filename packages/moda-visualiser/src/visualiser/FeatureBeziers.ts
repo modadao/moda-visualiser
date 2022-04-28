@@ -9,6 +9,7 @@ import TubeShaderFrag from '../shaders/tube_frag.glsl';
 import TubeShaderVert from '../shaders/tube_vert.glsl';
 import { IAudioFrame } from "./AudioAnalyser";
 import SpringPhysicsTextureManager from "./SpringPhysicsTextureManager";
+import gui from "./gui";
 
 export interface IFeatureBezierOptions {
   segments: number;
@@ -28,6 +29,33 @@ type GenerateCurvesResult = {
   next: IVisualiserCoordinate,
 }[]
 
+let mat: ShaderMaterial|undefined;
+const getMaterial = () => {
+  if (!mat) {
+    mat = new ShaderMaterial({
+      vertexShader: TubeShaderVert,
+      fragmentShader: TubeShaderFrag,
+      uniforms: {
+        u_springTexture: { value: Texture.DEFAULT_IMAGE },
+        u_springTextureHeight: { value: 0 },
+        u_triggerCount: { value: 0 },
+        u_noiseDensity: { value: 0.2 },
+        u_noiseScale: { value: 8 },
+        u_noiseRamp: { value: 8 },
+        u_noiseSpread: { value: 1 },
+        u_rotationDensity: { value: 2 },
+      }
+    });
+
+    gui.add(mat.uniforms.u_noiseDensity, 'value', 0, 5, 0.01).name('Noise Density');
+    gui.add(mat.uniforms.u_noiseScale, 'value', 0, 15, 0.01).name('Noise Scale');
+    gui.add(mat.uniforms.u_noiseRamp, 'value', 0, 15, 0.01).name('Noise Ramp');
+    gui.add(mat.uniforms.u_noiseSpread, 'value', 0, 15, 0.01).name('Noise Spread');
+    gui.add(mat.uniforms.u_rotationDensity, 'value', 0, 15, 0.01).name('Noise Rotation Density');
+  }
+  return mat;
+}
+
 export default class FeatureBeziers extends Object3D implements IAudioReactive {
   material: ShaderMaterial;
   uniformsSet = false;
@@ -35,16 +63,7 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
     super();
 
     const opts = Object.assign({}, defaultOptions, options ?? {}) as IFeatureBezierOptions;
-    this.material = new ShaderMaterial({
-      vertexShader: TubeShaderVert,
-      fragmentShader: TubeShaderFrag,
-      uniforms: {
-        u_springTexture: { value: Texture.DEFAULT_IMAGE },
-        u_springTextureHeight: { value: 0 },
-        u_triggerCount: { value: 0 },
-      }
-    });
-
+    this.material = getMaterial();
     const center = new Vector3();
     const { verticalIncidence } = settings.beziers;
     const firstDir = verticalIncidence 

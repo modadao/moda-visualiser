@@ -78,7 +78,7 @@ export default class AudioManager {
   useMedian = false;
   triggerThreshold = 0.5;
   private hasTriggered = false
-  fftNormalizeRate = 30;
+  fftNormalizeRate = 60;
   hasNewAudioFrame = false;
   minFft: number[];
   maxFft: number[];

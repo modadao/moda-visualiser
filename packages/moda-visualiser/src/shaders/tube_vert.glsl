@@ -1,3 +1,8 @@
+uniform float u_rotationDensity;
+uniform float u_noiseSpread;
+uniform float u_noiseDensity;
+uniform float u_noiseScale;
+uniform float u_noiseRamp;
 uniform float u_springTextureHeight;
 uniform float u_impactCount;
 uniform sampler2D u_springTexture;
@@ -47,18 +52,19 @@ float cnoise(vec2 P){
 
 void main() {
   vec3 newPos = position;
-  float springY = springTextureIndex / u_springTextureHeight;
+  float springY = (springTextureIndex / u_springTextureHeight - 0.5) * u_noiseSpread;
   vec4 c = texture2D(u_springTexture, vec2(progress, springY));
   vec3 offset = vec3(-0.5, -0.5, -0.5) + c.xyz;
-  float rotation = cnoise(vec2(progress, springY + u_impactCount));
-  float noiseScale = 0.4;
+  float rotation = cnoise(vec2(progress, springY + u_impactCount)) * u_rotationDensity;
   float noiseY = rotation * offset.y + offset.y * offset.y;
-  float xnoise = (cnoise(vec2(position.x * noiseScale + offset.y * 4., noiseY + position.x * noiseScale)) + 0.5) * 8. * offset.y * offset.y;
-  float ynoise = (cnoise(vec2(position.y * noiseScale + offset.y * 4., noiseY + position.y * noiseScale)) + 0.5) * 8. * offset.y * offset.y;
-  float znoise = (cnoise(vec2(position.z * noiseScale + offset.y * 4., noiseY + position.z * noiseScale)) + 0.5) * 8. * offset.y * offset.y;
+
+  float xnoise = (cnoise(vec2(rotation + noiseY + position.x * u_noiseDensity + offset.y * u_noiseRamp, noiseY + position.x * u_noiseDensity)) ) * u_noiseScale * offset.y * offset.y;
+  float ynoise = (cnoise(vec2(-rotation + noiseY - position.y * u_noiseDensity + offset.y * u_noiseRamp, noiseY + position.y * u_noiseDensity)) ) * u_noiseScale * offset.y * offset.y;
+  float znoise = (cnoise(vec2(rotation - noiseY + position.z * u_noiseDensity + offset.y * u_noiseRamp, noiseY + position.z * u_noiseDensity)) ) * u_noiseScale * offset.y * offset.y;
+
   newPos.xyz += vec3(xnoise, ynoise, znoise);
   vec4 mPosition = modelViewMatrix * vec4( newPos, 1.0 );
   gl_Position = projectionMatrix * mPosition;
 
-  vColor = vec4(color, 1.);
+  vColor = vec4(color - u_impactCount, 1.);
 }

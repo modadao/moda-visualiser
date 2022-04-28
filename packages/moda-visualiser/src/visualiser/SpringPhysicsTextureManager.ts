@@ -12,12 +12,18 @@ export default class SpringPhysicsTextureManager implements IAudioReactive {
   impactRadius = 0.01;
   impactForce = 1.2;
   impactWaveFrequency = 8;
+
+  fakeSpringPhysics = false;
+  fakeSpringPhysicsValue = 0;
   constructor(public width: number, public springConstant: number, public inertia: number) {
     
     gui.add(this, 'springConstant', 0.01, 1, 0.01);
     gui.add(this, 'inertia', 0.01, 1, 0.01);
     gui.add(this, 'impactRadius', 0, 1, 0.01);
     gui.add(this, 'impactWaveFrequency', 0, 16, 0.01);
+
+    gui.add(this, 'fakeSpringPhysics');
+    gui.add(this, 'fakeSpringPhysicsValue', -2, 2, 0.01);
   }
 
   /**
@@ -77,6 +83,14 @@ export default class SpringPhysicsTextureManager implements IAudioReactive {
       this.data[i] += this.data[i+3];
       this.data[i+1] += this.data[i+4];
       this.data[i+2] += this.data[i+5];
+    }
+
+    if (this.fakeSpringPhysics) {
+      for (let i = 0; i < this.data.length; i += 6) {
+        this.data[i] = this.fakeSpringPhysicsValue;
+        this.data[i+1] = this.fakeSpringPhysicsValue;
+        this.data[i+2] = this.fakeSpringPhysicsValue;
+      }
     }
 
 
