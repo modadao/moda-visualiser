@@ -3,6 +3,7 @@
     "outDir": "./dist/",
     "target": "ESNext",
     "useDefineForClassFields": true,
+    "typeRoots": ["./types", "./node_modules/@types"],
     "module": "ESNext",
     "lib": ["ESNext", "DOM"],
     "moduleResolution": "Node",

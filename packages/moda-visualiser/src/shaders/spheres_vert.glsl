@@ -1,5 +1,7 @@
 #define PI 3.1415926538
 
+uniform float u_pointIndex;
+
 varying vec3 vColor;
 varying vec3 vColor2;
 varying vec3 vNormal;
@@ -15,7 +17,8 @@ void main() {
   mat4 instMat = instanceMatrix;
   vBrightness = instMat[3][3];
   instMat[3][3] = 1.;
-  vec4 mPosition = modelMatrix * instMat * vec4( position, 1.0 );
+  vec3 newPos = position;
+  vec4 mPosition = modelMatrix * instMat * vec4( newPos, 1.0 );
 
   gl_Position = projectionMatrix * viewMatrix * mPosition ;
   vPosition = gl_Position.xyz;

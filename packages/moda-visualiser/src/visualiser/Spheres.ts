@@ -1,4 +1,4 @@
-import { BackSide, InstancedMesh, Line, Matrix4, MeshBasicMaterial, Object3D, Quaternion, ShaderMaterial, SphereBufferGeometry, Vector2, Vector3 } from "three"
+import { BackSide, InstancedMesh, Matrix4, MeshBasicMaterial, Object3D, Quaternion, ShaderMaterial, SphereBufferGeometry, Vector2, Vector3 } from "three"
 import { ISettings } from ".";
 import { IDerivedFingerPrint } from "../types";
 import IAudioReactive from "./ReactiveObject";
@@ -7,6 +7,7 @@ import VertShader from '../shaders/spheres_vert.glsl';
 import { IVisualiserCoordinate } from "./RadialSpheres";
 import { bezierVector } from "../utils";
 import { IAudioFrame } from "./AudioAnalyser";
+import { InstancedUniformsMesh } from 'three-instanced-uniforms-mesh'
 
 export default class Spheres extends Object3D implements IAudioReactive {
   points: InstancedMesh;
@@ -39,11 +40,12 @@ export default class Spheres extends Object3D implements IAudioReactive {
         u_innerColorMultiplier: { value: 2.0, },
         u_outerColorMultiplier: { value: 1, },
         u_cameraDirection: { value: new Vector3() },
+        u_pointIndex: { value: 0 },
       }
     })
 
-    const points = new InstancedMesh(g, m, coords.length);
-    const outlines = new InstancedMesh(g, outlineM, coords.length);
+    const points = new InstancedUniformsMesh(g, m, coords.length);
+    const outlines = new InstancedUniformsMesh(g, outlineM, coords.length);
 
     const mat4 = new Matrix4();
     const rot = new Quaternion();
@@ -60,6 +62,7 @@ export default class Spheres extends Object3D implements IAudioReactive {
       mat4.compose(p.pos, rot, scale);
       mat4.elements[15] = p.featureLevel * innerGlow;
       points.setMatrixAt(i, mat4);
+      points.setUniformAt('u_pointIndex', i, i);
       // Set transfomr of outline
       scale.setScalar(scale.x + outlineSize);
       mat4.compose(p.pos, rot, scale);
@@ -68,6 +71,7 @@ export default class Spheres extends Object3D implements IAudioReactive {
       // Set colour of point
       points.setColorAt(i, p.color);
       outlines.setColorAt(i, p.color.clone().multiplyScalar(outlineMultiplier).addScalar(outlineAdd));
+      outlines.setUniformAt('u_pointIndex', i, i);
     })
 
     this.points = points;

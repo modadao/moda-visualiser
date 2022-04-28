@@ -184,7 +184,6 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
   handleAudio(frame: IAudioFrame) { 
     if (frame.trigger) {
       this.material.uniforms.u_triggerCount = { value: this.material.uniforms.u_triggerCount.value + 1};
-      console.log('Updating trigger count to ', this.material.uniforms.u_triggerCount.value)
     }
   }
 }
