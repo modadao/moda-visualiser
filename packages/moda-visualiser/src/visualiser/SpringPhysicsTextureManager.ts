@@ -57,17 +57,19 @@ export default class SpringPhysicsTextureManager implements IAudioReactive {
     // When frame triggers, apply a force to a section of the bezier
     if (frame.trigger) {
       const radius = this.impactRadius * this.data.length;
-      const targetPos = Math.floor(Math.random() * this.width * 6);
+      const targetPos = Math.floor(Math.random() * this.width);
+      const secondTargetPos = targetPos < this.width / 2 ? targetPos + this.width : targetPos - this.width ;
       // const targetPos = 200;
-      const arrWidth = this.width * 6;
       for (let y = 0; y < this.height; y++) {
         const offset = Math.random() * 0.1 - 0.05;
-        for (let x = 0; x < arrWidth; x += 6) {
-          const distance = offset + Math.abs(MathUtils.clamp(MathUtils.mapLinear(targetPos - x/2, -radius, radius, -1, 1), -1, 1));
-          const impact = Math.cos(distance * this.impactWaveFrequency);
-          this.data[y * arrWidth + x + 3] += (1 - distance) * impact * frame.power * this.impactForce;
-          this.data[y * arrWidth + x + 4] += (1 - distance) * impact * frame.power * this.impactForce;
-          this.data[y * arrWidth + x + 5] += (1 - distance) * impact * frame.power * this.impactForce;
+        for (let x = 0; x < this.width; x++) {
+          const distance = offset + Math.abs(MathUtils.clamp(MathUtils.mapLinear(targetPos - x, -radius, radius, -1, 1), -1, 1));
+          const secondDistance = offset + Math.abs(MathUtils.clamp(MathUtils.mapLinear(secondTargetPos - x, -radius, radius, -1, 1), -1, 1));
+          const impact = Math.cos(Math.max(distance, secondDistance) * this.impactWaveFrequency);
+          const index = y * this.width * 6 + x * 6;
+          this.data[index + 3] += (1 - distance) * impact * frame.power * this.impactForce;
+          this.data[index + 4] += (1 - distance) * impact * frame.power * this.impactForce;
+          this.data[index + 5] += (1 - distance) * impact * frame.power * this.impactForce;
         }
       }
     }
