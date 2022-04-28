@@ -143,7 +143,7 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
     const tempColor = new Color();
     const geometries = curves.map((el, i) => {
       const { cur, next, curve } = el;
-      const scaledSegments = Math.floor(curve.getLength() / 5 * segments);
+      const scaledSegments = Math.floor(segments * curve.getLength());
       const tubeGeometry = new TubeGeometry(curve, scaledSegments, radius, radialSegments, false );
 
       const posAttributeLength = tubeGeometry.getAttribute('position').array.length
@@ -183,7 +183,7 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   handleAudio(frame: IAudioFrame) { 
     if (frame.trigger) {
-      this.material.uniforms.u_triggerCount.value += 1;
+      this.material.uniforms.u_triggerCount = { value: this.material.uniforms.u_triggerCount.value + 1};
       console.log('Updating trigger count to ', this.material.uniforms.u_triggerCount.value)
     }
   }

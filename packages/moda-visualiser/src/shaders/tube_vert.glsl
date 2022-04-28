@@ -4,7 +4,7 @@ uniform float u_noiseDensity;
 uniform float u_noiseScale;
 uniform float u_noiseRamp;
 uniform float u_springTextureHeight;
-uniform float u_impactCount;
+uniform float u_triggerCount;
 uniform sampler2D u_springTexture;
 attribute float springTextureIndex;
 attribute float progress;
@@ -55,16 +55,18 @@ void main() {
   float springY = (springTextureIndex / u_springTextureHeight - 0.5) * u_noiseSpread;
   vec4 c = texture2D(u_springTexture, vec2(progress, springY));
   vec3 offset = vec3(-0.5, -0.5, -0.5) + c.xyz;
-  float rotation = cnoise(vec2(progress, springY + u_impactCount)) * u_rotationDensity;
-  float noiseY = rotation * offset.y + offset.y * offset.y;
+  /* float noiseY = rotation * offset.y + offset.y * offset.y; */
+  /* float xnoise = (cnoise(vec2(rotation + noiseY + position.x * u_noiseDensity + offset.y * u_noiseRamp * springY, noiseY + position.x * u_noiseDensity)) ) * u_noiseScale * offset.y * offset.y; */
+  /* float ynoise = (cnoise(vec2(-rotation + noiseY - position.y * u_noiseDensity + offset.y * u_noiseRamp * springY, noiseY + position.y * u_noiseDensity)) ) * u_noiseScale * offset.y * offset.y; */
+  /* float znoise = (cnoise(vec2(rotation - noiseY + position.z * u_noiseDensity + offset.y * u_noiseRamp * springY, noiseY + position.z * u_noiseDensity)) ) * u_noiseScale * offset.y * offset.y; */
 
-  float xnoise = (cnoise(vec2(rotation + noiseY + position.x * u_noiseDensity + offset.y * u_noiseRamp, noiseY + position.x * u_noiseDensity)) ) * u_noiseScale * offset.y * offset.y;
-  float ynoise = (cnoise(vec2(-rotation + noiseY - position.y * u_noiseDensity + offset.y * u_noiseRamp, noiseY + position.y * u_noiseDensity)) ) * u_noiseScale * offset.y * offset.y;
-  float znoise = (cnoise(vec2(rotation - noiseY + position.z * u_noiseDensity + offset.y * u_noiseRamp, noiseY + position.z * u_noiseDensity)) ) * u_noiseScale * offset.y * offset.y;
+  float rotation = cnoise(vec2(progress, springY + u_triggerCount)) * u_rotationDensity;
+  float xnoise = cnoise(vec2(rotation + position.x * u_noiseDensity + springY, offset.y * u_noiseRamp)) * springY * u_noiseScale * offset.y;
+  float ynoise = cnoise(vec2(rotation + position.y * u_noiseDensity + springY, 10. - offset.y * u_noiseRamp)) * springY * u_noiseScale * offset.y;
+  float znoise = cnoise(vec2(rotation + position.z * u_noiseDensity + springY, 5. - offset.y * u_noiseRamp)) * springY * u_noiseScale * offset.y;
 
   newPos.xyz += vec3(xnoise, ynoise, znoise);
-  vec4 mPosition = modelViewMatrix * vec4( newPos, 1.0 );
-  gl_Position = projectionMatrix * mPosition;
+  gl_Position = projectionMatrix * mPosition * modelViewMatrix * vec4(newPos, 1.);
 
-  vColor = vec4(color - u_impactCount, 1.);
+  vColor = vec4(color, 1.);
 }
