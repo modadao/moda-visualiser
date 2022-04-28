@@ -39,8 +39,9 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
       vertexShader: TubeShaderVert,
       fragmentShader: TubeShaderFrag,
       uniforms: {
-        springTexture: { value: Texture.DEFAULT_IMAGE },
-        springTextureHeight: { value: 0 },
+        u_springTexture: { value: Texture.DEFAULT_IMAGE },
+        u_springTextureHeight: { value: 0 },
+        u_triggerCount: { value: 0 },
       }
     });
 
@@ -153,14 +154,18 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
   update() {
     if (!this.uniformsSet && this.springPhysTextureManager.dataTexture) {
       console.log('Setting uniforms on featurebeziers')
-      this.material.uniforms.springTexture.value = this.springPhysTextureManager.dataTexture;
-      this.material.uniforms.springTextureHeight.value = this.springPhysTextureManager.height;
-      console.log(this.springPhysTextureManager.height)
+      this.material.uniforms.u_springTexture.value = this.springPhysTextureManager.dataTexture;
+      this.material.uniforms.u_springTextureHeight.value = this.springPhysTextureManager.height;
       this.material.needsUpdate = true;
       this.uniformsSet = true;
     }
   }
   // @ts-expect-error; 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  handleAudio(frame: IAudioFrame) { }
+  handleAudio(frame: IAudioFrame) { 
+    if (frame.trigger) {
+      this.material.uniforms.u_triggerCount.value += 1;
+      console.log('Updating trigger count to ', this.material.uniforms.u_triggerCount.value)
+    }
+  }
 }

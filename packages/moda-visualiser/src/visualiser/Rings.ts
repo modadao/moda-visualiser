@@ -40,39 +40,39 @@ export default class Rings extends Object3D implements IAudioReactive {
   }
 
   handleAudio(frame: IAudioFrame) {
-    // const currentIndex = Math.floor(frame.progress * 512);
-    // this.leftBuffer[currentIndex] += frame.power;
-    // this.rightBuffer[currentIndex] += frame.power;
-    //
-    // (() => {
-    //   let prevVal = this.leftBuffer[0] * 0.99;
-    //   for (let i = 1; i < this.leftBuffer.length; i++) {
-    //     const thisVal = this.leftBuffer[i];
-    //     this.leftBuffer[i] = prevVal;
-    //     prevVal = thisVal * 0.990;
-    //   }
-    //   this.leftBuffer[0] = prevVal;
-    // })();
-    //
-    // (() => {
-    //   let prevVal = this.rightBuffer[511] * 0.99;
-    //   for (let i = this.rightBuffer.length - 1; i >= 0; i--) {
-    //     const thisVal = this.rightBuffer[i];
-    //     this.rightBuffer[i] = prevVal;
-    //     prevVal = thisVal * 0.990;
-    //   }
-    //   this.rightBuffer[511] = prevVal;
-    // })();
-    //
-    // const data = new Uint8ClampedArray(512);
-    // for (let i = 0; i < data.length; i++) {
-    //   data[i] = (this.leftBuffer[i] + this.rightBuffer[i]) * 128;
-    // }
-    // this.bufferTexture.image = {
-    //   data,
-    //   width: 512,
-    //   height: 1
-    // }
-    // this.bufferTexture.needsUpdate = true;
+    const currentIndex = Math.floor(frame.progress * 512);
+    this.leftBuffer[currentIndex] += frame.power;
+    this.rightBuffer[currentIndex] += frame.power;
+
+    (() => {
+      let prevVal = this.leftBuffer[0] * 0.99;
+      for (let i = 1; i < this.leftBuffer.length; i++) {
+        const thisVal = this.leftBuffer[i];
+        this.leftBuffer[i] = prevVal;
+        prevVal = thisVal * 0.990;
+      }
+      this.leftBuffer[0] = prevVal;
+    })();
+
+    (() => {
+      let prevVal = this.rightBuffer[511] * 0.99;
+      for (let i = this.rightBuffer.length - 1; i >= 0; i--) {
+        const thisVal = this.rightBuffer[i];
+        this.rightBuffer[i] = prevVal;
+        prevVal = thisVal * 0.990;
+      }
+      this.rightBuffer[511] = prevVal;
+    })();
+
+    const data = new Uint8ClampedArray(512);
+    for (let i = 0; i < data.length; i++) {
+      data[i] = (this.leftBuffer[i] + this.rightBuffer[i]) * 128;
+    }
+    this.bufferTexture.image = {
+      data,
+      width: 512,
+      height: 1
+    }
+    this.bufferTexture.needsUpdate = true;
   }
 }

@@ -31,7 +31,6 @@ export default class FFTDebug implements IAudioReactive {
       this.canvas.width = barWidth * frame.fft.length;
     }
     if (this.canvas.height !== this.height) {
-      console.log(this.canvas.height, this.height)
       this.canvas.height = this.height + this.historyHeight;
     }
     const {ctx} = this;

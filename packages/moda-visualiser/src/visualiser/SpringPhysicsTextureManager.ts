@@ -56,15 +56,12 @@ export default class SpringPhysicsTextureManager implements IAudioReactive {
       const arrWidth = this.width * 6;
       for (let y = 0; y < this.height; y++) {
         const offset = Math.random() * 0.1 - 0.05;
-        const impactForceX = Math.random() * 2 - 1;
-        const impactForceY = Math.random() * 2 - 1;
-        const impactForceZ = Math.random() * 2 - 1;
         for (let x = 0; x < arrWidth; x += 6) {
           const distance = offset + Math.abs(MathUtils.clamp(MathUtils.mapLinear(targetPos - x/2, -radius, radius, -1, 1), -1, 1));
           const impact = Math.cos(distance * this.impactWaveFrequency);
-          this.data[y * arrWidth + x + 3] += (1 - distance) * impact * impactForceX * frame.power * this.impactForce;
-          this.data[y * arrWidth + x + 4] += (1 - distance) * impact * impactForceY * frame.power * this.impactForce;
-          this.data[y * arrWidth + x + 5] += (1 - distance) * impact * impactForceZ * frame.power * this.impactForce;
+          this.data[y * arrWidth + x + 3] += (1 - distance) * impact * frame.power * this.impactForce;
+          this.data[y * arrWidth + x + 4] += (1 - distance) * impact * frame.power * this.impactForce;
+          this.data[y * arrWidth + x + 5] += (1 - distance) * impact * frame.power * this.impactForce;
         }
       }
     }
@@ -82,7 +79,6 @@ export default class SpringPhysicsTextureManager implements IAudioReactive {
       this.data[i+2] += this.data[i+5];
     }
 
-    console.log(this.data.slice(0, 6))
 
     // Convert Float32Array to Uint8ClampedArray, with center point at 127
     const data = new Uint8ClampedArray(this.width * this.height * 4);
@@ -97,7 +93,6 @@ export default class SpringPhysicsTextureManager implements IAudioReactive {
       data[outputIndex+2] = Math.floor(z + 127);
       data[outputIndex + 3] = 255;
     }
-    console.log(data.slice(0, 4).toString())
     this.dataTexture.image = new ImageData(data, this.width, this.height);
     this.dataTexture.needsUpdate = true;
 

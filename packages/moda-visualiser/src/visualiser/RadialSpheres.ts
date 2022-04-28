@@ -29,7 +29,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   innerRing: Line;
   barGraph: RingBar;
   floor: Mesh|undefined;
-  playbackHead: PlaybackHead;
+  // playbackHead: PlaybackHead;
   progressRing: ProgressRing;
   bezierSpringPhysicsTextureManager = new SpringPhysicsTextureManager(512, 0.1, 0.9);
 
@@ -55,8 +55,8 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     this.rings.rotateX(Math.PI / 2);
     this.add(this.rings);
 
-    this.playbackHead = new PlaybackHead();
-    this.add(this.playbackHead)
+    // this.playbackHead = new PlaybackHead();
+    // this.add(this.playbackHead)
 
     this.progressRing = new ProgressRing(0, 1.2);
     this.add(this.progressRing);
@@ -155,7 +155,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     this.bezierSpringPhysicsTextureManager.handleAudio(frame);
     this.rings.handleAudio(frame);
     this.barGraph.handleAudio(frame);
-    this.playbackHead.handleAudio(frame);
+    // this.playbackHead.handleAudio(frame);
     this.progressRing.handleAudio(frame);
     if (this.points) this.points.handleAudio(frame);
     if (this.mainBezier) this.mainBezier.handleAudio(frame);

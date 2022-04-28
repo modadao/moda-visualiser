@@ -28,4 +28,5 @@ void main() {
 
 
   gl_Position = projectionMatrix * viewMatrix * vec4(alteredPos + vec3(0., n + (-1. + a) * 8., 0.), 1.);
+  /* gl_Position = projectionMatrix * viewMatrix * vec4(alteredPos, 1.); */
 }
