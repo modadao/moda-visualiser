@@ -1,6 +1,6 @@
 import { IDerivedCoordinate, IDerivedFingerPrint } from "../types";
 import { chunk, GradientSampler, ImgSampler, pickRandom } from "../utils";
-import { Vector3, Mesh, Object3D, LineBasicMaterial, Line, Camera, Color, MathUtils } from "three";
+import { Vector3, Mesh, Object3D, LineBasicMaterial, Line, Camera, Color, MathUtils, WebGLRenderer } from "three";
 import CircleLineGeometry from '../helpers/CircleLineGeometry';
 import { ISettings } from "../visualiser";
 import Rings from "./Rings";
@@ -9,9 +9,10 @@ import Spheres from "./Spheres";
 import FeatureBeziers from "./FeatureBeziers";
 import IAudioReactive from "./ReactiveObject";
 import { IAudioFrame } from "./AudioAnalyser";
-import PlaybackHead from "./PlaybackHead";
+// import PlaybackHead from "./PlaybackHead";
 import ProgressRing from "./ProgressRing";
 import SpringPhysicsTextureManager from "./SpringPhysicsTextureManager";
+import ShaderBackground from "./ShaderBackground";
 
 export interface IVisualiserCoordinate extends IDerivedCoordinate {
   theta: number,
@@ -32,11 +33,13 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   // playbackHead: PlaybackHead;
   progressRing: ProgressRing;
   bezierSpringPhysicsTextureManager = new SpringPhysicsTextureManager(512, 0.1, 0.9);
+  shaderBackground: ShaderBackground;
 
   constructor(private camera: Camera, fingerprint: IDerivedFingerPrint, settings: ISettings) {
     super();
     this.name = 'RadialSpheres'
 
+    this.shaderBackground = new ShaderBackground(new Color('#1B1D21'));
     // Add rings for flare
     const geo = new CircleLineGeometry(1, 512, fingerprint);
     const matWhite = new LineBasicMaterial({ color: 0xdddddd });
@@ -101,8 +104,13 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
 
   }
 
-  update() {
+  preRender(renderer: WebGLRenderer) {
+    this.shaderBackground.render(renderer);
+  }
+
+  update(elapsed: number) {
     const dir = new Vector3();
+    this.shaderBackground.update(elapsed);
     this.camera.updateMatrixWorld();
     this.camera.getWorldDirection(dir);
     if (this.points) {
@@ -157,6 +165,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   rotationalVelocity = 0;
   handleAudio(frame: IAudioFrame): void {
     this.bezierSpringPhysicsTextureManager.handleAudio(frame);
+    this.shaderBackground.handleAudio(frame);
     this.rings.handleAudio(frame);
     this.barGraph.handleAudio(frame);
     // this.playbackHead.handleAudio(frame);

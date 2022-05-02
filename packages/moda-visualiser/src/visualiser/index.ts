@@ -123,6 +123,7 @@ export default class ModaVisualiser {
     this.renderer.setSize(800, 800);
     this.renderer.setPixelRatio(window.devicePixelRatio)
     this.renderer.setClearColor(new Color('#1B1D21'))
+    this.renderer.autoClear = false;
     this.element.appendChild(this.renderer.domElement);
 
     this.scene = new Scene();
@@ -160,13 +161,16 @@ export default class ModaVisualiser {
 
   private update() {
     if (this.stopped) return;
+    this.renderer.clear();
 
+    const time = this.clock.getElapsedTime();
     const deltaTime = this.clock.getDelta();
     this.orbitControls.update()
 
     const audioFrame = this.audioManager.getAudioFrame(deltaTime);
     if (this.radialSpheres) {
-      this.radialSpheres.update();
+      this.radialSpheres.preRender(this.renderer);
+      this.radialSpheres.update(time);
       if (audioFrame.ready) this.radialSpheres.handleAudio(audioFrame);
     }
     this.fftDebug.handleAudio(audioFrame);
