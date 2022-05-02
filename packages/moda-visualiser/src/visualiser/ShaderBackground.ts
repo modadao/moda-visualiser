@@ -25,6 +25,7 @@ export default class ShaderBackground implements IAudioReactive {
   }
 
   update(elapsed: number) {
+    console.log({elapsed});
     this.mat.uniforms.u_time.value = elapsed;
   }
 

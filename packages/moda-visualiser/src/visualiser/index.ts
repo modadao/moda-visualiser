@@ -159,18 +159,19 @@ export default class ModaVisualiser {
     this.update();
   }
 
+  time = 0;
   private update() {
     if (this.stopped) return;
     this.renderer.clear();
 
-    const time = this.clock.getElapsedTime();
     const deltaTime = this.clock.getDelta();
+    this.time += deltaTime;
     this.orbitControls.update()
 
     const audioFrame = this.audioManager.getAudioFrame(deltaTime);
     if (this.radialSpheres) {
       this.radialSpheres.preRender(this.renderer);
-      this.radialSpheres.update(time);
+      this.radialSpheres.update(this.time);
       if (audioFrame.ready) this.radialSpheres.handleAudio(audioFrame);
     }
     this.fftDebug.handleAudio(audioFrame);
