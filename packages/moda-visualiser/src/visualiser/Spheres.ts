@@ -1,4 +1,4 @@
-import { BackSide, InstancedMesh, Matrix4, MeshBasicMaterial, Object3D, Quaternion, ShaderMaterial, SphereBufferGeometry, Vector2, Vector3 } from "three"
+import { BackSide, InstancedMesh, Matrix4, MeshBasicMaterial, Object3D, Quaternion, ShaderMaterial, SphereBufferGeometry, Texture, Vector2, Vector3 } from "three"
 import { ISettings } from ".";
 import { IDerivedFingerPrint } from "../types";
 import IAudioReactive from "./ReactiveObject";
@@ -8,12 +8,18 @@ import { IVisualiserCoordinate } from "./RadialSpheres";
 import { bezierVector } from "../utils";
 import { IAudioFrame } from "./AudioAnalyser";
 import { InstancedUniformsMesh } from 'three-instanced-uniforms-mesh'
+import SpringPhysicsTextureManager from "./SpringPhysicsTextureManager";
 
 export default class Spheres extends Object3D implements IAudioReactive {
   points: InstancedMesh;
   outlines: InstancedMesh;
-  constructor(_fingerprint: IDerivedFingerPrint, settings: ISettings, coords: IVisualiserCoordinate[]) {
+  dataTextureSet = false;
+  material: ShaderMaterial;
+  outlineMaterial: ShaderMaterial;
+  constructor(fingerprint: IDerivedFingerPrint, settings: ISettings, coords: IVisualiserCoordinate[], public springPhysTextureManager: SpringPhysicsTextureManager) {
     super();
+    this.name = 'Spheres';
+    console.log(fingerprint, coords);
     const { sizeSmall, sizeMed, sizeMdLg, sizeLarge } = settings.featurePoints
     const sizeBezierPoints = [
       new Vector2(0, sizeSmall),
@@ -25,11 +31,6 @@ export default class Spheres extends Object3D implements IAudioReactive {
       const [a, b, c, d] = sizeBezierPoints;
       return bezierVector(a,b,c,d,t)
     }
-    const outlineM = new MeshBasicMaterial({
-      color: 0xffffff,
-      side: BackSide,
-      depthWrite: false,
-    })
 
     // Build geometry 
     const g = new SphereBufferGeometry(1);
@@ -41,11 +42,19 @@ export default class Spheres extends Object3D implements IAudioReactive {
         u_outerColorMultiplier: { value: 1, },
         u_cameraDirection: { value: new Vector3() },
         u_pointIndex: { value: 0 },
+        u_pointLength: { value: fingerprint.coords.length },
+        u_springIndex: { value: springPhysTextureManager.registerSpringPhysicsElement() },
+        u_springHeight: { value: 50 },
+        u_springTexture: { value: new Texture() },
+        u_triggerCount: { value: 0 },
       }
     })
+    this.outlineMaterial = m.clone();
+    this.outlineMaterial.side = BackSide;
+    this.material = m;
 
     const points = new InstancedUniformsMesh(g, m, coords.length);
-    const outlines = new InstancedUniformsMesh(g, outlineM, coords.length);
+    const outlines = new InstancedUniformsMesh(g, this.outlineMaterial, coords.length);
 
     const mat4 = new Matrix4();
     const rot = new Quaternion();
@@ -83,7 +92,22 @@ export default class Spheres extends Object3D implements IAudioReactive {
     (this.points.material as ShaderMaterial).uniforms.u_cameraDirection.value = v;
   }
 
-  // @ts-expect-error; 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  handleAudio(frame: IAudioFrame) { }
+  update() {
+    if (!this.dataTextureSet && this.springPhysTextureManager.dataTexture) {
+      this.material.uniforms.u_springTexture.value = this.springPhysTextureManager.dataTexture;
+      this.material.uniforms.u_springHeight.value = this.springPhysTextureManager.height;
+      this.material.needsUpdate = true;
+      this.outlineMaterial.uniforms.u_springTexture.value = this.springPhysTextureManager.dataTexture;
+      this.outlineMaterial.uniforms.u_springHeight.value = this.springPhysTextureManager.height;
+      this.outlineMaterial.needsUpdate = true;
+      this.dataTextureSet = true;
+      console.log('Set sphere data tex')
+    }
+  }
+
+  handleAudio(frame: IAudioFrame) {
+    if (frame.trigger) {
+      this.material.uniforms.u_triggerCount = { value: this.material.uniforms.u_triggerCount.value + 1};
+    }
+  }
 }

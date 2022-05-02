@@ -61,6 +61,7 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
   uniformsSet = false;
   constructor(_fingerprint: IDerivedFingerPrint, public settings: ISettings, coords: IVisualiserCoordinate[], public springPhysTextureManager: SpringPhysicsTextureManager, options?: Partial<IFeatureBezierOptions>) {
     super();
+    this.name = 'FeatureBeziers'
 
     const opts = Object.assign({}, defaultOptions, options ?? {}) as IFeatureBezierOptions;
     this.material = getMaterial();

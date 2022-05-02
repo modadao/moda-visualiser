@@ -35,6 +35,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
 
   constructor(private camera: Camera, fingerprint: IDerivedFingerPrint, settings: ISettings) {
     super();
+    this.name = 'RadialSpheres'
 
     // Add rings for flare
     const geo = new CircleLineGeometry(1, 512, fingerprint);
@@ -65,7 +66,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     (async () => {
       const coords = await this.calculateCoords(fingerprint, settings, colorSampler);
 
-      this.points = new Spheres(fingerprint, settings, coords);
+      this.points = new Spheres(fingerprint, settings, coords, this.bezierSpringPhysicsTextureManager);
       this.add(this.points);
 
       // Bezier through feature points
@@ -104,7 +105,10 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     const dir = new Vector3();
     this.camera.updateMatrixWorld();
     this.camera.getWorldDirection(dir);
-    if (this.points) this.points.setCameraDirection(dir);
+    if (this.points) {
+      this.points.setCameraDirection(dir);
+      this.points.update();
+    }
     if (this.mainBezier) this.mainBezier.update();
     this.secondaryBeziers.forEach(b => b.update());
   }
