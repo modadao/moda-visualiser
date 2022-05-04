@@ -1,4 +1,4 @@
-import { DataTexture, MathUtils, RGBAFormat, RGFormat, UnsignedByteType } from "three";
+import { DataTexture, FloatType, MathUtils, RGBAFormat, RGFormat, UnsignedByteType } from "three";
 import { IAudioFrame } from "./AudioAnalyser";
 import gui from "./gui";
 import IAudioReactive from "./ReactiveObject";
@@ -9,13 +9,13 @@ export default class SpringPhysicsTextureManager implements IAudioReactive {
   data!: Float32Array;
   imageData!: Uint8ClampedArray;
 
-  impactRadius = 0.01;
+  impactRadius = 0.005;
   impactForce = 1.2;
   impactWaveFrequency = 8;
 
   fakeSpringPhysics = false;
   fakeSpringPhysicsValue = 0;
-  constructor(public width: number, public springConstant: number, public inertia: number) {
+  constructor(public width: number, public springConstant = 0.05, public inertia = 0.95) {
     
     gui.add(this, 'springConstant', 0.01, 1, 0.01);
     gui.add(this, 'inertia', 0.01, 1, 0.01);
@@ -40,19 +40,18 @@ export default class SpringPhysicsTextureManager implements IAudioReactive {
   ctx!: CanvasRenderingContext2D;
   build() {
     this.data = new Float32Array(new Array(this.width * this.height * 6).fill(1));
-    this.dataTexture = new DataTexture(null, this.width, this.height, RGBAFormat, UnsignedByteType);
+    this.dataTexture = new DataTexture(null, this.width, this.height, RGBAFormat, FloatType);
     this.dataTexture.needsUpdate = true;
     console.log('Building spring physics texture manager', this.width, this.height);
 
-    this.canvas = document.createElement('canvas');
-    this.canvas.width = this.width;
-    this.canvas.height = this.height;
-    this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
-    document.body.appendChild(this.canvas);
+    // this.canvas = document.createElement('canvas');
+    // this.canvas.width = this.width;
+    // this.canvas.height = this.height;
+    // this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
+    // document.body.appendChild(this.canvas);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  // @ts-expect-error
   handleAudio(frame: IAudioFrame): void {
     // When frame triggers, apply a force to a section of the bezier
     if (frame.trigger) {
@@ -97,22 +96,28 @@ export default class SpringPhysicsTextureManager implements IAudioReactive {
 
 
     // Convert Float32Array to Uint8ClampedArray, with center point at 127
-    const data = new Uint8ClampedArray(this.width * this.height * 4);
+    const data = new Float32Array(this.width * this.height * 4);
     for (let i = 0; i < this.width * this.height; i++) {
       const sourceIndex = i * 6;
       const outputIndex = i * 4;
-      const x = this.data[sourceIndex] * 127;
-      const y = this.data[sourceIndex + 1] * 127;
-      const z = this.data[sourceIndex + 2] * 127;
-      data[outputIndex] = Math.floor(x + 127);
-      data[outputIndex+1] = Math.floor(y + 127);
-      data[outputIndex+2] = Math.floor(z + 127);
+      const x = this.data[sourceIndex];
+      const y = this.data[sourceIndex + 1];
+      const z = this.data[sourceIndex + 2];
+      data[outputIndex] = x;
+      data[outputIndex+1] = y;
+      data[outputIndex+2] = z;
       data[outputIndex + 3] = 255;
     }
-    this.dataTexture.image = new ImageData(data, this.width, this.height);
+    // this.dataTexture.image = new ImageData(data, this.width, this.height);
+    this.dataTexture.image = {
+      // @ts-expect-error; Undefined valid behaviour
+      data,
+      width: this.width,
+      height: this.height,
+    }
     this.dataTexture.needsUpdate = true;
 
-    this.ctx.putImageData(this.dataTexture.image, 0, 0);
+    // this.ctx.putImageData(this.dataTexture.image, 0, 0);
   }
 }
 

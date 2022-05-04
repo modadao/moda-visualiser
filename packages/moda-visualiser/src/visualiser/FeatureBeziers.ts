@@ -40,18 +40,18 @@ const getMaterial = () => {
         u_springTextureHeight: { value: 0 },
         u_triggerCount: { value: 0 },
         u_noiseDensity: { value: 0.2 },
-        u_noiseScale: { value: 8 },
-        u_noiseRamp: { value: 8 },
+        u_noiseScale: { value: 1 },
+        u_noiseRamp: { value: 1 },
         u_noiseSpread: { value: 1 },
         u_rotationDensity: { value: 2 },
       }
     });
 
-    gui.add(mat.uniforms.u_noiseDensity, 'value', 0, 5, 0.01).name('Noise Density');
-    gui.add(mat.uniforms.u_noiseScale, 'value', 0, 15, 0.01).name('Noise Scale');
-    gui.add(mat.uniforms.u_noiseRamp, 'value', 0, 15, 0.01).name('Noise Ramp');
-    gui.add(mat.uniforms.u_noiseSpread, 'value', 0, 15, 0.01).name('Noise Spread');
-    gui.add(mat.uniforms.u_rotationDensity, 'value', 0, 15, 0.01).name('Noise Rotation Density');
+    gui.add(mat.uniforms.u_noiseDensity, 'value', 0, 1, 0.001).name('Noise Density');
+    gui.add(mat.uniforms.u_noiseScale, 'value', 0, 30, 0.01).name('Noise Scale');
+    gui.add(mat.uniforms.u_noiseRamp, 'value', 0, 30, 0.01).name('Noise Ramp');
+    gui.add(mat.uniforms.u_noiseSpread, 'value', 0, 10, 0.01).name('Noise Spread');
+    gui.add(mat.uniforms.u_rotationDensity, 'value', 0, 10, 0.01).name('Noise Rotation Density');
   }
   return mat;
 }

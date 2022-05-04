@@ -32,7 +32,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   floor: Mesh|undefined;
   // playbackHead: PlaybackHead;
   progressRing: ProgressRing;
-  bezierSpringPhysicsTextureManager = new SpringPhysicsTextureManager(512, 0.1, 0.9);
+  bezierSpringPhysicsTextureManager = new SpringPhysicsTextureManager(512);
   shaderBackground: ShaderBackground;
 
   constructor(private camera: Camera, fingerprint: IDerivedFingerPrint, settings: ISettings) {
