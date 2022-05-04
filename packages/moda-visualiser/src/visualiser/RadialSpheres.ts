@@ -62,7 +62,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     // this.playbackHead = new PlaybackHead();
     // this.add(this.playbackHead)
 
-    this.progressRing = new ProgressRing(0, 1.2);
+    this.progressRing = new ProgressRing(3.175, 0.05);
     this.add(this.progressRing);
 
     const colorSampler = settings.color.colorschemeMethod === 'gradient' ? new GradientSampler(settings.color.custom) : new ImgSampler(settings.color.colorTextureSrc);
