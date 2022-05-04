@@ -8,7 +8,7 @@ import { IVisualiserCoordinate } from "./RadialSpheres";
 import { bezierVector } from "../utils";
 import { IAudioFrame } from "./AudioAnalyser";
 import { InstancedUniformsMesh } from 'three-instanced-uniforms-mesh'
-import SpringPhysicsTextureManager from "./SpringPhysicsTextureManager";
+import FFTTextureManager from "./FftTextureManager";
 
 export default class Spheres extends Object3D implements IAudioReactive {
   points: InstancedMesh;
@@ -16,7 +16,7 @@ export default class Spheres extends Object3D implements IAudioReactive {
   dataTextureSet = false;
   material: ShaderMaterial;
   outlineMaterial: ShaderMaterial;
-  constructor(fingerprint: IDerivedFingerPrint, settings: ISettings, coords: IVisualiserCoordinate[], public springPhysTextureManager: SpringPhysicsTextureManager) {
+  constructor(fingerprint: IDerivedFingerPrint, settings: ISettings, coords: IVisualiserCoordinate[], public fftTextureManager: FFTTextureManager) {
     super();
     this.name = 'Spheres';
     console.log(fingerprint, coords);
@@ -41,10 +41,9 @@ export default class Spheres extends Object3D implements IAudioReactive {
         u_innerColorMultiplier: { value: 2.0, },
         u_outerColorMultiplier: { value: 1, },
         u_cameraDirection: { value: new Vector3() },
+        u_time: { value: 0 },
         u_pointIndex: { value: 0 },
         u_pointLength: { value: fingerprint.coords.length },
-        u_springIndex: { value: springPhysTextureManager.registerSpringPhysicsElement() },
-        u_springHeight: { value: 50 },
         u_springTexture: { value: new Texture() },
         u_triggerCount: { value: 0 },
       }
@@ -92,13 +91,13 @@ export default class Spheres extends Object3D implements IAudioReactive {
     (this.points.material as ShaderMaterial).uniforms.u_cameraDirection.value = v;
   }
 
-  update() {
-    if (!this.dataTextureSet && this.springPhysTextureManager.dataTexture) {
-      this.material.uniforms.u_springTexture.value = this.springPhysTextureManager.dataTexture;
-      this.material.uniforms.u_springHeight.value = this.springPhysTextureManager.height;
+  update(elapsed: number) {
+    this.material.uniforms.u_time.value = elapsed;
+    this.outlineMaterial.uniforms.u_time.value = elapsed;
+    if (!this.dataTextureSet && this.fftTextureManager.dataTexture) {
+      this.material.uniforms.u_springTexture.value = this.fftTextureManager.dataTexture;
       this.material.needsUpdate = true;
-      this.outlineMaterial.uniforms.u_springTexture.value = this.springPhysTextureManager.dataTexture;
-      this.outlineMaterial.uniforms.u_springHeight.value = this.springPhysTextureManager.height;
+      this.outlineMaterial.uniforms.u_springTexture.value = this.fftTextureManager.dataTexture;
       this.outlineMaterial.needsUpdate = true;
       this.dataTextureSet = true;
       console.log('Set sphere data tex')

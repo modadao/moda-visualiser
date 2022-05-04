@@ -13,6 +13,7 @@ import { IAudioFrame } from "./AudioAnalyser";
 import ProgressRing from "./ProgressRing";
 import SpringPhysicsTextureManager from "./SpringPhysicsTextureManager";
 import ShaderBackground from "./ShaderBackground";
+import FFTTextureManager from "./FftTextureManager";
 
 export interface IVisualiserCoordinate extends IDerivedCoordinate {
   theta: number,
@@ -33,6 +34,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   // playbackHead: PlaybackHead;
   progressRing: ProgressRing;
   bezierSpringPhysicsTextureManager = new SpringPhysicsTextureManager(512);
+  fftTextureManager = new FFTTextureManager(64);
   shaderBackground: ShaderBackground;
 
   constructor(private camera: Camera, fingerprint: IDerivedFingerPrint, settings: ISettings) {
@@ -69,7 +71,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     (async () => {
       const coords = await this.calculateCoords(fingerprint, settings, colorSampler);
 
-      this.points = new Spheres(fingerprint, settings, coords, this.bezierSpringPhysicsTextureManager);
+      this.points = new Spheres(fingerprint, settings, coords, this.fftTextureManager);
       this.add(this.points);
 
       // Bezier through feature points
@@ -115,7 +117,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     this.camera.getWorldDirection(dir);
     if (this.points) {
       this.points.setCameraDirection(dir);
-      this.points.update();
+      this.points.update(elapsed);
     }
     if (this.mainBezier) this.mainBezier.update();
     this.secondaryBeziers.forEach(b => b.update());
@@ -164,6 +166,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
 
   rotationalVelocity = 0;
   handleAudio(frame: IAudioFrame): void {
+    this.fftTextureManager.handleAudio(frame);
     this.bezierSpringPhysicsTextureManager.handleAudio(frame);
     this.shaderBackground.handleAudio(frame);
     this.rings.handleAudio(frame);

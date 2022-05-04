@@ -25,7 +25,6 @@ export default class ShaderBackground implements IAudioReactive {
   }
 
   update(elapsed: number) {
-    console.log({elapsed});
     this.mat.uniforms.u_time.value = elapsed;
   }
 
@@ -36,10 +35,4 @@ export default class ShaderBackground implements IAudioReactive {
   handleAudio(frame: IAudioFrame): void {
     this.mat.uniforms.u_power.value = frame.power;
   }
-}
-
-if (import.meta.hot) {
-  import.meta.hot.accept((newModule) => {
-    console.log('updated: count is now ', newModule)
-  })
 }
