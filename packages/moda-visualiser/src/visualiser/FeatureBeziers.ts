@@ -142,17 +142,21 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
    */
   private generateTube (curves: GenerateCurvesResult, segments: number, radius: number, radialSegments: number, springTextureIndex: number) {
     const tempColor = new Color();
-    const geometries = curves.map((el, i) => {
+    const totalLength = Math.max(...curves.map(c => c.curve.getLength()));
+    let baseLength = 0;
+
+    const geometries = curves.map((el) => {
       const { cur, next, curve } = el;
-      const scaledSegments = Math.floor(segments * curve.getLength());
+      const length = curve.getLength();
+      const scaledSegments = Math.floor(segments * length);
       const tubeGeometry = new TubeGeometry(curve, scaledSegments, radius, radialSegments, false );
 
       const posAttributeLength = tubeGeometry.getAttribute('position').array.length
       const nVerts = posAttributeLength / 3;
       const colorsData: Array<number> = [];
       const progressAttribute = [];
-      const baseProgress = i / (curves.length);
-      const progressLength = 1 / (curves.length);
+      const baseProgress = baseLength / totalLength;
+      const progressLength = length / totalLength;
       for (let i = 0; i < nVerts; i++) {
         const thisProgress = Math.floor(i/radialSegments) / Math.floor(nVerts / radialSegments);
         tempColor.copy(cur.color);
@@ -164,6 +168,7 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
       tubeGeometry.setAttribute('color', new BufferAttribute(new Float32Array(colorsData), 3));
       tubeGeometry.setAttribute('springTextureIndex', new BufferAttribute(new Float32Array(progressAttribute.length).fill(springTextureIndex), 1));
       tubeGeometry.setAttribute('progress', new BufferAttribute(new Float32Array(progressAttribute), 1));
+      baseLength += length;
       return tubeGeometry;
     })
     const geometry = BufferGeometryUtils.mergeBufferGeometries([...geometries]);
