@@ -56,7 +56,7 @@ void main() {
   vec3 newPos = position;
   float springY = (springTextureIndex / u_springTextureHeight - 0.5) * u_noiseSpread;
   vec4 c = texture2D(u_springTexture, vec2(progress, springY));
-  vec3 offset = vec3(-0.5, -0.5, -0.5) + c.xyz;
+  vec3 offset = c.xyz;
   /* float noiseY = rotation * offset.y + offset.y * offset.y; */
   /* float xnoise = (cnoise(vec2(rotation + noiseY + position.x * u_noiseDensity + offset.y * u_noiseRamp * springY, noiseY + position.x * u_noiseDensity)) ) * u_noiseScale * offset.y * offset.y; */
   /* float ynoise = (cnoise(vec2(-rotation + noiseY - position.y * u_noiseDensity + offset.y * u_noiseRamp * springY, noiseY + position.y * u_noiseDensity)) ) * u_noiseScale * offset.y * offset.y; */
