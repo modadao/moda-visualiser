@@ -1,9 +1,9 @@
 import { DataTexture, Line, Object3D, RedFormat, ShaderMaterial, UnsignedByteType } from "three"
 import { ISettings } from ".";
+import { IDerivedFingerPrint } from "../types";
 import CircleLineGeometry from "../helpers/CircleLineGeometry";
 import RingFragShader from '../shaders/v1_rings_frag.glsl';
 import RingVertShader from '../shaders/v1_rings_vert.glsl';
-import { IDerivedFingerPrint } from "../types";
 import { IAudioFrame } from "./AudioAnalyser";
 import IAudioReactive from "./ReactiveObject";
 

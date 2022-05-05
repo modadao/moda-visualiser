@@ -9,6 +9,7 @@ import { bezierVector } from "../utils";
 import { IAudioFrame } from "./AudioAnalyser";
 import { InstancedUniformsMesh } from 'three-instanced-uniforms-mesh'
 import FFTTextureManager from "./FftTextureManager";
+import SuperNova from "./SuperNova";
 
 export default class Spheres extends Object3D implements IAudioReactive {
   points: InstancedMesh;
@@ -16,7 +17,7 @@ export default class Spheres extends Object3D implements IAudioReactive {
   dataTextureSet = false;
   material: ShaderMaterial;
   outlineMaterial: ShaderMaterial;
-  constructor(fingerprint: IDerivedFingerPrint, settings: ISettings, coords: IVisualiserCoordinate[], public fftTextureManager: FFTTextureManager) {
+  constructor(fingerprint: IDerivedFingerPrint, settings: ISettings, public coords: IVisualiserCoordinate[], public fftTextureManager: FFTTextureManager) {
     super();
     this.name = 'Spheres';
     console.log(fingerprint, coords);
@@ -34,6 +35,7 @@ export default class Spheres extends Object3D implements IAudioReactive {
 
     // Build geometry 
     const g = new SphereBufferGeometry(1);
+    g.center();
     const m = new ShaderMaterial({
       fragmentShader: FragShader,
       vertexShader: VertShader,
@@ -85,13 +87,15 @@ export default class Spheres extends Object3D implements IAudioReactive {
     this.points = points;
     this.outlines = outlines;
     this.add(this.points, this.outlines);
+
+    this.disposeSuperNova = this.disposeSuperNova.bind(this);
   }
 
   setCameraDirection(v: Vector3) {
     (this.points.material as ShaderMaterial).uniforms.u_cameraDirection.value = v;
   }
 
-  update(elapsed: number) {
+  update(elapsed: number, delta: number) {
     this.material.uniforms.u_time.value = elapsed;
     this.outlineMaterial.uniforms.u_time.value = elapsed;
     if (!this.dataTextureSet && this.fftTextureManager.dataTexture) {
@@ -102,11 +106,36 @@ export default class Spheres extends Object3D implements IAudioReactive {
       this.dataTextureSet = true;
       console.log('Set sphere data tex')
     }
+
+    this.superNovas.forEach(sn => sn.update(delta));
   }
 
+  superNovas: SuperNova[] = [];
   handleAudio(frame: IAudioFrame) {
     if (frame.trigger) {
       this.material.uniforms.u_triggerCount = { value: this.material.uniforms.u_triggerCount.value + 1};
     }
+    const { data } = this.fftTextureManager;
+    for (let i = 0; i < frame.fft.length; i++) {
+      const dataI = i * 4;
+      if (data[dataI + 3] > 0.5) {
+        const a = data[dataI + 1];
+        
+        const sn = new SuperNova(this.coords[i].featureLevel * 2, this.disposeSuperNova);
+        sn.position.copy(this.coords[i].pos);
+        sn.position.y += a * 0.2;
+        this.superNovas.push(sn);
+        this.add(sn);
+      }
+    }
+  }
+
+  disposeSuperNova(toRemove: SuperNova) {
+    const toRemoveArray = this.superNovas.filter(sn => sn.id === toRemove.id);
+    toRemoveArray.forEach((sn) => {
+      sn.dispose();
+      this.remove(sn);
+    })
+    this.superNovas = this.superNovas.filter(sn => sn.id !== toRemove.id);
   }
 }

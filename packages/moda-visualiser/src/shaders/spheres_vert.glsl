@@ -17,9 +17,11 @@ void main() {
   mat4 instMat = instanceMatrix;
   vBrightness = instMat[3][3];
   instMat[3][3] = 1.;
-  vec3 newPos = position;
+
   float theta = fract(u_pointIndex / ( u_pointLength - 0.5 ) + u_time * 0.01 );
   vec4 c = texture2D(u_springTexture, vec2(theta, 0.5));
+
+  vec3 newPos = position;
   vec4 mPosition = modelMatrix * instMat * vec4( newPos, 1.0 );
   mPosition.y += (c.g * 0.2);
 

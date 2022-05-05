@@ -171,7 +171,7 @@ export default class ModaVisualiser {
     const audioFrame = this.audioManager.getAudioFrame(deltaTime);
     if (this.radialSpheres) {
       this.radialSpheres.preRender(this.renderer);
-      this.radialSpheres.update(this.time);
+      this.radialSpheres.update(this.time, deltaTime);
       if (audioFrame.ready) this.radialSpheres.handleAudio(audioFrame);
     }
     this.fftDebug.handleAudio(audioFrame);

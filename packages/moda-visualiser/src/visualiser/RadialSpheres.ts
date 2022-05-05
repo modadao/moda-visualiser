@@ -3,7 +3,6 @@ import { chunk, GradientSampler, ImgSampler, pickRandom } from "../utils";
 import { Vector3, Mesh, Object3D, LineBasicMaterial, Line, Camera, Color, MathUtils, WebGLRenderer } from "three";
 import CircleLineGeometry from '../helpers/CircleLineGeometry';
 import { ISettings } from "../visualiser";
-import Rings from "./Rings";
 import RingBar from "./RingBar";
 import Spheres from "./Spheres";
 import FeatureBeziers from "./FeatureBeziers";
@@ -14,6 +13,7 @@ import ProgressRing from "./ProgressRing";
 import SpringPhysicsTextureManager from "./SpringPhysicsTextureManager";
 import ShaderBackground from "./ShaderBackground";
 import FFTTextureManager from "./FftTextureManager";
+import ShaderRings from "./ShaderRings";
 
 export interface IVisualiserCoordinate extends IDerivedCoordinate {
   theta: number,
@@ -27,7 +27,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   points: Spheres|undefined;
   mainBezier: FeatureBeziers|undefined;
   secondaryBeziers: FeatureBeziers[] = [];
-  rings: Rings;
+  rings: ShaderRings;
   innerRing: Line;
   barGraph: RingBar;
   floor: Mesh|undefined;
@@ -57,14 +57,14 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     this.add(this.barGraph);
 
     // Outer rings 
-    this.rings = new Rings(fingerprint, settings);
+    this.rings = new ShaderRings(fingerprint, settings, this.bezierSpringPhysicsTextureManager);
     this.rings.rotateX(Math.PI / 2);
     this.add(this.rings);
 
     // this.playbackHead = new PlaybackHead();
     // this.add(this.playbackHead)
 
-    this.progressRing = new ProgressRing(3.175, 0.05);
+    this.progressRing = new ProgressRing(3.170, 0.15);
     this.add(this.progressRing);
 
     const colorSampler = settings.color.colorschemeMethod === 'gradient' ? new GradientSampler(settings.color.custom) : new ImgSampler(settings.color.colorTextureSrc);
@@ -110,14 +110,15 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     this.shaderBackground.render(renderer);
   }
 
-  update(elapsed: number) {
+  update(elapsed: number, delta: number) {
     const dir = new Vector3();
     this.shaderBackground.update(elapsed);
     this.camera.updateMatrixWorld();
     this.camera.getWorldDirection(dir);
+    this.rings.update(elapsed);
     if (this.points) {
       this.points.setCameraDirection(dir);
-      this.points.update(elapsed);
+      this.points.update(elapsed, delta);
     }
     if (this.mainBezier) this.mainBezier.update();
     this.secondaryBeziers.forEach(b => b.update());

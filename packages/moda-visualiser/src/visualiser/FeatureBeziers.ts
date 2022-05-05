@@ -40,8 +40,8 @@ const getMaterial = () => {
         u_springTextureHeight: { value: 0 },
         u_triggerCount: { value: 0 },
         u_noiseDensity: { value: 0.2 },
-        u_noiseScale: { value: 1 },
-        u_noiseRamp: { value: 1 },
+        u_noiseScale: { value: 4 },
+        u_noiseRamp: { value: 6 },
         u_noiseSpread: { value: 1 },
         u_rotationDensity: { value: 2 },
       }
