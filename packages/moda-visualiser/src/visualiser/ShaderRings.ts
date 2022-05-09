@@ -1,4 +1,4 @@
-import { DoubleSide, Mesh, Object3D, PlaneBufferGeometry, ShaderMaterial } from "three";
+import { DoubleSide, MathUtils, Mesh, Object3D, PlaneBufferGeometry, ShaderMaterial } from "three";
 import { ISettings } from ".";
 import { IDerivedFingerPrint } from "../types";
 import IAudioReactive from "./ReactiveObject";
@@ -35,7 +35,10 @@ export default class ShaderRings extends Object3D implements IAudioReactive {
     this.mesh.material.uniforms.u_time.value = elapsed;
   }
 
+  internalPower = 0;
   handleAudio(frame: IAudioFrame): void {
-    this.mesh.material.uniforms.u_power.value = this.fftTextureManager.data[1];
+    const mixAmount = this.internalPower < frame.power ? 0.4 : 0.1;
+    this.internalPower = MathUtils.lerp(this.internalPower, frame.power, mixAmount);
+    this.mesh.material.uniforms.u_power.value = this.internalPower;
   }
 }

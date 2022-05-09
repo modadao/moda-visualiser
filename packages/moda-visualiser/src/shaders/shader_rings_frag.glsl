@@ -39,12 +39,14 @@ const float bottom_edge = 0.985;
 const float upper_edge = 0.99;
 
 void main() {
-  /* float noiseScale = noise(vec3(vPos.xy * 0.5, u_time)) * 2.; */
-  float noiseScale = 0.5;
+  float noiseScale = noise(vec3(vPos.xy * 0.3, u_time * 0.2)) * 2.;
+  noiseScale *= noise(vec3(vPos.yx * 0.3, -u_time * 0.2)) * 2.;
+  noiseScale = clamp(1. - noiseScale, 0., 1.) * u_power * 1.;
   float realD = length(vPos);
+  float distScale = clamp(realD - inner_radius, 0., 1.);
   vec2 pos = vec2(
-    vPos.x + noise(vec3(vPos.x * 0.2, vPos.x * 0.2, -u_time) * u_power * noiseScale * clamp(realD - inner_radius, 1., 0.)),
-    vPos.y + noise(vec3(vPos.y * 0.2, vPos.y * 0.2, u_time) * u_power * noiseScale * clamp(realD - inner_radius, 1., 0.))
+    vPos.x + (noise(vec3(vPos.x * 0.4 + u_time, vPos.x * 0.4, -u_time)) - 0.5) * u_power * distScale,
+    vPos.y + (noise(vec3(vPos.y * 0.4 - u_time, vPos.y * 0.4, u_time)) - 0.5) * u_power * distScale
   );
 
   float d = length(pos);
@@ -53,7 +55,9 @@ void main() {
   float m2 = 1. - smoothstep(outer_radius, outer_radius+edge_size, d);
   float m = min(m1, m2);
 
+  vec3 c = vec3(0.5);
+
   float a = sin((d - inner_radius) * sine_scale);
-  float a2 = smoothstep(bottom_edge, upper_edge, a) * m;
-  gl_FragColor = vec4(0.5, 0.5, 0.5, a2);
+  float a2 = smoothstep(bottom_edge - noiseScale , upper_edge, a) * m;
+  gl_FragColor = vec4(c.rgb, a2);
 }
