@@ -129,11 +129,16 @@ export default class Spheres extends Object3D implements IAudioReactive {
         sn.position.y += a * 0.2;
         this.superNovas.push(sn);
         this.add(sn);
-        
-        const s = new SuperNovaSpriteEmitter(10, this.disposeSuperNovaSprites);
-        s.position.copy(sn.position);
-        this.add(s);
-        this.sprites.push(s);
+
+        const nSprites = Math.floor(this.coords[i].scale * 50);
+        if (nSprites > 0) {
+          const s = new SuperNovaSpriteEmitter(nSprites, this.disposeSuperNovaSprites, {
+            color: this.coords[i].color,
+          });
+          s.position.copy(sn.position);
+          this.add(s);
+          this.sprites.push(s);
+        }
       }
     }
   }

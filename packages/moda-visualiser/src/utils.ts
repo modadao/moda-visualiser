@@ -47,6 +47,15 @@ export const customRandom = {
   },
 }
 
+export const fillArray = <T>(target: T[], source: T[]) => {
+  const targetLength = target.length;
+  const sourceLength = source.length;
+  for (let i = 0; i < targetLength; i++) {
+    const sourceI = i % sourceLength;
+    target[i] = source[sourceI];
+  }
+}
+
 /**
   * @param fingerprint - The fingerprint from the MODA API
   * @param settings - Settings object

@@ -1,5 +1,5 @@
 import { IDerivedCoordinate, IDerivedFingerPrint } from "../types";
-import { chunk, GradientSampler, ImgSampler, pickRandom } from "../utils";
+import { chunk, GradientSampler, ImgSampler } from "../utils";
 import { Vector3, Mesh, Object3D, LineBasicMaterial, Line, Camera, Color, MathUtils, WebGLRenderer } from "three";
 import CircleLineGeometry from '../helpers/CircleLineGeometry';
 import { ISettings } from "../visualiser";
