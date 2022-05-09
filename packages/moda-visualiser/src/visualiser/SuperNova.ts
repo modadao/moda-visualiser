@@ -1,3 +1,4 @@
+import SimplexNoise from "simplex-noise";
 import { AdditiveBlending, BoxBufferGeometry, BufferAttribute, BufferGeometry, Color, MathUtils, Mesh, Object3D, Points, PointsMaterial, ShaderMaterial, ShaderMaterialParameters, Sprite, SpriteMaterial, TextureLoader, Vector3, } from "three";
 import ProgressRingFrag from '../shaders/progress_ring_frag.glsl';
 import ProgressRingVert from '../shaders/progress_ring_vert.glsl';
@@ -60,7 +61,7 @@ float noise( in vec3 x )
           noise(vec3(worldPos.y * NOISE_SCALE, worldPos.z, (t + 0.3) * NOISE_SCALE)),
           noise(vec3(worldPos.z * NOISE_SCALE, worldPos.x, (t - 0.2) * 0.8 * NOISE_SCALE))
         );
-      vec4 mPosition = modelMatrix * vec4( position + altPos, 1.0 );
+      vec4 mPosition = modelMatrix * vec4( position, 1.0 );
       gl_Position = projectionMatrix * viewMatrix * mPosition;
       float pointSize = 15.;
       gl_PointSize = pointSize - distance(cameraPosition, mPosition.xyz) / pointSize;
@@ -93,6 +94,9 @@ const snseDefaults: ISuperNovaSpriteEmitterOptions = {
   color: new Color(0xffffff),
 }
 
+const simplex = new SimplexNoise();
+console.log(simplex.noise3D(1, 1, 1))
+
 export class SuperNovaSpriteEmitter extends Object3D {
   material: ShaderMaterial;
   geometry: BufferGeometry;
@@ -104,17 +108,15 @@ export class SuperNovaSpriteEmitter extends Object3D {
   constructor(public count: number, disposeCallback: (sn: SuperNovaSpriteEmitter) => void, opts = snseDefaults) {
     super();
     const vertices = [];
-    const { sin, cos, tan } = Math;
-    const temp = new Vector3();
-    const temp2 = new Vector3();
+    const { sin, cos, random } = Math;
     for ( let i = 0; i < count * 3; i += 3 ) {
-      // const theta = i / (count * 3) * 4;
-      temp2.randomDirection();
-      temp.add(temp2).normalize().multiplyScalar(0.1);
-      vertices.push(...temp.toArray());
-      // vertices.push((sin(theta) - 0.5) * 0.2);
-      // vertices.push((cos(theta) - 0.5) * 0.2);
-      // vertices.push((sin(theta + 0.5) - 0.5) * 0.2);
+      const theta = i / (count * 3) * 4;
+      // temp2.randomDirection();
+      // temp.add(temp2).normalize().multiplyScalar(0.1);
+      // vertices.push(...temp.toArray());
+      vertices.push((sin(theta) - 0.5) * 0.2);
+      vertices.push(random() * 0.3);
+      vertices.push((sin(theta + 0.5) - 0.5) * 0.2);
     }
     this.accelerations = new Float32Array(vertices);
     this.positions = new Float32Array(vertices.map(() => 0));
@@ -140,14 +142,21 @@ export class SuperNovaSpriteEmitter extends Object3D {
     this.material.uniforms.u_lifetime.value = 2;
   }
   setStartTime = false;
+
+  private static readonly NOISE_SCALE = 0.55;
+  private static readonly FLOW_SPEED = 0.05;
   update(elapsed: number, delta: number) {
+    const { NOISE_SCALE, FLOW_SPEED } = SuperNovaSpriteEmitter;
     for (let i = 0; i < this.count; i++) {
       const bufferI = i * 3;
       // Update acceleration
-      this.accelerations[bufferI] *= 0.95;
-      this.accelerations[bufferI + 1] *= 0.95;
-      this.accelerations[bufferI + 1] -= 0.1 * delta;
-      this.accelerations[bufferI + 2] *= 0.95;
+      const [x, y, z] = this.positions.slice(bufferI, bufferI + 3);
+      this.accelerations[bufferI] *= 0.9;
+      this.accelerations[bufferI] += (simplex.noise3D(x * NOISE_SCALE, y * NOISE_SCALE, z * NOISE_SCALE) * FLOW_SPEED);
+      this.accelerations[bufferI + 1] += 0.03 * delta;
+
+      this.accelerations[bufferI + 2] *= 0.9;
+      this.accelerations[bufferI + 2] += (simplex.noise3D(y * NOISE_SCALE, z * NOISE_SCALE, x * NOISE_SCALE) * FLOW_SPEED);
 
       // Update position
       this.positions[bufferI] += this.accelerations[bufferI];
