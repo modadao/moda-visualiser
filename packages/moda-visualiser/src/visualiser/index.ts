@@ -58,10 +58,10 @@ const defaults: ISettings = {
   featurePoints: {
     count: 7,
     extraPer: 3000,
-    sizeSmall: 0.25,
-    sizeMed: 0.3,
-    sizeMdLg: 0.4,
-    sizeLarge: 0.6,
+    sizeSmall: 0.1,
+    sizeMed: 0.15,
+    sizeMdLg: 0.2,
+    sizeLarge: 0.3,
   },
   color: {
     colorschemeMethod: 'texture',

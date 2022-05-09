@@ -9,7 +9,7 @@ import { bezierVector } from "../utils";
 import { IAudioFrame } from "./AudioAnalyser";
 import { InstancedUniformsMesh } from 'three-instanced-uniforms-mesh'
 import FFTTextureManager from "./FftTextureManager";
-import SuperNova, { SuperNovaSprite, SuperNovaSpriteEmitter } from "./SuperNova";
+import SuperNova from "./SuperNova";
 
 export default class Spheres extends Object3D implements IAudioReactive {
   points: InstancedMesh;
@@ -17,7 +17,6 @@ export default class Spheres extends Object3D implements IAudioReactive {
   dataTextureSet = false;
   material: ShaderMaterial;
   outlineMaterial: ShaderMaterial;
-  sprites: SuperNovaSpriteEmitter[] = [];
   constructor(fingerprint: IDerivedFingerPrint, settings: ISettings, public coords: IVisualiserCoordinate[], public fftTextureManager: FFTTextureManager) {
     super();
     this.name = 'Spheres';
@@ -90,7 +89,6 @@ export default class Spheres extends Object3D implements IAudioReactive {
     this.add(this.points, this.outlines);
 
     this.disposeSuperNova = this.disposeSuperNova.bind(this);
-    this.disposeSuperNovaSprites = this.disposeSuperNovaSprites.bind(this);
   }
 
   setCameraDirection(v: Vector3) {
@@ -110,7 +108,6 @@ export default class Spheres extends Object3D implements IAudioReactive {
     }
 
     this.superNovas.forEach(sn => sn.update(delta));
-    this.sprites.forEach(sn => sn.update(elapsed, delta));
   }
 
   superNovas: SuperNova[] = [];
@@ -129,27 +126,8 @@ export default class Spheres extends Object3D implements IAudioReactive {
         sn.position.y += a * 0.2;
         this.superNovas.push(sn);
         this.add(sn);
-
-        const nSprites = Math.floor(this.coords[i].scale * 50);
-        if (nSprites > 0) {
-          const s = new SuperNovaSpriteEmitter(nSprites, this.disposeSuperNovaSprites, {
-            color: this.coords[i].color,
-          });
-          // s.position.copy(sn.position);
-          this.add(s);
-          this.sprites.push(s);
-        }
       }
     }
-  }
-
-  disposeSuperNovaSprites(toRemove: SuperNovaSpriteEmitter) {
-    const toRemoveArray = this.sprites.filter(sn => sn.id === toRemove.id);
-    toRemoveArray.forEach((sn) => {
-      sn.dispose();
-      this.remove(sn);
-    })
-    this.sprites = this.sprites.filter(sn => sn.id !== toRemove.id);
   }
 
   disposeSuperNova(toRemove: SuperNova) {

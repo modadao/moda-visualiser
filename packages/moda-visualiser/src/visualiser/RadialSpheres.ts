@@ -14,6 +14,7 @@ import SpringPhysicsTextureManager from "./SpringPhysicsTextureManager";
 import ShaderBackground from "./ShaderBackground";
 import FFTTextureManager from "./FftTextureManager";
 import ShaderRings from "./ShaderRings";
+import { SuperNovaSpriteEmitter } from "./SuperNova";
 
 export interface IVisualiserCoordinate extends IDerivedCoordinate {
   theta: number,
@@ -37,9 +38,14 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   fftTextureManager = new FFTTextureManager(64);
   shaderBackground: ShaderBackground;
 
+  particles: SuperNovaSpriteEmitter;
+
   constructor(private camera: Camera, fingerprint: IDerivedFingerPrint, settings: ISettings) {
     super();
     this.name = 'RadialSpheres'
+
+    this.particles = new SuperNovaSpriteEmitter(8000);
+    this.add(this.particles);
 
     this.shaderBackground = new ShaderBackground(new Color('#1B1D21'));
     // Add rings for flare
@@ -70,6 +76,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     const colorSampler = settings.color.colorschemeMethod === 'gradient' ? new GradientSampler(settings.color.custom) : new ImgSampler(settings.color.colorTextureSrc);
     (async () => {
       const coords = await this.calculateCoords(fingerprint, settings, colorSampler);
+      this.coords = coords;
 
       this.points = new Spheres(fingerprint, settings, coords, this.fftTextureManager);
       this.add(this.points);
@@ -116,6 +123,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     this.camera.updateMatrixWorld();
     this.camera.getWorldDirection(dir);
     this.rings.update(elapsed);
+    this.particles.update(elapsed, delta);
     if (this.points) {
       this.points.setCameraDirection(dir);
       this.points.update(elapsed, delta);
@@ -124,6 +132,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     this.secondaryBeziers.forEach(b => b.update(elapsed));
   }
 
+  coords?: IVisualiserCoordinate[];
   private async calculateCoords(fingerprint: IDerivedFingerPrint, settings: ISettings, colorSampler: ImgSampler|GradientSampler): Promise<IVisualiserCoordinate[]> {
     const { sin, cos, floor, max, pow } = Math;
     const [ width, height ] = fingerprint.shape;
@@ -177,6 +186,16 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     if (this.points) this.points.handleAudio(frame);
     if (this.mainBezier) this.mainBezier.handleAudio(frame);
     if (this.secondaryBeziers.length) this.secondaryBeziers.forEach((se) => se.handleAudio(frame));
+
+    if (this.coords) {
+      const theta = Math.sin(frame.avgFrequency / 29);
+      this.coords.forEach(c => {
+        const nParticles = Math.floor(Math.abs(theta - c.theta) * frame.power * c.scale * (2.0 + c.featureLevel));
+        if (nParticles) {
+          this.particles.addParticles(nParticles, c.pos, c.color);
+        }
+      })
+    }
   }
 
   dispose() {

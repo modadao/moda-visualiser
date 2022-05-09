@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import ModaVisualiser, { IFingerprint } from 'moda-visualiser';
-import Song from '../data/midtown.mp3';
+import Song from '../data/roby.mp3';
+import fingerprint from '../data/roby.json';
 
 function Visualiser() {
   const container = useRef(null);
@@ -34,9 +35,10 @@ function Visualiser() {
       e.preventDefault();
     console.log('Handling form submit')
     if (visualiser) {
-      const response = await fetch(`http://206.189.47.33/?address=${address}&id=${id}`)
-      const data = await response.json() as IFingerprint;
-      visualiser.updateFingerprint(data, Song);
+      // const response = await fetch(`http://206.189.47.33/?address=${address}&id=${id}`)
+      // const response = await fetch(fingerprint);
+      // const data = await response.json() as IFingerprint;
+      visualiser.updateFingerprint(fingerprint, Song);
     }
   }
   return (

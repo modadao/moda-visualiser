@@ -11,6 +11,10 @@ module.exports = withTM({
       test: /\.mp3/,
       type: "asset/resource",
     })
+    config.module.rules.push({
+      test: /\.wav/,
+      type: "asset/resource",
+    })
     return config
   },
 });
