@@ -40,16 +40,17 @@ const getMaterial = () => {
         u_springTextureHeight: { value: 0 },
         u_triggerCount: { value: 0 },
         u_noiseDensity: { value: 0.2 },
-        u_noiseScale: { value: 4 },
-        u_noiseRamp: { value: 6 },
+        u_noiseScale: { value: 8 },
+        u_noiseRamp: { value: 2 },
         u_noiseSpread: { value: 1 },
-        u_rotationDensity: { value: 2 },
+        u_rotationDensity: { value: 8 },
+        u_time: { value: 0 },
       }
     });
 
     gui.add(mat.uniforms.u_noiseDensity, 'value', 0, 1, 0.001).name('Noise Density');
     gui.add(mat.uniforms.u_noiseScale, 'value', 0, 30, 0.01).name('Noise Scale');
-    gui.add(mat.uniforms.u_noiseRamp, 'value', 0, 30, 0.01).name('Noise Ramp');
+    gui.add(mat.uniforms.u_noiseRamp, 'value', 0, 2, 0.01).name('Noise Ramp');
     gui.add(mat.uniforms.u_noiseSpread, 'value', 0, 10, 0.01).name('Noise Spread');
     gui.add(mat.uniforms.u_rotationDensity, 'value', 0, 10, 0.01).name('Noise Rotation Density');
   }
@@ -176,7 +177,8 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
     return tubeMesh;
   }
 
-  update() {
+  update(elapsed: number) {
+    this.material.uniforms.u_time.value = elapsed;
     if (!this.uniformsSet && this.springPhysTextureManager.dataTexture) {
       console.log('Setting uniforms on featurebeziers')
       this.material.uniforms.u_springTexture.value = this.springPhysTextureManager.dataTexture;

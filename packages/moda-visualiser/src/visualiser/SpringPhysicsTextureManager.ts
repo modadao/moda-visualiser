@@ -1,4 +1,4 @@
-import { DataTexture, FloatType, MathUtils, RGBAFormat, RGFormat, UnsignedByteType } from "three";
+import { DataTexture, FloatType, MathUtils, RGBAFormat } from "three";
 import { IAudioFrame } from "./AudioAnalyser";
 import gui from "./gui";
 import IAudioReactive from "./ReactiveObject";
@@ -60,10 +60,9 @@ export default class SpringPhysicsTextureManager implements IAudioReactive {
       const secondTargetPos = targetPos < this.width / 2 ? targetPos + this.width : targetPos - this.width ;
       // const targetPos = 200;
       for (let y = 0; y < this.height; y++) {
-        const offset = Math.random() * 0.1 - 0.05;
         for (let x = 0; x < this.width; x++) {
-          const distance = offset + Math.abs(MathUtils.clamp(MathUtils.mapLinear(targetPos - x, -radius, radius, -1, 1), -1, 1));
-          const secondDistance = offset + Math.abs(MathUtils.clamp(MathUtils.mapLinear(secondTargetPos - x, -radius, radius, -1, 1), -1, 1));
+          const distance = Math.abs(MathUtils.clamp(MathUtils.mapLinear(targetPos - x, -radius, radius, -1, 1), -1, 1));
+          const secondDistance = Math.abs(MathUtils.clamp(MathUtils.mapLinear(secondTargetPos - x, -radius, radius, -1, 1), -1, 1));
           const impact = Math.cos(Math.max(distance, secondDistance) * this.impactWaveFrequency);
           const index = y * this.width * 6 + x * 6;
           this.data[index + 3] += (1 - distance) * impact * frame.power * this.impactForce;

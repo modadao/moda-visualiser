@@ -120,8 +120,8 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
       this.points.setCameraDirection(dir);
       this.points.update(elapsed, delta);
     }
-    if (this.mainBezier) this.mainBezier.update();
-    this.secondaryBeziers.forEach(b => b.update());
+    if (this.mainBezier) this.mainBezier.update(elapsed);
+    this.secondaryBeziers.forEach(b => b.update(elapsed));
   }
 
   private async calculateCoords(fingerprint: IDerivedFingerPrint, settings: ISettings, colorSampler: ImgSampler|GradientSampler): Promise<IVisualiserCoordinate[]> {

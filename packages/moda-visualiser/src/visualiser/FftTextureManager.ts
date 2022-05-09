@@ -6,7 +6,7 @@ export default class FFTTextureManager implements IAudioReactive {
   dataTexture: DataTexture;
   data: Float32Array;
   triggerStates: boolean[][] = [];
-  constructor(public frameSize: number, public springConstant = 0.05, public inertia = 0.95, public threshold = 0.5) {
+  constructor(public frameSize: number, public springConstant = 0.05, public inertia = 0.95, public threshold = 0.8) {
     this.dataTexture = new DataTexture(null, frameSize, 1, RGBAFormat, FloatType);
     this.data = new Float32Array(frameSize * 4).fill(0);
     this.triggerStates = new Array(frameSize).fill(0).map(() => [false, false]);
