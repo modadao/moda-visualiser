@@ -41,23 +41,29 @@ const float upper_edge = 0.99;
 void main() {
   float noiseScale = noise(vec3(vPos.xy * 0.3, u_time * 0.2)) * 2.;
   noiseScale *= noise(vec3(vPos.yx * 0.3, -u_time * 0.2)) * 2.;
-  noiseScale = clamp(1. - noiseScale, 0., 1.) * u_power * 1.;
+  noiseScale = clamp(1. - noiseScale, 0., 1.) * u_power * 2.;
   float realD = length(vPos);
   float distScale = clamp(realD - inner_radius, 0., 1.);
-  vec2 pos = vec2(
-    vPos.x + (noise(vec3(vPos.x * 0.4 + u_time, vPos.x * 0.4, -u_time)) - 0.5) * u_power * distScale,
-    vPos.y + (noise(vec3(vPos.y * 0.4 - u_time, vPos.y * 0.4, u_time)) - 0.5) * u_power * distScale
+
+  vec2 noise = vec2(
+    (noise(vec3(vPos.x * 0.2, vPos.y * 0.2, -u_time + u_power * 2.)) - 0.5) * u_power * distScale * 1.,
+    (noise(vec3(vPos.y * 0.2, vPos.x * 0.2, u_time + u_power * 2.)) - 0.5) * u_power * distScale * 1.
   );
 
-  float d = length(pos);
-  // Generate the greater mask
-  float m1 = smoothstep(inner_radius, inner_radius+edge_size, d);
-  float m2 = 1. - smoothstep(outer_radius, outer_radius+edge_size, d);
-  float m = min(m1, m2);
-
   vec3 c = vec3(0.5);
+  for(int i = 0; i < 3; i++){ // calc rgb offset;
+    vec2 pos = vPos + noise * length(noise) + noise * float(i) * length(noise) * 0.01;
+    float d = length(pos);
+    // Generate the greater mask
+    float m1 = smoothstep(inner_radius, inner_radius+edge_size, d);
+    float m2 = 1. - smoothstep(outer_radius, outer_radius+edge_size, d);
+    float m = min(m1, m2);
+    float a = smoothstep(bottom_edge - length(noise), upper_edge, sin((d - inner_radius) * sine_scale)) * m;
+    c[i] = a * 0.5 + a * length(noise) * 2.;
+  }
 
-  float a = sin((d - inner_radius) * sine_scale);
-  float a2 = smoothstep(bottom_edge - noiseScale , upper_edge, a) * m;
+
+  float a2 = length(c) * 2.;
+  /* float a2 = smoothstep(bottom_edge - noiseScale , upper_edge, a) * m; */
   gl_FragColor = vec4(c.rgb, a2);
 }

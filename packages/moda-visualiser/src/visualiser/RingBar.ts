@@ -1,10 +1,8 @@
 import { Line, LineBasicMaterial, Object3D } from "three"
 import RingBarGeometry from "../helpers/RingBarGeometry";
 import { IDerivedFingerPrint } from "../types";
-import { IAudioFrame } from "./AudioAnalyser";
-import IAudioReactive from "./ReactiveObject";
 
-export default class RingBar extends Object3D implements IAudioReactive {
+export default class RingBar extends Object3D {
   rings: Line[] = [];
   constructor(fingerprint: IDerivedFingerPrint) {
     super();
@@ -14,8 +12,4 @@ export default class RingBar extends Object3D implements IAudioReactive {
     ringBarLine.rotateX(Math.PI / 2);
     this.add(ringBarLine);
   }
-
-  // @ts-expect-error;
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  handleAudio(frame: IAudioFrame) { }
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import ModaVisualiser, { IFingerprint } from 'moda-visualiser';
+import ModaVisualiser, { IFingerprint } from '@coc-boilerplate/moda-visualiser';
 import Song from '../data/roby.mp3';
 import fingerprint from '../data/roby.json';
 

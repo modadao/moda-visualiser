@@ -1,4 +1,4 @@
-const withTM = require("next-transpile-modules")(["moda-visualiser"]);
+const withTM = require("next-transpile-modules")(["@coc-boilerplate/moda-visualiser"]);
 
 module.exports = withTM({
   reactStrictMode: true,

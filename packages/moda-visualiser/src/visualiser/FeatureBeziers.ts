@@ -187,7 +187,6 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
       this.uniformsSet = true;
     }
   }
-  // @ts-expect-error; 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   handleAudio(frame: IAudioFrame) { 
     if (frame.trigger) {

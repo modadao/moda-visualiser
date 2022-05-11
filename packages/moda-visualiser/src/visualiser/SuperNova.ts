@@ -51,6 +51,8 @@ float noise( in vec3 x )
     varying float v_opacity;
     varying vec3 v_color;
     const float NOISE_SCALE = 0.5;
+
+    const float radius = 1.0;
     void main() {
       vec4 worldPos = modelMatrix * vec4(position, 1.); 
       float t = u_time * 0.5;
@@ -61,8 +63,10 @@ float noise( in vec3 x )
         );
       vec4 mPosition = modelMatrix * vec4( position, 1.0 );
       gl_Position = projectionMatrix * viewMatrix * mPosition;
-      float pointSize = 15.;
-      gl_PointSize = pointSize - distance(cameraPosition, mPosition.xyz) / pointSize;
+      float pointSize = 10.;
+
+      gl_PointSize = pointSize * projectionMatrix[1][1] * pointSize / gl_Position.w;
+      // gl_PointSize = pointSize - distance(cameraPosition, mPosition.xyz) / 600.;
       v_color = color * 1.2;
       v_opacity = opacity;
     }
@@ -134,13 +138,13 @@ export class SuperNovaSpriteEmitter extends Object3D {
   setStartTime = false;
 
   private static readonly NOISE_SCALE = 0.65;
-  private static readonly FLOW_SPEED = 0.03;
+  private static readonly FLOW_SPEED = 0.02;
   update(elapsed: number, delta: number) {
     if (this.toAdd.length > 0) {
       // Filter out old particles
       this.lastCount = 0;
       for (let i = 0; i < this.count; i++) {
-        if (this.opacities[i] > 0.01) {
+        if (this.opacities[i] > 0.05) {
           const v3i = i * 3;
           const lastCountV3 = this.lastCount * 3;
           this.colors[lastCountV3] = this.colors[v3i];
@@ -168,33 +172,35 @@ export class SuperNovaSpriteEmitter extends Object3D {
           this.colors[v3i] = r;
           this.colors[v3i + 1] = g;
           this.colors[v3i + 2] = b;
-          this.positions[v3i] = x;
-          this.positions[v3i + 1] = y;
-          this.positions[v3i + 2] = z;
-          this.accelerations[v3i] = Math.random() * 0.2;
-          this.accelerations[v3i + 1] = Math.random() * 0.2;
-          this.accelerations[v3i + 2] = Math.random() * 0.2;
+          this.positions[v3i] = x + Math.random() * 0.2;
+          this.positions[v3i + 1] = y + Math.random() * 0.2;
+          this.positions[v3i + 2] = z + Math.random() * 0.2;
+          this.accelerations[v3i] = Math.random() * 1 - 0.5;
+          this.accelerations[v3i + 1] = Math.random() * 0.2 - 0.1;
+          this.accelerations[v3i + 2] = Math.random() * 1 - 0.5;
           this.opacities[i] = 1;
         }
         this.lastCount += model.count;
       })
 
+      console.log(this.lastCount)
       this.toAdd = [];
       this.geometry.attributes.color.needsUpdate = true;
     }
 
     // Update already existing particles
     const { NOISE_SCALE, FLOW_SPEED } = SuperNovaSpriteEmitter;
-    for (let i = 0; i < this.lastCount; i++) {
+    for (let i = 0; i < this.count; i++) {
       const bufferI = i * 3;
       // Update acceleration
       const [x, y, z] = this.positions.slice(bufferI, bufferI + 3);
       this.accelerations[bufferI] *= 0.8;
-      this.accelerations[bufferI] += (simplex.noise3D(x * NOISE_SCALE, elapsed + y * NOISE_SCALE, z * NOISE_SCALE) * FLOW_SPEED);
-      this.accelerations[bufferI + 1] += 0.03 * delta;
+      this.accelerations[bufferI] += simplex.noise3D(x * NOISE_SCALE, elapsed + y * NOISE_SCALE, z * NOISE_SCALE) * FLOW_SPEED;
+      this.accelerations[bufferI + 1] += 0.3 * delta;
+      this.accelerations[bufferI + 1] *= 0.97;
 
       this.accelerations[bufferI + 2] *= 0.8;
-      this.accelerations[bufferI + 2] += (simplex.noise3D(y * NOISE_SCALE, elapsed - z * NOISE_SCALE, x * NOISE_SCALE) * FLOW_SPEED);
+      this.accelerations[bufferI + 2] += simplex.noise3D(y * NOISE_SCALE, elapsed - z * NOISE_SCALE, x * NOISE_SCALE) * FLOW_SPEED;
 
       // Update position
       this.positions[bufferI] += this.accelerations[bufferI];

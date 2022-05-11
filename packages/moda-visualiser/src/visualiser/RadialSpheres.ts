@@ -1,5 +1,5 @@
 import { IDerivedCoordinate, IDerivedFingerPrint } from "../types";
-import { chunk, GradientSampler, ImgSampler } from "../utils";
+import { GradientSampler, ImgSampler } from "../utils";
 import { Vector3, Mesh, Object3D, LineBasicMaterial, Line, Camera, Color, MathUtils, WebGLRenderer } from "three";
 import CircleLineGeometry from '../helpers/CircleLineGeometry';
 import { ISettings } from "../visualiser";
@@ -11,7 +11,7 @@ import { IAudioFrame } from "./AudioAnalyser";
 // import PlaybackHead from "./PlaybackHead";
 import ProgressRing from "./ProgressRing";
 import SpringPhysicsTextureManager from "./SpringPhysicsTextureManager";
-import ShaderBackground from "./ShaderBackground";
+// import ShaderBackground from "./ShaderBackground";
 import FFTTextureManager from "./FftTextureManager";
 import ShaderRings from "./ShaderRings";
 import { SuperNovaSpriteEmitter } from "./SuperNova";
@@ -36,7 +36,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   progressRing: ProgressRing;
   bezierSpringPhysicsTextureManager = new SpringPhysicsTextureManager(512);
   fftTextureManager = new FFTTextureManager(64);
-  shaderBackground: ShaderBackground;
+  // shaderBackground: ShaderBackground;
 
   particles: SuperNovaSpriteEmitter;
 
@@ -47,7 +47,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     this.particles = new SuperNovaSpriteEmitter(8000);
     this.add(this.particles);
 
-    this.shaderBackground = new ShaderBackground(new Color('#1B1D21'));
+    // this.shaderBackground = new ShaderBackground(new Color('#1B1D21'));
     // Add rings for flare
     const geo = new CircleLineGeometry(1, 512, fingerprint);
     const matWhite = new LineBasicMaterial({ color: 0xdddddd });
@@ -86,7 +86,6 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
       // Generate main bezier
       this.mainBezier = new FeatureBeziers(fingerprint, settings, featurePoints, this.bezierSpringPhysicsTextureManager);
       this.add(this.mainBezier);
-      console.log('Added main bezier')
 
       
       // Generate random secondary beziers
@@ -113,15 +112,15 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
 
   }
 
-  preRender(renderer: WebGLRenderer) {
-    this.shaderBackground.render(renderer);
+  preRender(_renderer: WebGLRenderer) {
+    // this.shaderBackground.render(renderer);
   }
 
-  elapsed: number;
+  elapsed = 0;
   update(elapsed: number, delta: number) {
     this.elapsed = elapsed;
     const dir = new Vector3();
-    this.shaderBackground.update(elapsed);
+    // this.shaderBackground.update(elapsed);
     this.camera.updateMatrixWorld();
     this.camera.getWorldDirection(dir);
     this.rings.update(elapsed);
@@ -151,7 +150,6 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     const scale = (500 + max(-pow(height, 0.8), -pow(height, 0.7)-100, -pow(height, 0.6)-160)) / 400 * 0.15
     const coords = fingerprint.coords.map(p => {
       const theta = (p.x / width) * Math.PI * 2;
-      console.log({theta})
       const x = sin(theta);
       const z = cos(theta);
       const step = floor(theta / (Math.PI * 2));
@@ -181,9 +179,8 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   handleAudio(frame: IAudioFrame): void {
     this.fftTextureManager.handleAudio(frame);
     this.bezierSpringPhysicsTextureManager.handleAudio(frame);
-    this.shaderBackground.handleAudio(frame);
+    // this.shaderBackground.handleAudio(frame);
     this.rings.handleAudio(frame);
-    this.barGraph.handleAudio(frame);
     // this.playbackHead.handleAudio(frame);
     this.progressRing.handleAudio(frame);
     if (this.points) this.points.handleAudio(frame);
@@ -193,7 +190,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     if (this.coords) {
       const capacity = (1 - this.particles.lastCount / this.particles.count);
       const scaledPower = MathUtils.smoothstep(frame.power, 0.2, 0.6);
-      const particleGenerationMultiplier = MathUtils.mapLinear(capacity * scaledPower, 0, 1, 1.01, 8.);
+      const particleGenerationMultiplier = MathUtils.mapLinear(capacity * scaledPower, 0, 1, 1.01, 6.);
       // console.log(`Capacity: ${capacity.toFixed(3)}, power: ${scaledPower} => mutliplier: ${particleGenerationMultiplier.toFixed(3)}`)
       const { data } = this.fftTextureManager;
       const toFFT = 1 / (Math.PI * 2) * (data.length / 4);

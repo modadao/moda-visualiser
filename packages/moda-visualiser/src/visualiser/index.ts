@@ -139,12 +139,6 @@ export default class ModaVisualiser {
     this.clock = new Clock(true);
 
     this.startAnimation();
-
-    if (typeof __THREE_DEVTOOLS__ !== 'undefined') {
-      __THREE_DEVTOOLS__.dispatchEvent(new CustomEvent('observe', { detail: this.scene }));
-      __THREE_DEVTOOLS__.dispatchEvent(new CustomEvent('observe', { detail: this.renderer }));
-    }
-
   }
 
   private buildScene(fingerprint: IDerivedFingerPrint, settings: ISettings) {
