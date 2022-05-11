@@ -174,7 +174,6 @@ export class SuperNovaSpriteEmitter extends Object3D {
           this.accelerations[v3i] = Math.random() * 0.2;
           this.accelerations[v3i + 1] = Math.random() * 0.2;
           this.accelerations[v3i + 2] = Math.random() * 0.2;
-          console.log('Adding particle to ', i)
           this.opacities[i] = 1;
         }
         this.lastCount += model.count;
@@ -186,7 +185,6 @@ export class SuperNovaSpriteEmitter extends Object3D {
 
     // Update already existing particles
     const { NOISE_SCALE, FLOW_SPEED } = SuperNovaSpriteEmitter;
-    console.log(this.lastCount);
     for (let i = 0; i < this.lastCount; i++) {
       const bufferI = i * 3;
       // Update acceleration

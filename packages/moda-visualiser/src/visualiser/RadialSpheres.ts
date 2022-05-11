@@ -149,6 +149,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     const scale = (500 + max(-pow(height, 0.8), -pow(height, 0.7)-100, -pow(height, 0.6)-160)) / 400 * 0.15
     const coords = fingerprint.coords.map(p => {
       const theta = (p.x / width) * Math.PI * 2;
+      console.log({theta})
       const x = sin(theta);
       const z = cos(theta);
       const step = floor(theta / (Math.PI * 2));
@@ -188,13 +189,30 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     if (this.secondaryBeziers.length) this.secondaryBeziers.forEach((se) => se.handleAudio(frame));
 
     if (this.coords) {
-      const theta = Math.sin(frame.avgFrequency / 29);
-      this.coords.forEach(c => {
-        const nParticles = Math.floor(Math.abs(theta - c.theta) * frame.power * c.scale * (2.0 + c.featureLevel));
+      const capacity = (1 - this.particles.lastCount / this.particles.count);
+      const particleGenerationMultiplier = MathUtils.mapLinear(capacity, 0, 1, 1.01, 1.1);
+      console.log(particleGenerationMultiplier);
+      const { data } = this.fftTextureManager;
+      const toFFT = 1 / (Math.PI * 2) * (data.length / 4);
+      for (let i = 0; i < this.coords.length; i++) {
+        const { theta, pos, color } = this.coords[i];
+        const fftI = Math.floor(theta * toFFT) * 4;
+        const v = data[fftI];
+        const nParticles = Math.floor(Math.abs(v) * Math.random() * (particleGenerationMultiplier));
         if (nParticles) {
-          this.particles.addParticles(nParticles, c.pos, c.color);
+          // console.log(fftI, v, nParticles);
+          this.particles.addParticles(nParticles, pos, color);
         }
-      })
+      }
+      // for (let i = 0; i < this.fftTextureManager)
+      // this.fftTextureManager.da
+      // const theta = Math.sin(frame.avgFrequency / 29);
+      // this.coords.forEach(c => {
+      //   const nParticles = Math.floor(Math.abs(theta - c.theta) * frame.power * c.scale * (4.0 + c.featureLevel));
+      //   if (nParticles) {
+      //     this.particles.addParticles(nParticles, c.pos, c.color);
+      //   }
+      // })
     }
   }
 
