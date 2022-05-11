@@ -108,13 +108,15 @@ export default class AudioManager {
     }
     const decay = this.fftNormalizeRate * deltaTime;
     this.maxFft = this.maxFft.map((el, i) => {
-      return Math.max(el - decay, this.fft[i], 1)
+      return Math.max(el - decay, this.fft[i] * 1.1, 1)
     })
+
     const fft = Array.from(this.fft).map((v, i) => {
       const upper = this.maxFft[i];
       const scaled = (v) / (upper);
       return scaled;
     });
+
 
     const _rawFFt = Array.from(this.fft);
     this.hasNewAudioFrame = false;

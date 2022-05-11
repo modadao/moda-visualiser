@@ -18,7 +18,7 @@ void main() {
   vBrightness = instMat[3][3];
   instMat[3][3] = 1.;
 
-  float theta = fract(u_pointIndex / ( u_pointLength - 0.5 ) + u_time * 0.01 );
+  float theta = fract((u_pointIndex) / ( u_pointLength - 0.5 ));
   vec4 c = texture2D(u_springTexture, vec2(theta, 0.5));
 
   vec3 newPos = position;

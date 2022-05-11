@@ -117,7 +117,9 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     this.shaderBackground.render(renderer);
   }
 
+  elapsed: number;
   update(elapsed: number, delta: number) {
+    this.elapsed = elapsed;
     const dir = new Vector3();
     this.shaderBackground.update(elapsed);
     this.camera.updateMatrixWorld();
@@ -190,17 +192,17 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
 
     if (this.coords) {
       const capacity = (1 - this.particles.lastCount / this.particles.count);
-      const particleGenerationMultiplier = MathUtils.mapLinear(capacity, 0, 1, 1.01, 1.1);
-      console.log(particleGenerationMultiplier);
+      const scaledPower = MathUtils.smoothstep(frame.power, 0.2, 0.6);
+      const particleGenerationMultiplier = MathUtils.mapLinear(capacity * scaledPower, 0, 1, 1.01, 8.);
+      // console.log(`Capacity: ${capacity.toFixed(3)}, power: ${scaledPower} => mutliplier: ${particleGenerationMultiplier.toFixed(3)}`)
       const { data } = this.fftTextureManager;
       const toFFT = 1 / (Math.PI * 2) * (data.length / 4);
       for (let i = 0; i < this.coords.length; i++) {
         const { theta, pos, color } = this.coords[i];
-        const fftI = Math.floor(theta * toFFT) * 4;
-        const v = data[fftI];
+        const fftI = Math.floor(theta * toFFT);
+        const v = data[fftI * 4 + 3];
         const nParticles = Math.floor(Math.abs(v) * Math.random() * (particleGenerationMultiplier));
         if (nParticles) {
-          // console.log(fftI, v, nParticles);
           this.particles.addParticles(nParticles, pos, color);
         }
       }
