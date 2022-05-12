@@ -6,6 +6,7 @@ import ShaderRingsFrag from "../shaders/shader_rings_frag.glsl";
 import ShaderRingsVert from "../shaders/shader_rings_vert.glsl";
 import { IAudioFrame } from "./AudioAnalyser";
 import SpringPhysicsTextureManager from "./SpringPhysicsTextureManager";
+import { ringsControls } from "./gui";
 
 const DIMENSION = 20;
 export default class ShaderRings extends Object3D implements IAudioReactive {
@@ -22,11 +23,21 @@ export default class ShaderRings extends Object3D implements IAudioReactive {
         u_dimension: { value: DIMENSION },
         u_time: { value: 0 },
         u_power: { value: 0 },
+        u_noiseAmp: { value: 4 },
+        u_noiseScale: { value: 0.7 },
+        u_lineWidthMax: { value: 0.05 },
+        u_brightness: { value: 0.4 },
+        u_chromaticOffset: { value: 0.01 },
       },
       depthWrite: false,
       transparent: true,
     })
     const m = new Mesh(geo, mat);
+    ringsControls.add(mat.uniforms.u_noiseAmp, 'value').name('u_noiseAmp');
+    ringsControls.add(mat.uniforms.u_noiseScale, 'value').name('u_noiseScale');
+    ringsControls.add(mat.uniforms.u_brightness, 'value').name('u_brightness');
+    ringsControls.add(mat.uniforms.u_lineWidthMax, 'value').name('u_lineWidthMax');
+    ringsControls.add(mat.uniforms.u_chromaticOffset, 'value').name('u_chromaticOffset');
     this.mesh = m;
     this.add(m);
   }

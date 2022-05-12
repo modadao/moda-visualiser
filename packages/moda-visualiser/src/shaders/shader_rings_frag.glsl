@@ -27,6 +27,11 @@ float noise( in vec3 x )
 
 uniform float u_power;
 uniform float u_time;
+uniform float u_noiseAmp;
+uniform float u_noiseScale;
+uniform float u_brightness;
+uniform float u_chromaticOffset;
+uniform float u_lineWidthMax;
 
 varying vec2 vPos;
 
@@ -46,20 +51,20 @@ void main() {
   float distScale = clamp(realD - inner_radius, 0., 1.);
 
   vec2 noise = vec2(
-    (noise(vec3(vPos.x * 0.2, vPos.y * 0.2, -u_time + u_power * 2.)) - 0.5) * u_power * distScale * 1.,
-    (noise(vec3(vPos.y * 0.2, vPos.x * 0.2, u_time + u_power * 2.)) - 0.5) * u_power * distScale * 1.
+    (noise(vec3(vPos.x * u_noiseScale, vPos.y * u_noiseScale, -u_time + u_power * 2.)) - 0.5) * u_power * distScale * u_noiseAmp,
+    (noise(vec3(vPos.y * u_noiseScale, vPos.x * u_noiseScale, u_time + u_power * 2.)) - 0.5) * u_power * distScale * u_noiseAmp
   );
 
   vec3 c = vec3(0.5);
   for(int i = 0; i < 3; i++){ // calc rgb offset;
-    vec2 pos = vPos + noise * length(noise) + noise * float(i) * length(noise) * 0.01;
+    vec2 pos = vPos + noise * length(noise) + noise * float(i) * length(noise) * u_chromaticOffset;
     float d = length(pos);
     // Generate the greater mask
     float m1 = smoothstep(inner_radius, inner_radius+edge_size, d);
     float m2 = 1. - smoothstep(outer_radius, outer_radius+edge_size, d);
     float m = min(m1, m2);
-    float a = smoothstep(bottom_edge - length(noise), upper_edge, sin((d - inner_radius) * sine_scale)) * m;
-    c[i] = a * 0.5 + a * length(noise) * 2.;
+    float a = smoothstep(bottom_edge - length(noise) * u_lineWidthMax, upper_edge, sin((d - inner_radius) * sine_scale)) * m;
+    c[i] = a * 0.5 + a * length(noise) * u_brightness;
   }
 
 

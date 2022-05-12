@@ -16,7 +16,7 @@ export default class ShaderBackground implements IAudioReactive {
       uniforms: {
         u_backgroundColor: { value: backgroundColor },
         u_power: { value: 0 },
-        u_time: { value: 0 }
+        u_time: { value: 0 },
       },
       depthWrite: false,
     })
