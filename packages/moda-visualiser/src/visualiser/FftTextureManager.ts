@@ -42,6 +42,7 @@ export default class FFTTextureManager implements IAudioReactive {
     this.dataTexture.wrapT = RepeatWrapping;
     this.data = new Float32Array(textureSize * 4).fill(0);
     this.triggerStates = new Array(textureSize).fill(0).map(() => [false, false]);
+    console.log(this.opts.blurRadius)
   }
 
   handleAudio(frame: IAudioFrame): void {
@@ -71,7 +72,7 @@ export default class FFTTextureManager implements IAudioReactive {
         for (let k = -blurRadius; k < blurRadius; k++) {
           const realI = mod(i + k, textureSize) * 4;
           const alpha = 1 - Math.abs(k / blurRadius);
-          this.data[realI + 2] += fft[fftI] * impactVelocity * alpha;
+          this.data[realI + 2] = Math.min(this.data[realI + 2] + fft[fftI] * impactVelocity * alpha, 0.3);
           // if (realI > textureSize * 4 || this.data[realI + 2] === undefined) {
           //   debugger;
           // }

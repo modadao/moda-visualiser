@@ -38,10 +38,10 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   fftTextureManager = new FFTTextureManager();
   bezierFftTextureManager = new FFTTextureManager({
     textureSize: 256,
-    blurRadius: 100,
-    impactVelocity: 2,
-    springConstant: 0.01,
-    inertia: 0.999,
+    blurRadius: 56,
+    impactVelocity: 0.5,
+    springConstant: 0.03,
+    inertia: 0.7,
     threshold: 0.9
   });
   // shaderBackground: ShaderBackground;
@@ -98,7 +98,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
       
       // Generate random secondary beziers
       new Array(20).fill(0).forEach((el, i) => {
-        const secondaryBeziers = new FeatureBeziers(fingerprint, settings, featurePoints, this.fftTextureManager, i + 1, {
+        const secondaryBeziers = new FeatureBeziers(fingerprint, settings, featurePoints, this.bezierFftTextureManager, i + 1, {
           radialSegments: 3,
           radius: 0.01
         });
@@ -186,6 +186,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   rotationalVelocity = 0;
   handleAudio(frame: IAudioFrame): void {
     this.fftTextureManager.handleAudio(frame);
+    this.bezierFftTextureManager.handleAudio(frame);
     this.bezierSpringPhysicsTextureManager.handleAudio(frame);
     // this.shaderBackground.handleAudio(frame);
     this.rings.handleAudio(frame);
