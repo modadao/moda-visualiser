@@ -254,7 +254,7 @@ const material = new ShaderMaterial({
 
 export default class SuperNova extends Object3D {
   mesh: Mesh<BoxBufferGeometry, ShaderMaterial>;
-  constructor(public size: number, disposeCallback: (sn: SuperNova) => void, public disposeDuration = 200) {
+  constructor(public size: number, disposeCallback: (sn: SuperNova) => void, public disposeDuration = 800) {
     super();
     const mat = material.clone();
     mat.uniforms.u_innerRadius.value = size;
@@ -271,7 +271,7 @@ export default class SuperNova extends Object3D {
   update(delta: number) {
     this.lifetime += delta;
     
-    this.mesh.material.uniforms.u_innerRadius.value = this.size + (this.size + 0.5) * this.lifetime * 1000 / this.disposeDuration * 2;
+    this.mesh.material.uniforms.u_innerRadius.value = (this.size + 0.5) * this.lifetime * 1000 / this.disposeDuration;
     this.mesh.material.uniforms.u_opacity.value = 1 - this.lifetime * 1000 / this.disposeDuration;
   }
 

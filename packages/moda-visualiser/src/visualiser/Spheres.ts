@@ -115,17 +115,21 @@ export default class Spheres extends Object3D implements IAudioReactive {
     if (frame.trigger) {
       this.material.uniforms.u_triggerCount = { value: this.material.uniforms.u_triggerCount.value + 1};
     }
-    const { data } = this.fftTextureManager;
-    for (let i = 0; i < frame.fft.length; i++) {
-      const dataI = i * 4;
-      if (data[dataI + 3] > 0.5) {
-        const a = data[dataI + 1];
-        
-        const sn = new SuperNova(this.coords[i].featureLevel * 2, this.disposeSuperNova);
-        sn.position.copy(this.coords[i].pos);
-        sn.position.y += a * 0.2;
-        this.superNovas.push(sn);
-        this.add(sn);
+    if (this.coords) {
+      // console.log(`Capacity: ${capacity.toFixed(3)}, power: ${scaledPower} => mutliplier: ${particleGenerationMultiplier.toFixed(3)}`)
+      const { data } = this.fftTextureManager;
+      const toFFT = 1 / (Math.PI * 2) * (data.length / 4);
+      for (let i = 0; i < this.coords.length; i++) {
+        const { theta, pos, featureLevel } = this.coords[i];
+        const fftI = Math.floor(theta * toFFT);
+        const v = data[fftI * 4 + 3];
+        if (v * Math.random() > 0.9) {
+          const sn = new SuperNova(featureLevel * 2, this.disposeSuperNova);
+          sn.position.copy(pos);
+          sn.position.y += data[fftI + 1] * 0.2;
+          this.superNovas.push(sn);
+          this.add(sn);
+        }
       }
     }
   }
