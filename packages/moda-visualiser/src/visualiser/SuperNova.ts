@@ -139,8 +139,12 @@ export class SuperNovaSpriteEmitter extends Object3D {
 
   private static readonly NOISE_SCALE = 0.65;
   private static readonly FLOW_SPEED = 0.02;
+  totalAdded = 0;
   update(elapsed: number, delta: number) {
     if (this.toAdd.length > 0) {
+      // const totalToAdd = this.toAdd.reduce((acc, el) => acc + el.count, 0)
+      // const totalExisting = this.opacities.reduce((acc, el) => el > 0.05 ? acc + 1 : acc, 0);
+      // console.log(`Adding: ${totalToAdd} to ${totalExisting} (${totalToAdd + totalExisting})`);
       // Filter out old particles
       this.lastCount = 0;
       for (let i = 0; i < this.count; i++) {
@@ -162,6 +166,7 @@ export class SuperNovaSpriteEmitter extends Object3D {
           this.opacities[i] = 0;
         }
       }
+      // const existing = this.lastCount;
       // Add new particles
       this.toAdd.forEach(model => {
         const [r, g, b] = model.color.toArray();
@@ -183,6 +188,7 @@ export class SuperNovaSpriteEmitter extends Object3D {
         this.lastCount += model.count;
       })
 
+      // console.log(`Added ${this.lastCount - existing} to ${existing} (${this.lastCount})`);
       this.toAdd = [];
       this.geometry.attributes.color.needsUpdate = true;
     }
