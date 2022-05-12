@@ -183,7 +183,6 @@ export class SuperNovaSpriteEmitter extends Object3D {
         this.lastCount += model.count;
       })
 
-      console.log(this.lastCount)
       this.toAdd = [];
       this.geometry.attributes.color.needsUpdate = true;
     }

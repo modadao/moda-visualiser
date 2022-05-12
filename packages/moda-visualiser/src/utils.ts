@@ -320,3 +320,8 @@ export class GradientSampler {
     return wrappedColours[lowerIndex].clone().lerp(wrappedColours[upperIndex], mix);
   }
 }
+
+
+export const mod = (n: number, m: number) => {
+  return ((n % m) + m) % m;
+}

@@ -1,4 +1,4 @@
-import { DataTexture, FloatType, MathUtils, RGBAFormat } from "three";
+import { DataTexture, FloatType, LinearFilter, Mapping, MathUtils, RGBAFormat } from "three";
 import { IAudioFrame } from "./AudioAnalyser";
 import gui from "./gui";
 import IAudioReactive from "./ReactiveObject";
@@ -41,6 +41,8 @@ export default class SpringPhysicsTextureManager implements IAudioReactive {
   build() {
     this.data = new Float32Array(new Array(this.width * this.height * 6).fill(1));
     this.dataTexture = new DataTexture(null, this.width, this.height, RGBAFormat, FloatType);
+    this.dataTexture.minFilter = LinearFilter;
+    this.dataTexture.magFilter = LinearFilter;
     this.dataTexture.needsUpdate = true;
     console.log('Building spring physics texture manager', this.width, this.height);
 

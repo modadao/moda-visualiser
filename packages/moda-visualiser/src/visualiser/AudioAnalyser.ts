@@ -1,4 +1,4 @@
-import { Camera, Scene, AudioListener, Audio, AudioAnalyser } from "three";
+import { Camera, Scene, AudioListener, Audio, AudioAnalyser, MathUtils } from "three";
 import gui from "./gui";
 
 export interface IAudioFrame {
@@ -10,6 +10,7 @@ export interface IAudioFrame {
   progress: number,
   _rawFFt: number[],
   _maxFft: number[],
+  _minFft: number[],
 }
 
 export default class AudioManager {
@@ -32,7 +33,7 @@ export default class AudioManager {
     }, { once: true })
 
     this.fft = new Uint8Array(fftSize).fill(0);
-    this.minFft = new Array(fftSize).fill(100);
+    this.minFft = new Array(fftSize).fill(0);
     this.maxFft = new Array(fftSize).fill(200);
     gui.add(this, 'fftNormalizeRate', 0, 100);
     gui.add(this, 'triggerThreshold', 0, 1, 0.01);
@@ -56,7 +57,11 @@ export default class AudioManager {
     audio.addEventListener('canplaythrough', () => {
       console.log('Audio loaded, playing song', audio)
       if (!this.song) throw new Error('song audio object not initialised');
-      this.song.setMediaElementSource(audio);
+      try {
+        this.song.setMediaElementSource(audio);
+      } catch(e) {
+        console.warn(`There was an error setting the media source but usually it works anyway. \n\n`, e)
+      }
 
       this.analyser = new AudioAnalyser(this.song, this.fftSize * 2);
       console.log( this.analyser.analyser);
@@ -104,19 +109,24 @@ export default class AudioManager {
         progress: -1,
         _rawFFt: [],
         _maxFft: [],
+        _minFft: [],
       };
     }
     const decay = this.fftNormalizeRate * deltaTime;
-    this.maxFft = this.maxFft.map((el, i) => {
-      return Math.max(el - decay, this.fft[i] * 1.1, 1)
-    })
+    const { length } = this.maxFft;
+    for (let i = 0; i < length; i++) {
+      this.maxFft[i] = Math.max(this.maxFft[i] - decay, MathUtils.lerp(this.fft[i], this.fft[i] * 1.1, 0.5), 1);
+    }
+    for (let i = 0; i < length; i++) {
+      this.minFft[i] = Math.min(this.minFft[i] + decay, MathUtils.lerp(this.fft[i], this.fft[i] * 0.9, 0.5), 255);
+    }
 
-    const fft = Array.from(this.fft).map((v, i) => {
+    const fft = new Array(length);
+    for (let i = 0; i < length; i++) {
       const upper = this.maxFft[i];
-      const scaled = (v) / (upper);
-      return scaled;
-    });
-
+      const lower = this.minFft[i];
+      fft[i] = ( this.fft[i] - lower ) / ( upper - lower );
+    }
 
     const _rawFFt = Array.from(this.fft);
     this.hasNewAudioFrame = false;
@@ -150,6 +160,7 @@ export default class AudioManager {
       progress,
       _rawFFt,
       _maxFft: this.maxFft,
+      _minFft: this.minFft,
     }
   }
 

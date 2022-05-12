@@ -1,4 +1,5 @@
 import { IAudioFrame } from "./AudioAnalyser";
+import FFTTextureManager from "./FftTextureManager";
 import gui from "./gui";
 import IAudioReactive from "./ReactiveObject";
 
@@ -13,6 +14,7 @@ export default class FFTDebug implements IAudioReactive {
   height = 200;
   historyHeight = 100;
   triggerThreshold = 0.5;
+  fftTextureManager = new FFTTextureManager();
   constructor() {
     this.canvas = document.createElement('canvas');
     this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
@@ -26,6 +28,7 @@ export default class FFTDebug implements IAudioReactive {
 
   history = new Array<HistoryEl>(64);
   handleAudio(frame: IAudioFrame): void {
+    this.fftTextureManager.handleAudio(frame);
     const barWidth = 4;
     if (this.canvas.width !== barWidth * frame.fft.length) {
       this.canvas.width = barWidth * frame.fft.length;
@@ -37,21 +40,30 @@ export default class FFTDebug implements IAudioReactive {
     ctx.fillStyle = 'black'
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    const {fft, _rawFFt, _maxFft} = frame;
+    const {fft, _rawFFt, _maxFft, _minFft} = frame;
 
+    ctx.fillStyle = 'white';
+    fft.forEach((amp, i) => {
+      const top = this.height - amp * this.height;
+      ctx.fillRect(i * barWidth+1, top, barWidth, amp * this.height);
+    })
     ctx.fillStyle = 'grey';
     _rawFFt.forEach((amp, i) => {
       const a = (amp / 255) * this.height;
       const top = this.height - a;
-      ctx.fillRect(i * barWidth-1, top, barWidth-2, a);
+      ctx.fillRect(i * barWidth-1, top, 1, a);
     })
-    ctx.fillStyle = 'white';
-    fft.forEach((amp, i) => {
-      const top = this.height - amp * this.height;
-      ctx.fillRect(i * barWidth+1, top, 1, amp * this.height);
+    _maxFft.forEach((amp, i) => {
+      if (this.fftTextureManager.triggerStates[i][1]) {
+        ctx.fillStyle = 'green';
+      } else {
+        ctx.fillStyle = 'red';
+      }
+      const top = this.height - amp / 255 * this.height;
+      ctx.fillRect(i * barWidth-1, top - 4, barWidth-1, 4);
     })
     ctx.fillStyle = 'red';
-    _maxFft.forEach((amp, i) => {
+    _minFft.forEach((amp, i) => {
       const top = this.height - amp / 255 * this.height;
       ctx.fillRect(i * barWidth-1, top - 4, barWidth-1, 4);
     })

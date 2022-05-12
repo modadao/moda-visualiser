@@ -8,8 +8,8 @@ import { customRandom } from "../utils";
 import TubeShaderFrag from '../shaders/tube_frag.glsl';
 import TubeShaderVert from '../shaders/tube_vert.glsl';
 import { IAudioFrame } from "./AudioAnalyser";
-import SpringPhysicsTextureManager from "./SpringPhysicsTextureManager";
 import gui from "./gui";
+import FFTTextureManager from "./FftTextureManager";
 
 export interface IFeatureBezierOptions {
   segments: number;
@@ -40,8 +40,8 @@ const getMaterial = () => {
         u_springTextureHeight: { value: 0 },
         u_triggerCount: { value: 0 },
         u_noiseDensity: { value: 0.2 },
-        u_noiseScale: { value: 8 },
-        u_noiseRamp: { value: 2 },
+        u_noiseScale: { value: 1.5 },
+        u_noiseRamp: { value: 1 },
         u_noiseSpread: { value: 1 },
         u_rotationDensity: { value: 8 },
         u_time: { value: 0 },
@@ -59,13 +59,14 @@ const getMaterial = () => {
 
 export default class FeatureBeziers extends Object3D implements IAudioReactive {
   material: ShaderMaterial;
-  uniformsSet = false;
-  constructor(_fingerprint: IDerivedFingerPrint, public settings: ISettings, coords: IVisualiserCoordinate[], public springPhysTextureManager: SpringPhysicsTextureManager, options?: Partial<IFeatureBezierOptions>) {
+  constructor(_fingerprint: IDerivedFingerPrint, public settings: ISettings, coords: IVisualiserCoordinate[], public fftTextureManager: FFTTextureManager, public index: number, options?: Partial<IFeatureBezierOptions>) {
     super();
     this.name = 'FeatureBeziers'
 
     const opts = Object.assign({}, defaultOptions, options ?? {}) as IFeatureBezierOptions;
     this.material = getMaterial();
+    this.material.uniforms.u_springTexture.value = this.fftTextureManager.dataTexture;
+    this.material.needsUpdate = true;
     const center = new Vector3();
     const { verticalIncidence } = settings.beziers;
     const firstDir = verticalIncidence 
@@ -75,8 +76,7 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
 
     const curves = this.generateCurves(remainingPoints, firstCoord, firstDir, true, []);
 
-    const y = springPhysTextureManager.registerSpringPhysicsElement();
-    const mainBezierCurves = this.generateTube(curves, opts.segments, opts.radius, opts.radialSegments, y);
+    const mainBezierCurves = this.generateTube(curves, opts.segments, opts.radius, opts.radialSegments, this.index);
     this.add(mainBezierCurves);
   }
 
@@ -157,6 +157,7 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
       const colorsData: Array<number> = [];
       const progressAttribute = [];
       const baseProgress = baseLength / totalLength;
+      console.log(baseProgress)
       const progressLength = length / totalLength;
       for (let i = 0; i < nVerts; i++) {
         const thisProgress = Math.floor(i/radialSegments) / Math.floor(nVerts / radialSegments);
@@ -179,13 +180,6 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
 
   update(elapsed: number) {
     this.material.uniforms.u_time.value = elapsed;
-    if (!this.uniformsSet && this.springPhysTextureManager.dataTexture) {
-      console.log('Setting uniforms on featurebeziers')
-      this.material.uniforms.u_springTexture.value = this.springPhysTextureManager.dataTexture;
-      this.material.uniforms.u_springTextureHeight.value = this.springPhysTextureManager.height;
-      this.material.needsUpdate = true;
-      this.uniformsSet = true;
-    }
   }
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   handleAudio(frame: IAudioFrame) { 
