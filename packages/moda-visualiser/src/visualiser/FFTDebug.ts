@@ -22,8 +22,6 @@ export default class FFTDebug implements IAudioReactive {
     this.canvas.style.position = 'fixed';
     this.canvas.style.right = '0';
     this.canvas.style.bottom = '0';
-
-    gui.add(this, 'triggerThreshold', 0, 1, 0.01);
   }
 
   history = new Array<HistoryEl>(64);

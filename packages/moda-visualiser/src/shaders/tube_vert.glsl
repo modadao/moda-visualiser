@@ -53,7 +53,7 @@ void main() {
   /* float ynoise = (cnoise(vec2(-rotation + noiseY - position.y * u_noiseDensity + offset.y * u_noiseRamp * springY, noiseY + position.y * u_noiseDensity)) ) * u_noiseScale * offset.y * offset.y; */
   /* float znoise = (cnoise(vec2(rotation - noiseY + position.z * u_noiseDensity + offset.y * u_noiseRamp * springY, noiseY + position.z * u_noiseDensity)) ) * u_noiseScale * offset.y * offset.y; */
 
-  float rotation = noise(vec3(sin(progress / PI) + u_time, 1., noiseY)) * u_rotationDensity;
+  float rotation = noise(vec3(sin(progress / PI) + u_time * 0.02, 1., noiseY)) * u_rotationDensity;
   vec3 noiseCoords = position.xyz * u_noiseDensity + vec3(1., 2., 3.);
   float xnoise = (noise(vec3(noiseCoords.x - noiseY + rotation, noiseCoords.y + noiseY, noiseCoords.z + a * u_noiseRamp)) - 0.5) * noiseY * u_noiseScale * a;
   float ynoise = (noise(vec3(noiseCoords.y - noiseY + rotation, noiseCoords.z + noiseY, noiseCoords.x + a * u_noiseRamp)) - 0.5) * noiseY * u_noiseScale * a;

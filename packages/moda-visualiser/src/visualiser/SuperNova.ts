@@ -201,7 +201,7 @@ export class SuperNovaSpriteEmitter extends Object3D {
       const [x, y, z] = this.positions.slice(bufferI, bufferI + 3);
       this.accelerations[bufferI] *= 0.8;
       this.accelerations[bufferI] += simplex.noise3D(x * NOISE_SCALE, elapsed + y * NOISE_SCALE, z * NOISE_SCALE) * FLOW_SPEED;
-      this.accelerations[bufferI + 1] += 0.3 * delta;
+      this.accelerations[bufferI + 1] += 0.1 * delta;
       this.accelerations[bufferI + 1] *= 0.97;
 
       this.accelerations[bufferI + 2] *= 0.8;

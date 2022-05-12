@@ -1,5 +1,8 @@
 import gui from 'lil-gui'
 
-export default new gui({
+const myGui = new gui({
   autoPlace: true,
-})
+});
+
+export default myGui
+export const components = myGui.addFolder('Components')

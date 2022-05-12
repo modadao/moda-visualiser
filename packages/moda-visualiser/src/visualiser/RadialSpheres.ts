@@ -11,10 +11,12 @@ import { IAudioFrame } from "./AudioAnalyser";
 // import PlaybackHead from "./PlaybackHead";
 import ProgressRing from "./ProgressRing";
 import SpringPhysicsTextureManager from "./SpringPhysicsTextureManager";
-// import ShaderBackground from "./ShaderBackground";
+import ShaderBackground from "./ShaderBackground";
 import FFTTextureManager from "./FftTextureManager";
 import ShaderRings from "./ShaderRings";
 import { SuperNovaSpriteEmitter } from "./SuperNova";
+import CameraController from "./CameraController";
+import { components } from "./gui";
 
 export interface IVisualiserCoordinate extends IDerivedCoordinate {
   theta: number,
@@ -44,18 +46,33 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     inertia: 0.7,
     threshold: 0.9
   });
-  // shaderBackground: ShaderBackground;
+  cameraController: CameraController;
+  shaderBackground: ShaderBackground;
 
   particles: SuperNovaSpriteEmitter;
+
+  showBackground = true;
+  useCameraController = true;
+  useParticles = true;
+  animateBeziers = true;
+  animatePoints = true;
+
 
   constructor(private camera: Camera, fingerprint: IDerivedFingerPrint, settings: ISettings) {
     super();
     this.name = 'RadialSpheres'
 
+    this.cameraController = new CameraController(camera);
+
+    components.add(this, 'showBackground');
+    components.add(this, 'useCameraController');
+    components.add(this, 'useParticles');
+    components.add(this, 'animatePoints');
+    components.add(this, 'animateBeziers');
     this.particles = new SuperNovaSpriteEmitter(8000);
     this.add(this.particles);
 
-    // this.shaderBackground = new ShaderBackground(new Color('#1B1D21'));
+    this.shaderBackground = new ShaderBackground(new Color('#1B1D21'));
     // Add rings for flare
     const geo = new CircleLineGeometry(1, 512, fingerprint);
     const matWhite = new LineBasicMaterial({ color: 0xdddddd });
@@ -121,14 +138,15 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   }
 
   preRender(_renderer: WebGLRenderer) {
-    // this.shaderBackground.render(renderer);
+    if (this.showBackground) this.shaderBackground.render(_renderer);
   }
 
   elapsed = 0;
   update(elapsed: number, delta: number) {
     this.elapsed = elapsed;
     const dir = new Vector3();
-    // this.shaderBackground.update(elapsed);
+    this.shaderBackground.update(elapsed);
+    if (this.useCameraController) this.cameraController.update(elapsed);
     this.camera.updateMatrixWorld();
     this.camera.getWorldDirection(dir);
     this.rings.update(elapsed);
@@ -185,18 +203,20 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
 
   rotationalVelocity = 0;
   handleAudio(frame: IAudioFrame): void {
-    this.fftTextureManager.handleAudio(frame);
-    this.bezierFftTextureManager.handleAudio(frame);
+    if (this.animatePoints) this.fftTextureManager.handleAudio(frame);
+    else this.fftTextureManager.reset();
+    if (this.animateBeziers) this.bezierFftTextureManager.handleAudio(frame);
+    else this.bezierFftTextureManager.reset();
     this.bezierSpringPhysicsTextureManager.handleAudio(frame);
-    // this.shaderBackground.handleAudio(frame);
+    this.shaderBackground.handleAudio(frame);
     this.rings.handleAudio(frame);
     // this.playbackHead.handleAudio(frame);
     this.progressRing.handleAudio(frame);
-    if (this.points) this.points.handleAudio(frame);
-    if (this.mainBezier) this.mainBezier.handleAudio(frame);
-    if (this.secondaryBeziers.length) this.secondaryBeziers.forEach((se) => se.handleAudio(frame));
+    if (this.points && this.animatePoints) this.points.handleAudio(frame);
+    if (this.mainBezier && this.animateBeziers) this.mainBezier.handleAudio(frame);
+    if (this.secondaryBeziers.length && this.animateBeziers) this.secondaryBeziers.forEach((se) => se.handleAudio(frame));
 
-    if (this.coords) {
+    if (this.coords && this.useParticles) {
       const capacity = (1 - this.particles.lastCount / this.particles.count);
       const scaledPower = MathUtils.smoothstep(frame.power, 0.2, 0.6);
       const particleGenerationMultiplier = MathUtils.mapLinear(capacity * scaledPower, 0, 1, 1.01, 6.);

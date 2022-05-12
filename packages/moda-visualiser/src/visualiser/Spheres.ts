@@ -10,6 +10,7 @@ import { IAudioFrame } from "./AudioAnalyser";
 import { InstancedUniformsMesh } from 'three-instanced-uniforms-mesh'
 import FFTTextureManager from "./FftTextureManager";
 import SuperNova from "./SuperNova";
+import { components } from "./gui";
 
 export default class Spheres extends Object3D implements IAudioReactive {
   points: InstancedMesh;
@@ -17,6 +18,8 @@ export default class Spheres extends Object3D implements IAudioReactive {
   dataTextureSet = false;
   material: ShaderMaterial;
   outlineMaterial: ShaderMaterial;
+
+  useSuperNova = true;
   constructor(fingerprint: IDerivedFingerPrint, settings: ISettings, public coords: IVisualiserCoordinate[], public fftTextureManager: FFTTextureManager) {
     super();
     this.name = 'Spheres';
@@ -89,6 +92,7 @@ export default class Spheres extends Object3D implements IAudioReactive {
     this.add(this.points, this.outlines);
 
     this.disposeSuperNova = this.disposeSuperNova.bind(this);
+    components.add(this, 'useSuperNova');
   }
 
   setCameraDirection(v: Vector3) {
@@ -115,7 +119,7 @@ export default class Spheres extends Object3D implements IAudioReactive {
     if (frame.trigger) {
       this.material.uniforms.u_triggerCount = { value: this.material.uniforms.u_triggerCount.value + 1};
     }
-    if (this.coords) {
+    if (this.coords && this.useSuperNova) {
       // console.log(`Capacity: ${capacity.toFixed(3)}, power: ${scaledPower} => mutliplier: ${particleGenerationMultiplier.toFixed(3)}`)
       const { data } = this.fftTextureManager;
       const toFFT = 1 / (Math.PI * 2) * (data.length / 4);
