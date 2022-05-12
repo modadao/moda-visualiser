@@ -10,7 +10,7 @@ import SpringPhysicsTextureManager from "./SpringPhysicsTextureManager";
 const DIMENSION = 20;
 export default class ShaderRings extends Object3D implements IAudioReactive {
   mesh: Mesh<PlaneBufferGeometry, ShaderMaterial>;
-  constructor(fingerprint: IDerivedFingerPrint, settings: ISettings, public fftTextureManager: SpringPhysicsTextureManager) {
+  constructor(fingerprint: IDerivedFingerPrint, settings: ISettings) {
     super();
 
     const geo = new PlaneBufferGeometry(DIMENSION, DIMENSION);

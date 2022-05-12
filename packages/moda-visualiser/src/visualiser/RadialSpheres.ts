@@ -1,6 +1,6 @@
 import { IDerivedCoordinate, IDerivedFingerPrint } from "../types";
 import { GradientSampler, ImgSampler } from "../utils";
-import { Vector3, Mesh, Object3D, LineBasicMaterial, Line, Camera, Color, MathUtils, WebGLRenderer } from "three";
+import { Vector3, Mesh, Object3D, LineBasicMaterial, Line, Color, MathUtils, WebGLRenderer, PerspectiveCamera, OrthographicCamera } from "three";
 import CircleLineGeometry from '../helpers/CircleLineGeometry';
 import { ISettings } from "../visualiser";
 import RingBar from "./RingBar";
@@ -10,13 +10,12 @@ import IAudioReactive from "./ReactiveObject";
 import { IAudioFrame } from "./AudioAnalyser";
 // import PlaybackHead from "./PlaybackHead";
 import ProgressRing from "./ProgressRing";
-import SpringPhysicsTextureManager from "./SpringPhysicsTextureManager";
 import ShaderBackground from "./ShaderBackground";
 import FFTTextureManager from "./FftTextureManager";
 import ShaderRings from "./ShaderRings";
 import { SuperNovaSpriteEmitter } from "./SuperNova";
 import CameraController from "./CameraController";
-import { components } from "./gui";
+import { bezierSpringControls, components, fftSpringControls } from "./gui";
 
 export interface IVisualiserCoordinate extends IDerivedCoordinate {
   theta: number,
@@ -36,15 +35,18 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   floor: Mesh|undefined;
   // playbackHead: PlaybackHead;
   progressRing: ProgressRing;
-  bezierSpringPhysicsTextureManager = new SpringPhysicsTextureManager(512);
-  fftTextureManager = new FFTTextureManager();
+  // bezierSpringPhysicsTextureManager = new SpringPhysicsTextureManager(512);
+  fftTextureManager = new FFTTextureManager({
+    folder: fftSpringControls,
+  });
   bezierFftTextureManager = new FFTTextureManager({
     textureSize: 256,
     blurRadius: 56,
     impactVelocity: 0.5,
     springConstant: 0.03,
     inertia: 0.7,
-    threshold: 0.9
+    threshold: 0.9,
+    folder: bezierSpringControls,
   });
   cameraController: CameraController;
   shaderBackground: ShaderBackground;
@@ -58,7 +60,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   animatePoints = true;
 
 
-  constructor(private camera: Camera, fingerprint: IDerivedFingerPrint, settings: ISettings) {
+  constructor(private camera: PerspectiveCamera|OrthographicCamera, fingerprint: IDerivedFingerPrint, settings: ISettings) {
     super();
     this.name = 'RadialSpheres'
 
@@ -88,7 +90,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     this.add(this.barGraph);
 
     // Outer rings 
-    this.rings = new ShaderRings(fingerprint, settings, this.bezierSpringPhysicsTextureManager);
+    this.rings = new ShaderRings(fingerprint, settings);
     this.rings.rotateX(Math.PI / 2);
     this.add(this.rings);
 
@@ -131,10 +133,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
         this.barGraph.visible = settings.sceneElements.circumferenceGraph;
       }
       updateVisibility();
-    })().then(() => {
-      this.bezierSpringPhysicsTextureManager.build();
-    })
-
+    })()
   }
 
   preRender(_renderer: WebGLRenderer) {
@@ -148,6 +147,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     this.shaderBackground.update(elapsed);
     if (this.useCameraController) this.cameraController.update(elapsed);
     this.camera.updateMatrixWorld();
+    this.camera.updateProjectionMatrix();
     this.camera.getWorldDirection(dir);
     this.rings.update(elapsed);
     this.particles.update(elapsed, delta);
@@ -207,7 +207,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     else this.fftTextureManager.reset();
     if (this.animateBeziers) this.bezierFftTextureManager.handleAudio(frame);
     else this.bezierFftTextureManager.reset();
-    this.bezierSpringPhysicsTextureManager.handleAudio(frame);
+    // this.bezierSpringPhysicsTextureManager.handleAudio(frame);
     this.shaderBackground.handleAudio(frame);
     this.rings.handleAudio(frame);
     // this.playbackHead.handleAudio(frame);

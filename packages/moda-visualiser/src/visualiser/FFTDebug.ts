@@ -1,6 +1,6 @@
 import { IAudioFrame } from "./AudioAnalyser";
 import FFTTextureManager from "./FftTextureManager";
-import gui from "./gui";
+import gui, { components } from "./gui";
 import IAudioReactive from "./ReactiveObject";
 
 type HistoryEl = {
@@ -15,6 +15,7 @@ export default class FFTDebug implements IAudioReactive {
   historyHeight = 100;
   triggerThreshold = 0.5;
   fftTextureManager = new FFTTextureManager();
+  showDebug = false;
   constructor() {
     this.canvas = document.createElement('canvas');
     this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
@@ -22,10 +23,16 @@ export default class FFTDebug implements IAudioReactive {
     this.canvas.style.position = 'fixed';
     this.canvas.style.right = '0';
     this.canvas.style.bottom = '0';
+
+    components.add(this, 'showDebug').onChange((v: boolean) => {
+      if (v) this.canvas.style.display = "block";
+      else this.canvas.style.display = "none";
+    })
   }
 
   history = new Array<HistoryEl>(64);
   handleAudio(frame: IAudioFrame): void {
+    if (!this.showDebug) return;
     this.fftTextureManager.handleAudio(frame);
     const barWidth = 4;
     if (this.canvas.width !== barWidth * frame.fft.length) {

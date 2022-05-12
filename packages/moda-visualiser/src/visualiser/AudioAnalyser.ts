@@ -1,5 +1,5 @@
 import { Camera, Scene, AudioListener, Audio, AudioAnalyser, MathUtils } from "three";
-import gui from "./gui";
+import gui, { fftControls } from "./gui";
 
 export interface IAudioFrame {
   ready: boolean,
@@ -35,9 +35,9 @@ export default class AudioManager {
     this.fft = new Uint8Array(fftSize).fill(0);
     this.minFft = new Array(fftSize).fill(0);
     this.maxFft = new Array(fftSize).fill(200);
-    gui.add(this, 'fftNormalizeRate', 0, 100);
-    gui.add(this, 'triggerThreshold', 0, 1, 0.01);
-    gui.add(this, 'useMedian');
+    fftControls.add(this, 'fftNormalizeRate', 0, 100);
+    fftControls.add(this, 'triggerThreshold', 0, 1, 0.01);
+    fftControls.add(this, 'useMedian');
   }
 
   interval: number|undefined;

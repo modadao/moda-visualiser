@@ -1,3 +1,4 @@
+import GUI from "lil-gui";
 import { DataTexture, FloatType, RepeatWrapping, RGBAFormat, } from "three";
 import { mod } from "../utils";
 import { IAudioFrame } from "./AudioAnalyser";
@@ -11,6 +12,7 @@ export interface IFFTTextureManagerOptions {
   inertia: number,
   threshold: number,
   blurRadius: number,
+  folder?: GUI,
 }
 
 const defaultOptions: IFFTTextureManagerOptions = {
@@ -33,6 +35,16 @@ export default class FFTTextureManager implements IAudioReactive {
   constructor(opts?: Partial<IFFTTextureManagerOptions>) {
 
     this.opts = Object.assign({}, defaultOptions, opts || {});
+
+    if (opts?.folder) {
+      const {folder} = opts;
+      Object.keys(this.opts).forEach((k) => {
+        if (k !== 'folder') {
+          folder.add(this.opts, k);
+        }
+      })
+    }
+
     console.log('FFTTextureManager opts: ', this.opts)
     const { frameSize, textureSize } = this.opts;
     this.texture2fft = frameSize / textureSize;
