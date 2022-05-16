@@ -36,18 +36,8 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   // playbackHead: PlaybackHead;
   progressRing: ProgressRing;
   // bezierSpringPhysicsTextureManager = new SpringPhysicsTextureManager(512);
-  fftTextureManager = new FFTTextureManager({
-    folder: fftSpringControls,
-  });
-  bezierFftTextureManager = new FFTTextureManager({
-    textureSize: 256,
-    blurRadius: 56,
-    impactVelocity: 0.5,
-    springConstant: 0.03,
-    inertia: 0.7,
-    threshold: 0.9,
-    folder: bezierSpringControls,
-  });
+  fftTextureManager!: FFTTextureManager;
+  bezierFftTextureManager!: FFTTextureManager;
   cameraController: CameraController;
   shaderBackground: ShaderBackground;
 
@@ -63,6 +53,15 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   constructor(private camera: PerspectiveCamera|OrthographicCamera, fingerprint: IDerivedFingerPrint, settings: ISettings) {
     super();
     this.name = 'RadialSpheres'
+    this.fftTextureManager = new FFTTextureManager({
+      folder: fftSpringControls,
+      ...settings.springPhysics.spheres,
+    });
+    this.bezierFftTextureManager = new FFTTextureManager({
+      textureSize: 256,
+      folder: bezierSpringControls,
+      ...settings.springPhysics.beziers,
+    });
 
     this.cameraController = new CameraController(camera);
 
@@ -86,7 +85,6 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
 
     // Inner bar graph
     this.barGraph = new RingBar(fingerprint);
-    this.barGraph.visible = settings.sceneElements.circumferenceGraph;
     this.add(this.barGraph);
 
     // Outer rings 
@@ -100,7 +98,8 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     this.progressRing = new ProgressRing(3.170, 0.15);
     this.add(this.progressRing);
 
-    const colorSampler = settings.color.colorschemeMethod === 'gradient' ? new GradientSampler(settings.color.custom) : new ImgSampler(settings.color.colorTextureSrc);
+    const colorSampler = new ImgSampler(settings.color.colorTextureSrc);
+
     (async () => {
       const coords = await this.calculateCoords(fingerprint, settings, colorSampler);
       this.coords = coords;
@@ -116,7 +115,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
 
       
       // Generate random secondary beziers
-      new Array(20).fill(0).forEach((el, i) => {
+      new Array(20).fill(0).forEach((_, i) => {
         const secondaryBeziers = new FeatureBeziers(fingerprint, settings, featurePoints, this.bezierFftTextureManager, i + 1, {
           radialSegments: 3,
           radius: 0.01
@@ -124,17 +123,8 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
         this.add(secondaryBeziers);
         this.secondaryBeziers.push(secondaryBeziers);
       });
-
-      const updateVisibility = () => {
-        if (this.mainBezier) this.mainBezier.visible = settings.sceneElements.mainBezier;
-        this.secondaryBeziers.forEach(l => l.visible = settings.sceneElements.extraBeziers);
-        this.rings.visible = settings.sceneElements.rings;
-        this.innerRing.visible = settings.sceneElements.rings;
-        this.barGraph.visible = settings.sceneElements.circumferenceGraph;
-      }
-      updateVisibility();
     })()
-  }
+ }
 
   preRender(_renderer: WebGLRenderer) {
     if (this.showBackground) this.shaderBackground.render(_renderer);

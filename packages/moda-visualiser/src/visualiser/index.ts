@@ -42,9 +42,38 @@ export interface ISettings {
   audio: {
     /** @description The rate at which the FFT adjusts to the audio.  Higher normalize rate = more frequent triggers, lower normalize rate = less frequent triggers.  **/
     normalizeRate: number,
-    /** @description Threshold to perform a trigger **/
-    triggerThreshold: number,
   },
+
+  /**
+   * @description Options relating to the movement of the bezier curves and RadialSpheres
+   */
+  springPhysics: {
+    spheres: {
+      /** @description How much the springs are "hit" when triggered */
+      impactVelocity: number,
+      /** @description How much the impact is blurred throughout across the band */
+      blurRadius: number,
+      /** @description How much the spring wants to return back to its resting position */
+      springConstant: number,
+      /** @description How much the spring wants to continue moving in the same direction */
+      inertia: number,
+      /** @description The sensitivity of the springs, lower threshold = more impacts/triggers */
+      threshold: number
+    },
+    beziers: {
+      /** @description How much the springs are "hit" when triggered */
+      impactVelocity: number,
+      /** @description How much the impact is blurred throughout across the band */
+      blurRadius: number,
+      /** @description How much the spring wants to return back to its resting position */
+      springConstant: number,
+      /** @description How much the spring wants to continue moving in the same direction */
+      inertia: number,
+      /** @description The sensitivity of the springs, lower threshold = more impacts/triggers */
+      threshold: number
+    }
+  },
+
   showDebugMenu: boolean,
 }
 
@@ -77,7 +106,22 @@ const defaults: ISettings = {
   },
   audio: {
     normalizeRate: 60,
-    triggerThreshold: 0.5,
+  },
+  springPhysics: {
+    spheres: {
+      impactVelocity: 0.2,
+      springConstant: 0.025,
+      inertia: 0.95,
+      threshold: 0.8,
+      blurRadius: 3,
+    },
+    beziers: {
+      blurRadius: 56,
+      impactVelocity: 0.5,
+      springConstant: 0.03,
+      inertia: 0.7,
+      threshold: 0.9,
+    }
   },
   showDebugMenu: false,
 }
@@ -99,12 +143,12 @@ export default class ModaVisualiser {
   shouldExport = false;
   exportDimensions = 0;
 
-  audioManager: AudioManager;
+  audioManager?: AudioManager;
 
   stopped = false;
   clock: Clock;
 
-  fftDebug: FFTDebug|undefined;
+  fftDebug?: FFTDebug;
 
   constructor(public element: HTMLElement) {
     this.renderer = new WebGLRenderer({
@@ -125,13 +169,13 @@ export default class ModaVisualiser {
 
     this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
 
-    this.audioManager = new AudioManager(this.camera, this.scene);
-    this.clock = new Clock(true);
+    this.clock = new Clock(false);
 
     this.startAnimation();
   }
 
   private buildScene(fingerprint: IDerivedFingerPrint, settings: ISettings) {
+    this.audioManager = new AudioManager(this.camera, this.scene, 64, settings);
     this.lastFingerprint = fingerprint;
     this.radialSpheres = new RadialSphere(this.camera, fingerprint, settings);
     this.settings = settings;
@@ -139,6 +183,7 @@ export default class ModaVisualiser {
     if (settings.showDebugMenu && !this.fftDebug) {
       this.fftDebug = new FFTDebug();
     }
+    if (!this.clock.running) this.clock.start();
   }
 
   private startAnimation() {
@@ -155,13 +200,15 @@ export default class ModaVisualiser {
     this.time += deltaTime;
     this.orbitControls.update()
 
-    const audioFrame = this.audioManager.getAudioFrame(deltaTime);
-    if (this.radialSpheres) {
-      this.radialSpheres.preRender(this.renderer);
-      this.radialSpheres.update(this.time, deltaTime);
-      if (audioFrame.ready) this.radialSpheres.handleAudio(audioFrame);
+    if (this.audioManager) {
+      const audioFrame = this.audioManager.getAudioFrame(deltaTime);
+      if (this.radialSpheres) {
+        this.radialSpheres.preRender(this.renderer);
+        this.radialSpheres.update(this.time, deltaTime);
+        if (audioFrame.ready) this.radialSpheres.handleAudio(audioFrame);
+      }
+      if (this.fftDebug) this.fftDebug.handleAudio(audioFrame);
     }
-    if (this.fftDebug) this.fftDebug.handleAudio(audioFrame);
 
     this.renderer.render(this.scene, this.camera);
 
@@ -178,7 +225,7 @@ export default class ModaVisualiser {
     if (!this.stopped) window.requestAnimationFrame(this.update);
   }
 
-  resizeTimeout: number|undefined;
+  resizeTimeout: number | undefined;
   private handleResize(overrideBounds?: DOMRect) {
     if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
 
@@ -196,8 +243,8 @@ export default class ModaVisualiser {
       this.camera.top = halfDims.y;
       this.camera.bottom = -halfDims.y;
       this.camera.updateProjectionMatrix();
-      const {top, bottom, left, right} = this.camera;
-      console.log({top, bottom, left, right})
+      const { top, bottom, left, right } = this.camera;
+      console.log({ top, bottom, left, right })
       this.renderer.setSize(bounds.width, bounds.height);
       this.resizeTimeout = undefined;
     }, 200)
@@ -323,8 +370,6 @@ export default class ModaVisualiser {
     this.updateSettings(this.settings);
   }
 
-  setFftDecayRate()
-
   /**
    * @description Cleans up scene elements, run this before component unmounts.
    * @returns
@@ -335,9 +380,8 @@ export default class ModaVisualiser {
     this.renderer.dispose();
     this.renderer.domElement.parentElement?.removeChild(this.renderer.domElement);
     this.stopped = true;
-    this.audioManager.dispose();
-    if (this.radialSpheres)
-      this.radialSpheres.dispose();
+    if (this.audioManager) this.audioManager.dispose();
+    if (this.radialSpheres) this.radialSpheres.dispose();
   }
 
   /**

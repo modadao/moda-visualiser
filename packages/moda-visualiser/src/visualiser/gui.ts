@@ -18,3 +18,5 @@ export const ringsControls = myGui.addFolder('RingsControls').close();
 //     myGui.domElement.parentElement?.removeChild(myGui.domElement);
 //   })
 // }
+
+
