@@ -8,22 +8,22 @@ function Visualiser() {
   console.log('app component')
 
   // Mount/dispose and remove visualiser on mount/unmount
-  let visualiser: ModaVisualiser|undefined = undefined;
+  const visualiser = useRef<ModaVisualiser>();
   useEffect(() => {
     if (container.current) {
-      visualiser = new ModaVisualiser(container.current);
+      visualiser.current = new ModaVisualiser(container.current);
     }
     return () => {
-      if (visualiser) {
-        visualiser.dispose();
-        visualiser = undefined;
+      if (visualiser.current) {
+        visualiser.current.dispose();
+        visualiser.current = null;
       }
     }
   }, [])
 
   const handleExport = () => {
-    if (visualiser) {
-        (visualiser as ModaVisualiser).export(1024);
+    if (visualiser.current) {
+        visualiser.current.export(1024);
       }
   }
 
@@ -33,16 +33,16 @@ function Visualiser() {
   const handleSubmit = async (e?: React.FormEvent<HTMLFormElement>) => {
     if (e)
       e.preventDefault();
-    if (visualiser) {
+    if (visualiser.current) {
       const response = await fetch(`http://206.189.47.33/?address=${address}&id=${id}`)
       const data = await response.json() as IFingerprint;
-      visualiser.updateFingerprint(data, Song);
+      visualiser.current.updateFingerprint(data, Song);
     }
   }
 
   const submitRoby = () => {
-    if (visualiser) {
-      visualiser.updateFingerprint(fingerprint, Song);
+    if (visualiser.current) {
+      visualiser.current.updateFingerprint(fingerprint, Song);
     }
   }
   return (
@@ -66,8 +66,8 @@ function Visualiser() {
         <button onClick={handleExport}>Export</button>  
       </div>
       <div>
-        <button onClick={() => visualiser && visualiser.play()}>Play</button>
-        <button onClick={() => visualiser && visualiser.pause()}>Pause</button>
+        <button onClick={() => visualiser.current && visualiser.current.play()}>Play</button>
+        <button onClick={() => visualiser.current && visualiser.current.pause()}>Pause</button>
       </div>
     </div>
   )
