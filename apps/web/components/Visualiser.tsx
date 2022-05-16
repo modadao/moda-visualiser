@@ -59,9 +59,11 @@ function Visualiser() {
         </div>
         <div>
           <button type="submit">Fetch data</button>
-          <button onClick={submitRoby}> Play Roby Preset </button>
         </div>
       </form>
+      <div>
+        <button onClick={submitRoby}> Play Roby Preset </button>
+      </div>
       <div>
         <button onClick={handleExport}>Export</button>  
       </div>
