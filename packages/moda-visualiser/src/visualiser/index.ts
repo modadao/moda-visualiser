@@ -25,9 +25,7 @@ export interface ISettings {
     sizeLarge: number,
   },
   color: {
-    colorschemeMethod: 'gradient'|'texture',
     colorTextureSrc: string,
-    custom: Record<string, string>,
     baseVariation: number,
     velocityVariation: number,
   },
@@ -38,14 +36,16 @@ export interface ISettings {
     verticalAngleRandomness: number,
     verticalIncidence: boolean,
   },
-  sceneElements: {
-    galaxyPoints: boolean,
-    outlines: boolean,
-    circumferenceGraph: boolean,
-    mainBezier: boolean,
-    extraBeziers: boolean,
-    rings: boolean,
-  }
+  /**
+   * @description Controls for options relating to the audio analysis including "triggers" (moments of impact in the audio, used for effects).
+   */
+  audio: {
+    /** @description The rate at which the FFT adjusts to the audio.  Higher normalize rate = more frequent triggers, lower normalize rate = less frequent triggers.  **/
+    normalizeRate: number,
+    /** @description Threshold to perform a trigger **/
+    triggerThreshold: number,
+  },
+  showDebugMenu: boolean,
 }
 
 const defaults: ISettings = {
@@ -64,14 +64,7 @@ const defaults: ISettings = {
     sizeLarge: 0.3,
   },
   color: {
-    colorschemeMethod: 'texture',
     colorTextureSrc: COLOR_SCHEME_IMG,
-    custom: {
-      '1': '#FF2F42',
-      '2': '#FFA71F',
-      '3': '#00F5C4',
-      '4': '#B44CF8',
-    },
     baseVariation: 0.2,
     velocityVariation: 0.3,
   },
@@ -82,14 +75,11 @@ const defaults: ISettings = {
     verticalAngleRandomness: 1,
     verticalIncidence: false,
   },
-  sceneElements: {
-    galaxyPoints: false,
-    outlines: true,
-    circumferenceGraph: true,
-    mainBezier: true,
-    extraBeziers: true,
-    rings: true,
-  }
+  audio: {
+    normalizeRate: 60,
+    triggerThreshold: 0.5,
+  },
+  showDebugMenu: false,
 }
 
 
@@ -114,7 +104,7 @@ export default class ModaVisualiser {
   stopped = false;
   clock: Clock;
 
-  fftDebug = new FFTDebug();
+  fftDebug: FFTDebug|undefined;
 
   constructor(public element: HTMLElement) {
     this.renderer = new WebGLRenderer({
@@ -146,6 +136,9 @@ export default class ModaVisualiser {
     this.radialSpheres = new RadialSphere(this.camera, fingerprint, settings);
     this.settings = settings;
     this.scene.add(this.radialSpheres);
+    if (settings.showDebugMenu && !this.fftDebug) {
+      this.fftDebug = new FFTDebug();
+    }
   }
 
   private startAnimation() {
@@ -168,7 +161,7 @@ export default class ModaVisualiser {
       this.radialSpheres.update(this.time, deltaTime);
       if (audioFrame.ready) this.radialSpheres.handleAudio(audioFrame);
     }
-    this.fftDebug.handleAudio(audioFrame);
+    if (this.fftDebug) this.fftDebug.handleAudio(audioFrame);
 
     this.renderer.render(this.scene, this.camera);
 
@@ -289,27 +282,6 @@ export default class ModaVisualiser {
   }
 
   /**
-   * @param  method Sets the colorscheme method to source colours from either a texture (setColorsTexture) or an array of colors (setColors).
-   * @default 'texture'
-   */
-  setColorschemeMethod(method: 'texture'|'gradient') {
-    this.settings.color.colorschemeMethod = method;
-    this.updateSettings(this.settings);
-  }
-
-  /**
-   * @description Set a custom colour scheme using an array of hex strings.
-   */
-  setColors(colors = ['#ff2f42', '#ffa71f', '#00f5c4', '#b44cf8']) {
-    const custom = colors.reduce((acc: Record<string, string>, el: string, i: number) => {
-      acc[i.toString()] = el;
-      return acc;
-    }, {} as Record<string, string>);
-    this.settings.color.custom = custom;
-    this.updateSettings(this.settings);
-  }
-
-  /**
    * @description Use a texture as a colour gradient.  Only enabled when setColorschemeMethod is 'texture'.
    */
   setColorsTexture(src: string) {
@@ -333,17 +305,25 @@ export default class ModaVisualiser {
     this.updateSettings(this.settings);
   }
 
+  /**
+   * @description Sets the amount that the beziers flare in vs out.
+   */
   setBeziersFlare(flareIn = 0.5, flareOut = 2.5) {
     this.settings.beziers.flareIn = flareIn;
     this.settings.beziers.flareOut = flareOut;
     this.updateSettings(this.settings);
   }
 
+  /**
+   * @description Sets the randomisation of the bezier's angle of incidence.
+   */
   setBeziersAngleVariation(horizontal = 1, vertical = 1) {
     this.settings.beziers.angleRandomness = horizontal;
     this.settings.beziers.verticalAngleRandomness = vertical;
     this.updateSettings(this.settings);
   }
+
+  setFftDecayRate()
 
   /**
    * @description Cleans up scene elements, run this before component unmounts.

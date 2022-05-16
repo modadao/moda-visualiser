@@ -100,13 +100,9 @@ export default class FFTTextureManager implements IAudioReactive {
       this.data[texI + 3] = trigger ? 1 : 0;
     }
 
-    const data = new Float32Array(this.data.length);
-    for (let i = 0; i < this.data.length; i++) {
-      data[i] = this.data[i];
-    }
     this.dataTexture.image = {
       // @ts-expect-error; Undefined valid behaviour
-      data: data,
+      data: this.data,
       width: textureSize,
       height: 1,
     }

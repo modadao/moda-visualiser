@@ -1,4 +1,5 @@
 import { Camera, Scene, AudioListener, Audio, AudioAnalyser, MathUtils } from "three";
+import { ISettings } from ".";
 import gui, { fftControls } from "./gui";
 
 export interface IAudioFrame {
@@ -19,11 +20,18 @@ export default class AudioManager {
   listener: AudioListener|undefined;
 
   analyser: AudioAnalyser|undefined;
+  triggerThreshold = 0.5;
+  fftNormalizeRate = 60;
+
   constructor(
     public camera: Camera,
     public scene: Scene,
-    public fftSize = 64
+    public fftSize = 64,
+    settings: ISettings,
   ) {
+    this.triggerThreshold = settings.audio.triggerThreshold;
+    this.fftNormalizeRate = settings.audio.normalizeRate;
+
     document.body.addEventListener('click', () => {
       console.log('Creating audio listener')
       this.listener = new AudioListener();
@@ -35,9 +43,6 @@ export default class AudioManager {
     this.fft = new Uint8Array(fftSize).fill(0);
     this.minFft = new Array(fftSize).fill(0);
     this.maxFft = new Array(fftSize).fill(200);
-    fftControls.add(this, 'fftNormalizeRate', 0, 100);
-    fftControls.add(this, 'triggerThreshold', 0, 1, 0.01);
-    fftControls.add(this, 'useMedian');
   }
 
   interval: number|undefined;
@@ -80,10 +85,7 @@ export default class AudioManager {
     audio.src = path;
   }
 
-  useMedian = false;
-  triggerThreshold = 0.5;
   private hasTriggered = false
-  fftNormalizeRate = 60;
   hasNewAudioFrame = false;
   minFft: number[];
   maxFft: number[];
@@ -133,9 +135,7 @@ export default class AudioManager {
     this.fft.fill(0);
     const power = (fft as Array<number>).reduce((acc: number, el: number) => acc + el, 0) / this.fftSize;
 
-    const shouldTrigger = this.useMedian 
-      ? fft.filter((v) => v > this.triggerThreshold).length > fft.length / 2
-      : power > this.triggerThreshold;
+    const shouldTrigger = power > this.triggerThreshold;
 
     let trigger = false;
     if (!this.hasTriggered && shouldTrigger) {
