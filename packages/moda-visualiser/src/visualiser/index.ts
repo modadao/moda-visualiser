@@ -192,6 +192,9 @@ export default class ModaVisualiser {
     this.resizeTimeout = window.setTimeout(() => {
       console.log(overrideBounds);
       const bounds = overrideBounds || this.element.getBoundingClientRect();
+
+      const dimensionScale = Math.max(bounds.height / bounds.width, 1);
+      halfDims.set(10, 10).multiplyScalar(dimensionScale).divideScalar(2);
       console.log(`Resizing to ${bounds.width}x${bounds.height}`);
       const aspect = bounds.width / bounds.height;
       console.log(aspect);
