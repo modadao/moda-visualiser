@@ -33,11 +33,15 @@ function Visualiser() {
   const handleSubmit = async (e?: React.FormEvent<HTMLFormElement>) => {
     if (e)
       e.preventDefault();
-    console.log('Handling form submit')
     if (visualiser) {
-      // const response = await fetch(`http://206.189.47.33/?address=${address}&id=${id}`)
-      // const response = await fetch(fingerprint);
-      // const data = await response.json() as IFingerprint;
+      const response = await fetch(`http://206.189.47.33/?address=${address}&id=${id}`)
+      const data = await response.json() as IFingerprint;
+      visualiser.updateFingerprint(data, Song);
+    }
+  }
+
+  const submitRoby = () => {
+    if (visualiser) {
       visualiser.updateFingerprint(fingerprint, Song);
     }
   }
@@ -55,6 +59,7 @@ function Visualiser() {
         </div>
         <div>
           <button type="submit">Fetch data</button>
+          <button onClick={submitRoby}> Play Roby Preset </button>
         </div>
       </form>
       <div>
