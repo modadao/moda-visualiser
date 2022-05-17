@@ -104,19 +104,19 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
       const coords = await this.calculateCoords(fingerprint, settings, colorSampler);
       this.coords = coords;
 
-      this.points = new Spheres(fingerprint, settings, coords, this.fftTextureManager);
+      this.points = new Spheres(fingerprint, coords, this.fftTextureManager);
       this.add(this.points);
 
       // Bezier through feature points
       const featurePoints = coords.filter(p => p.featureLevel !== 0);
       // Generate main bezier
-      this.mainBezier = new FeatureBeziers(fingerprint, settings, featurePoints, this.bezierFftTextureManager, 0);
+      this.mainBezier = new FeatureBeziers(fingerprint, featurePoints, this.bezierFftTextureManager, 0);
       this.add(this.mainBezier);
 
       
       // Generate random secondary beziers
       new Array(20).fill(0).forEach((_, i) => {
-        const secondaryBeziers = new FeatureBeziers(fingerprint, settings, featurePoints, this.bezierFftTextureManager, i + 1, {
+        const secondaryBeziers = new FeatureBeziers(fingerprint, featurePoints, this.bezierFftTextureManager, i + 1, {
           radialSegments: 3,
           radius: 0.01
         });
@@ -124,7 +124,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
         this.secondaryBeziers.push(secondaryBeziers);
       });
     })()
- }
+  }
 
   preRender(_renderer: WebGLRenderer) {
     if (this.showBackground) this.shaderBackground.render(_renderer);

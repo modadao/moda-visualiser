@@ -1,5 +1,4 @@
-import { BackSide, InstancedMesh, Matrix4, MeshBasicMaterial, Object3D, Quaternion, ShaderMaterial, SphereBufferGeometry, Texture, Vector2, Vector3 } from "three"
-import { ISettings } from ".";
+import { BackSide, InstancedMesh, Matrix4, Object3D, Quaternion, ShaderMaterial, SphereBufferGeometry, Texture, Vector2, Vector3 } from "three"
 import { IDerivedFingerPrint } from "../types";
 import IAudioReactive from "./ReactiveObject";
 import FragShader from '../shaders/spheres_frag.glsl';
@@ -12,6 +11,23 @@ import FFTTextureManager from "./FftTextureManager";
 import SuperNova from "./SuperNova";
 import { components } from "./gui";
 
+const settings = {
+  points: {
+    outlineSize: 0.007,
+    outlineAdd: 0.65,
+    outlineMultiplier: 1,
+    innerGlow: 1,
+  },
+  featurePoints: {
+    count: 7,
+    extraPer: 3000,
+    sizeSmall: 0.1,
+    sizeMed: 0.15,
+    sizeMdLg: 0.2,
+    sizeLarge: 0.3,
+  },
+}
+
 export default class Spheres extends Object3D implements IAudioReactive {
   points: InstancedMesh;
   outlines: InstancedMesh;
@@ -20,7 +36,7 @@ export default class Spheres extends Object3D implements IAudioReactive {
   outlineMaterial: ShaderMaterial;
 
   useSuperNova = true;
-  constructor(fingerprint: IDerivedFingerPrint, settings: ISettings, public coords: IVisualiserCoordinate[], public fftTextureManager: FFTTextureManager) {
+  constructor(fingerprint: IDerivedFingerPrint, public coords: IVisualiserCoordinate[], public fftTextureManager: FFTTextureManager) {
     super();
     this.name = 'Spheres';
     console.log(fingerprint, coords);

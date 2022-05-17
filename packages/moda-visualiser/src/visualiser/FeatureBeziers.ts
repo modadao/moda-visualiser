@@ -57,9 +57,19 @@ const getMaterial = () => {
   return mat;
 }
 
+const settings = {
+  beziers: {
+    flareOut: 2.5,
+    flareIn: 0.5,
+    angleRandomness: 1,
+    verticalAngleRandomness: 1,
+    verticalIncidence: false,
+  },
+}
+
 export default class FeatureBeziers extends Object3D implements IAudioReactive {
   material: ShaderMaterial;
-  constructor(_fingerprint: IDerivedFingerPrint, public settings: ISettings, coords: IVisualiserCoordinate[], public fftTextureManager: FFTTextureManager, public index: number, options?: Partial<IFeatureBezierOptions>) {
+  constructor(_fingerprint: IDerivedFingerPrint, coords: IVisualiserCoordinate[], public fftTextureManager: FFTTextureManager, public index: number, options?: Partial<IFeatureBezierOptions>) {
     super();
     this.name = 'FeatureBeziers'
 
@@ -92,7 +102,7 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
    */
   private generateCurves (points: IVisualiserCoordinate[], cur: IVisualiserCoordinate, dir: Vector3, facingTowardsCenter: boolean, result: GenerateCurvesResult, firstPoint?: IVisualiserCoordinate, firstDir?: Vector3): GenerateCurvesResult {
     const center = new Vector3();
-    const { flareOut, flareIn, angleRandomness, verticalAngleRandomness, verticalIncidence } = this.settings.beziers;
+    const { flareOut, flareIn, angleRandomness, verticalAngleRandomness, verticalIncidence } = settings.beziers;
     const isLast = points.length === 0;
     const targetDist = 2;
     const next = isLast 

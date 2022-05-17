@@ -56,12 +56,15 @@ export const fillArray = <T>(target: T[], source: T[]) => {
   }
 }
 
+const FEATURE_POINT_COUNT = 7;
+const FEATURE_POINT_EXTRA_PER = 3000;
+
 /**
   * @param fingerprint - The fingerprint from the MODA API
   * @param settings - Settings object
   * @returns A fingerprint with derived data
   */
-export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDerivedFingerPrint => {
+export const deriveData = (fingerprint: IFingerprint): IDerivedFingerPrint => {
   const coords = fingerprint.coords.x.map((x, i) => ({ x, y: fingerprint.coords.y[i] }))
   // Generate smoothed data
   console.log(fingerprint);
@@ -114,7 +117,7 @@ export const deriveData = (fingerprint: IFingerprint, settings: ISettings): IDer
   }
   const floatHash = (hash / 2_147_483_647) * 0.5 + 0.5;
 
-  const targetNumberOfFeatures = settings.featurePoints.count + Math.floor(coords.length / settings.featurePoints.extraPer);
+  const targetNumberOfFeatures = FEATURE_POINT_COUNT + Math.floor(coords.length / FEATURE_POINT_EXTRA_PER);
   const features: number[] = [];
   const featureLevels: number[] = [];
   for (let i = 0; i < targetNumberOfFeatures; i++) {

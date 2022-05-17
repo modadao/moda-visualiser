@@ -9,33 +9,7 @@ import RadialSphere from "./RadialSpheres";
 
 const COLOR_SCHEME_IMG = ' data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/4gIoSUNDX1BST0ZJTEUAAQEAAAIYAAAAAAQwAABtbnRyUkdCIFhZWiAAAAAAAAAAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAAHRyWFlaAAABZAAAABRnWFlaAAABeAAAABRiWFlaAAABjAAAABRyVFJDAAABoAAAAChnVFJDAAABoAAAAChiVFJDAAABoAAAACh3dHB0AAAByAAAABRjcHJ0AAAB3AAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAFgAAAAcAHMAUgBHAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFhZWiAAAAAAAABvogAAOPUAAAOQWFlaIAAAAAAAAGKZAAC3hQAAGNpYWVogAAAAAAAAJKAAAA+EAAC2z3BhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABYWVogAAAAAAAA9tYAAQAAAADTLW1sdWMAAAAAAAAAAQAAAAxlblVTAAAAIAAAABwARwBvAG8AZwBsAGUAIABJAG4AYwAuACAAMgAwADEANv/bAEMACgcHCAcGCggICAsKCgsOGBAODQ0OHRUWERgjHyUkIh8iISYrNy8mKTQpISIwQTE0OTs+Pj4lLkRJQzxINz0+O//bAEMBCgsLDg0OHBAQHDsoIig7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7O//AABEIAAoAgAMBIgACEQEDEQH/xAAYAAEBAQEBAAAAAAAAAAAAAAAEAwUBAv/EACAQAAIBAwUBAQAAAAAAAAAAAAABMQIDBAUREiEyQYH/xAAWAQEBAQAAAAAAAAAAAAAAAAAFBgT/xAAcEQACAwADAQAAAAAAAAAAAAAAMQIDBAEFM0H/2gAMAwEAAhEDEQA/APAqxKBi7Eonri8mjWxktkMoS5A8aENtz+BVoVaxVkuoIWS6gKmwDaRuB6pEXA9UmmhkppZyiS7S4EKPRaryWvW/A2LA5aXEwM1Sb+X5ZgZv0tMiNlLMTIQXbsXkegrkcgiiyGlp67G1g9OgZWBdz4SKTH68H//Z'
 
-export interface ISettings {
-  points: {
-    outlineSize: number,
-    outlineMultiplier: number,
-    outlineAdd: number,
-    innerGlow: number,
-  }
-  featurePoints: {
-    count: number,
-    extraPer: number,
-    sizeSmall: number,
-    sizeMed: number,
-    sizeMdLg: number,
-    sizeLarge: number,
-  },
-  color: {
-    colorTextureSrc: string,
-    baseVariation: number,
-    velocityVariation: number,
-  },
-  beziers: {
-    flareOut: number,
-    flareIn: number,
-    angleRandomness: number,
-    verticalAngleRandomness: number,
-    verticalIncidence: boolean,
-  },
+export interface IBaseSettings {
   /**
    * @description Controls for options relating to the audio analysis including "triggers" (moments of impact in the audio, used for effects).
    */
@@ -44,6 +18,24 @@ export interface ISettings {
     normalizeRate: number,
   },
 
+  /**
+   * @description Controls relating to the colouring of the fingerprint points
+   */
+  color: {
+    /* @description Gradient texture to sample the point colours from */
+    colorTextureSrc: string,
+    /* @description The rotational variation (basically a rotational gradient) */
+    baseVariation: number,
+    /* @description The amount of variation depending on the fingerpint data of that specific point.  */
+    velocityVariation: number,
+  },
+
+  /**
+   * @description Show or hide a canvas used for displaying FFT/Audio information.  Useful for debugging.
+   */
+  showDebugMenu: boolean,
+}
+export interface ISettings extends IBaseSettings {
   /**
    * @description Options relating to the movement of the bezier curves and RadialSpheres
    */
@@ -73,36 +65,13 @@ export interface ISettings {
       threshold: number
     }
   },
-
-  showDebugMenu: boolean,
 }
 
 const defaults: ISettings = {
-  points: {
-    outlineSize: 0.007,
-    outlineAdd: 0.65,
-    outlineMultiplier: 1,
-    innerGlow: 1,
-  },
-  featurePoints: {
-    count: 7,
-    extraPer: 3000,
-    sizeSmall: 0.1,
-    sizeMed: 0.15,
-    sizeMdLg: 0.2,
-    sizeLarge: 0.3,
-  },
   color: {
     colorTextureSrc: COLOR_SCHEME_IMG,
     baseVariation: 0.2,
     velocityVariation: 0.3,
-  },
-  beziers: {
-    flareOut: 2.5,
-    flareIn: 0.5,
-    angleRandomness: 1,
-    verticalAngleRandomness: 1,
-    verticalIncidence: false,
   },
   audio: {
     normalizeRate: 60,
@@ -257,9 +226,9 @@ export default class ModaVisualiser {
     this.scene.clear();
     if (this.radialSpheres)
       this.radialSpheres.dispose();
-    const derivedFingerprint = deriveData(fingerprint, this.settings);
+    const derivedFingerprint = deriveData(fingerprint);
     this.buildScene(derivedFingerprint, this.settings);
-    this.audioManager.load(audioPath);
+    if (this.audioManager) this.audioManager.load(audioPath);
   }
 
   /**
@@ -270,62 +239,6 @@ export default class ModaVisualiser {
     if (this.radialSpheres)
       this.radialSpheres.dispose();
     this.buildScene(this.lastFingerprint, settings);
-  }
-
-  /**
-   * @description Sets the outline width of all of the points.
-   */
-  setOutlineSize(val = 0.007) {
-    this.settings.points.outlineSize = val;
-    this.updateSettings(this.settings);
-  }
-
-  /**
-   * @description Brighten or darken the outline color.  At 0 the outline will be the same colour as the feature point.
-   */
-  setOutlineColorBrightness(val = 0.65) {
-    this.settings.points.outlineAdd = val;
-    this.updateSettings(this.settings);
-  }
-
-  /**
-   * @description Configure the amount of inner glow applied to the feature point spheres.
-   */
-  setSphereInnerGlow(val = 1) {
-    this.settings.points.innerGlow = val;
-    this.updateSettings(this.settings);
-  }
-
-  /**
-   * @description Set the base number of feature points.
-   */
-  setFeaturePointBaseCount(val = 7) {
-    this.settings.featurePoints.count = val;
-    this.updateSettings(this.settings);
-  }
-
-  /**
-   * @description Add an extra feature point for every x number of data points.
-   */
-  setFeaturePointExtraPer(val = 1000) {
-    this.settings.featurePoints.extraPer = val;
-    this.updateSettings(this.settings);
-  }
-
-  /**
-   * @description Set the variation of feature point sizes.
-   */
-  setFeaturePointsSizes(sizes = {
-    small: 0.25,
-    medium: 0.3,
-    large: 0.4,
-    xlarge: 0.6
-  }) {
-    this.settings.featurePoints.sizeSmall = sizes.small;
-    this.settings.featurePoints.sizeMed = sizes.medium;
-    this.settings.featurePoints.sizeMdLg = sizes.large;
-    this.settings.featurePoints.sizeLarge = sizes.xlarge;
-    this.updateSettings(this.settings);
   }
 
   /**
@@ -349,24 +262,6 @@ export default class ModaVisualiser {
    */
   setColorVelocityVariation(val = 0.3) {
     this.settings.color.velocityVariation = val;
-    this.updateSettings(this.settings);
-  }
-
-  /**
-   * @description Sets the amount that the beziers flare in vs out.
-   */
-  setBeziersFlare(flareIn = 0.5, flareOut = 2.5) {
-    this.settings.beziers.flareIn = flareIn;
-    this.settings.beziers.flareOut = flareOut;
-    this.updateSettings(this.settings);
-  }
-
-  /**
-   * @description Sets the randomisation of the bezier's angle of incidence.
-   */
-  setBeziersAngleVariation(horizontal = 1, vertical = 1) {
-    this.settings.beziers.angleRandomness = horizontal;
-    this.settings.beziers.verticalAngleRandomness = vertical;
     this.updateSettings(this.settings);
   }
 
