@@ -1,13 +1,43 @@
 import React, { useEffect, useRef, useState } from 'react'
-import ModaVisualiser, { IFingerprint, DefaultVisuals } from '@coc-boilerplate/moda-visualiser';
+import { Object3D, OrthographicCamera, WebGLRenderer, AxesHelper } from 'three';
+import ModaVisualiser, { IFingerprint, IVisuals, DefaultVisuals, IAudioFrame, IDerivedFingerPrint  } from '@moda/moda-visualiser';
 import Song from '../data/roby.mp3';
 import fingerprint from '../data/roby.json';
 
-function Visualiser() {
-  const container = useRef(null);
-  console.log('app component')
 
+class CustomVisuals extends Object3D implements IVisuals {
+  axes: AxesHelper;
+ constructor(
+    _camera: OrthographicCamera,
+    _renderer: WebGLRenderer,
+    _fingerprint: IDerivedFingerPrint
+  ) {
+    super();
+    this.axes = new AxesHelper(1);
+    this.add(this.axes); // Scene elements should be added to self 
+  }
+
+  // Update function runs once per frame.
+  update(elapsed: number, delta: number) {
+    this.axes.rotateY(delta); // Rotate axes at a consistent speed
+  }
+
+  // Handle audio is run once every frame after update.  This is where you add the audio reactivity.
+  handleAudio(frame: IAudioFrame) {
+    this.axes.position.x = frame.power * 4; // Move axes up and down 
+  }
+
+  // Dispose function is run on unmount/when switching fingerprint or settings.
+  // It is required to cleanup GPU resources, event listeners etc.
+  dispose() {
+    this.axes.dispose();
+  }
+}
+
+function Visualiser() {
+  console.log('app component')
   // Mount/dispose and remove visualiser on mount/unmount
+  const container = useRef(null);
   const visualiser = useRef<ModaVisualiser>();
   useEffect(() => {
     if (container.current) {

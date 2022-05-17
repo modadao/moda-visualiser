@@ -1,12 +1,14 @@
-const withTM = require("next-transpile-modules")(["@coc-boilerplate/moda-visualiser"]);
+// const withTM = require("next-transpile-modules")(["@moda/moda-visualiser"]);
 
-module.exports = withTM({
+module.exports = {
   reactStrictMode: true,
   webpack: (config, options) => {
-    config.module.rules.push({
-      test: /\.glsl/,
-      type: "asset/source",
-    })
+    // Only needed when importing @moda/moda-visualiser directly
+    //
+    // config.module.rules.push({
+    //   test: /\.glsl/,
+    //   type: "asset/source",
+    // })
     config.module.rules.push({
       test: /\.mp3/,
       type: "asset/resource",
@@ -17,4 +19,4 @@ module.exports = withTM({
     })
     return config
   },
-});
+};

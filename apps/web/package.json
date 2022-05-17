@@ -1,5 +1,5 @@
 {
-  "name": "@coc-boilerplate/web",
+  "name": "@moda/web",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -10,7 +10,7 @@
     "deploy": "yarn build && cd out && mv index.html 200.html && surge --domain moda-nft-test.surge.sh"
   },
   "dependencies": {
-    "@coc-boilerplate/moda-visualiser": "*",
+    "@moda/moda-visualiser": "*",
     "next": "^12.1.5",
     "react": "17.0.2",
     "react-dom": "17.0.2"
