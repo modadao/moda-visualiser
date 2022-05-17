@@ -1,5 +1,4 @@
 import { Clock, Color, MathUtils, OrthographicCamera, Scene, Vector2, Vector3, WebGLRenderer } from "three";
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 import { IDerivedCoordinate, IDerivedFingerPrint, IFingerprint, IVisuals, IVisualsConstructor } from "../types";
 import { customRandom, ImgSampler } from "../utils";

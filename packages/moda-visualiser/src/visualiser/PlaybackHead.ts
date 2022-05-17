@@ -1,9 +1,9 @@
 import { CylinderBufferGeometry, Mesh, Object3D, ShaderMaterial } from "three";
 import { IAudioFrame } from "./AudioAnalyser";
-import IAudioReactive from "./ReactiveObject";
 
 import PlaybackFrag from '../shaders/playback_head_frag.glsl';
 import PlaybackVert from '../shaders/playback_head_vert.glsl';
+import IAudioReactive from "../types";
 
 export default class PlaybackHead extends Object3D implements IAudioReactive {
   needle: Mesh;

@@ -5,7 +5,13 @@
   "files": [
     "dist"
   ],
-  "main": "./src/index.ts",
+  "types": "./dist/types.d.ts",
+  "module": "./dist/moda-visualiser.es.js",
+  "exports": {
+    ".": {
+      "import": "./dist/moda-visualiser.es.js"
+    }
+  },
   "scripts": {
     "build": "vite build && tsc --emitDeclarationOnly && npm run build:bundle-types",
     "build:bundle-types": "dts-bundle-generator -o dist/types.d.ts dist/index.d.ts",

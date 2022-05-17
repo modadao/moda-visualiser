@@ -1,13 +1,4 @@
-import { BufferAttribute, BufferGeometry, Color, Line, LineBasicMaterial, MathUtils, Texture, Vector, Vector2, Vector3, WebGLRenderer } from "three";
-import { ISettings } from "./visualiser";
-import { IDerivedFingerPrint, IFingerprint } from "./types";
-import { Pass } from 'three/examples/jsm/postprocessing/Pass';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
-import { TexturePass } from 'three/examples/jsm/postprocessing/TexturePass';
-import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
-import { HorizontalBlurShader } from "three/examples/jsm/shaders/HorizontalBlurShader";
-import { VerticalBlurShader } from "three/examples/jsm/shaders/VerticalBlurShader";
-import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass";
+import { BufferAttribute, BufferGeometry, Color, Line, LineBasicMaterial, MathUtils, Vector, Vector3 } from "three";
 
 export const buildAttribute = (length: number, itemSize: number, predicate: (i: number) => number[]): BufferAttribute => {
   const array = new Float32Array(length * itemSize);
@@ -54,14 +45,6 @@ export const fillArray = <T>(target: T[], source: T[]) => {
     const sourceI = i % sourceLength;
     target[i] = source[sourceI];
   }
-}
-
-/**
-  * @param fingerprint - The fingerprint from the MODA API
-  * @param settings - Settings object
-  * @returns A fingerprint with derived data
-  */
-export const deriveData = (fingerprint: IFingerprint): IDerivedFingerPrint => {
 }
 
 // export const createShaderControls = (mat: ShaderMaterial) => {

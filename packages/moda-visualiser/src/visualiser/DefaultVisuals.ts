@@ -1,5 +1,5 @@
-import IAudioReactive, { IDerivedCoordinate, IDerivedFingerPrint, IVisuals } from "../types";
-import { Vector3, Mesh, Object3D, LineBasicMaterial, Line, Color, MathUtils, WebGLRenderer, PerspectiveCamera, OrthographicCamera } from "three";
+import { IDerivedCoordinate, IDerivedFingerPrint, IVisuals } from "../types";
+import { Vector3, Mesh, Object3D, LineBasicMaterial, Line, Color, MathUtils, WebGLRenderer, OrthographicCamera } from "three";
 import CircleLineGeometry from '../helpers/CircleLineGeometry';
 import RingBar from "./RingBar";
 import Spheres from "./Spheres";
@@ -95,7 +95,7 @@ export default class DefaultVisuals extends Object3D implements IVisuals {
 
   static settings = defaultVisualsDefaultSettings;
 
-  constructor(private camera: PerspectiveCamera|OrthographicCamera, renderer: WebGLRenderer, private fingerprint: IDerivedFingerPrint) {
+  constructor(private camera: OrthographicCamera, renderer: WebGLRenderer, private fingerprint: IDerivedFingerPrint) {
     super();
     this.name = 'RadialSpheres'
     this.fftTextureManager = new FFTTextureManager({

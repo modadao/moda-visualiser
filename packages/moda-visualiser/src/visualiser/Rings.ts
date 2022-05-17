@@ -1,11 +1,9 @@
 import { DataTexture, Line, Object3D, RedFormat, ShaderMaterial, UnsignedByteType } from "three"
-import { ISettings } from ".";
-import { IDerivedFingerPrint } from "../types";
+import IAudioReactive, { IDerivedFingerPrint } from "../types";
 import CircleLineGeometry from "../helpers/CircleLineGeometry";
 import RingFragShader from '../shaders/v1_rings_frag.glsl';
 import RingVertShader from '../shaders/v1_rings_vert.glsl';
 import { IAudioFrame } from "./AudioAnalyser";
-import IAudioReactive from "./ReactiveObject";
 
 export default class Rings extends Object3D implements IAudioReactive {
   rings: Line[] = [];
@@ -15,7 +13,7 @@ export default class Rings extends Object3D implements IAudioReactive {
 
   bufferTexture: DataTexture;
   
-  constructor(fingerprint: IDerivedFingerPrint, settings: ISettings) {
+  constructor(fingerprint: IDerivedFingerPrint) {
     super();
     this.bufferTexture = new DataTexture(null, 512, 1, RedFormat, UnsignedByteType);
 
@@ -33,7 +31,6 @@ export default class Rings extends Object3D implements IAudioReactive {
       const ring = greyRing.clone()
       ring.scale.setScalar(4.0 + i * 0.3);
       this.add(ring);
-      ring.visible = settings.sceneElements.rings;
       this.rings.push(ring);
     })
 

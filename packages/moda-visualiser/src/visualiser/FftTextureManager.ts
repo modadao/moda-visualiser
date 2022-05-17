@@ -1,7 +1,7 @@
 import { DataTexture, FloatType, RepeatWrapping, RGBAFormat, } from "three";
+import IAudioReactive from "../types";
 import { mod } from "../utils";
 import { IAudioFrame } from "./AudioAnalyser";
-import IAudioReactive from "./ReactiveObject";
 
 export interface IFFTTextureManagerOptions {
   frameSize: number,

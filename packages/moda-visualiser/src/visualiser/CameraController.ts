@@ -1,66 +1,9 @@
-import { Camera, Clock, CubicBezierCurve3, Curve, MathUtils, Matrix3, Object3D, OrthographicCamera, PerspectiveCamera, Quaternion, Vector2, Vector3, WebGLRenderer } from "three";
+import { Clock, MathUtils, Object3D, OrthographicCamera, Vector3, WebGLRenderer } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
-export enum CameraTracks {
-  ENTRY = 'entry',
-  // ROTATE = 'rotate',
-  SWOOP_IN = 'swoop_in',
-}
-
-const tracks: Record<CameraTracks, (pos: Vector3, prevCurve: Curve<Vector3>) => Curve<Vector3>> = {
-  [CameraTracks.ENTRY]: () => new CubicBezierCurve3(
-    new Vector3(0, 50, 0),
-    new Vector3(0, 40, 0),
-    new Vector3(0, 20, 10),
-    new Vector3(0, 5, 20)
-  ),
-  // [CameraTracks.ROTATE]: (pos, prevCurve) => {
-  //   const axis = new Vector3(0, 1, 0);
-  //   const step = Math.PI / 8;
-  //
-  //   const finalPoint = pos.clone().normalize().multiplyScalar(30).applyAxisAngle(axis, 4 * step);
-  //   const dir = prevCurve.getPoint(1).clone().sub(prevCurve.getPoint(0.99)).normalize().multiplyScalar(3);
-  //   const handle1 = pos.clone().add(dir);
-  //   const handle2 = pos.clone().lerp(finalPoint, 0.75).normalize().multiplyScalar(30);
-  //
-  //   return new CubicBezierCurve3(
-  //     pos.clone(),
-  //     handle1,
-  //     handle2,
-  //     finalPoint,
-  //   )
-  // },
-  [CameraTracks.SWOOP_IN]: (pos, prevCurve) => {
-    const step = Math.PI / 4;
-    const handle2Temp = new Vector2(pos.x, pos.z).normalize();
-    handle2Temp.rotateAround(new Vector2(), step);
-    const handle3Temp = new Vector2(pos.x, pos.z).normalize();
-    handle3Temp.rotateAround(new Vector2(), step * 2);
-
-    const dir = prevCurve.getPoint(1).clone().sub(prevCurve.getPoint(0.99)).normalize().multiplyScalar(5);
-    const handle1 = pos.clone().add(dir);
-    const handle2 = new Vector3(handle2Temp.x, 0.4, handle2Temp.y).normalize().multiplyScalar(20);
-    const finalPoint = new Vector3(handle3Temp.x, 0.4, handle3Temp.y).normalize().multiplyScalar(30);
-    console.log(pos, handle1, handle2, finalPoint);
-
-    return new CubicBezierCurve3(
-      pos.clone(),
-      handle1,
-      handle2,
-      finalPoint,
-    )
-  },
-
-}
-
-// const { cos, PI } = Math;
-// function easeInOutSine(x: number): number {
-//   return -(cos(PI * x) - 1) / 2;
-// }
 const INTRO_TIME = 10;
 
 export default class CameraController {
-  activeTrack!: Curve<Vector3>;
   clock = new Clock();
   orbitControls: OrbitControls;
   startTime = 0;
