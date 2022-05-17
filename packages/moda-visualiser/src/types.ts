@@ -49,7 +49,6 @@ export interface IDerivedFingerPrint {
 
 export default interface IAudioReactive {
 
-  isAudioReactive: true;
   /*
    * @description Called once per frame after the update event.  This is where you add audioreactivity
    */
@@ -57,7 +56,7 @@ export default interface IAudioReactive {
 }
 
 export interface IVisualsConstructor {
-  new (camera: OrthographicCamera|PerspectiveCamera, fingerprint: IDerivedFingerPrint): IVisuals;
+  new (camera: OrthographicCamera|PerspectiveCamera, renderer: WebGLRenderer, fingerprint: IDerivedFingerPrint): IVisuals;
 }
 
 export interface IVisuals extends IAudioReactive, Object3D {

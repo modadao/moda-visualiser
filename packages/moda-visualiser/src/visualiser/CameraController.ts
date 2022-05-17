@@ -1,4 +1,5 @@
-import { Camera, Clock, CubicBezierCurve3, Curve, OrthographicCamera, Vector3 } from "three";
+import { Camera, Clock, CubicBezierCurve3, Curve, OrthographicCamera, Vector3, WebGLRenderer } from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 export enum CameraTracks {
   ENTRY = 'entry',
@@ -55,8 +56,10 @@ const tracks: Record<CameraTracks, (pos: Vector3) => Curve<Vector3>> = {
 export default class CameraController {
   activeTrack!: Curve<Vector3>;
   clock = new Clock();
-  constructor(public camera: Camera) {
+  orbitControls: OrbitControls;
+  constructor(private camera: Camera, private renderer: WebGLRenderer) {
     this.switchTrack(CameraTracks.ENTRY, 2, this.clock.getElapsedTime());
+    this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
   }
 
 
@@ -66,6 +69,8 @@ export default class CameraController {
   trackDuration = 4;
   trackSpeed = 0;
   update(elapsed: number) {
+    this.orbitControls.update();
+
     this.elapsed = elapsed;
     const mix = ((elapsed - this.trackStartTime) / this.trackLength * this.trackSpeed);
     // const eased = easeInOutSine(mix);

@@ -61,7 +61,6 @@ export default class ModaVisualiser {
   renderer: WebGLRenderer;
   scene: Scene;
   camera: OrthographicCamera;
-  orbitControls: OrbitControls;
 
   visuals?: IVisuals;
   settings: ISettings = defaults;
@@ -95,8 +94,6 @@ export default class ModaVisualiser {
     this.camera.position.y = 10;
     this.camera.lookAt(0, 0, 0);
 
-    this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
-
     this.clock = new Clock(false);
 
     this.startAnimation();
@@ -107,7 +104,7 @@ export default class ModaVisualiser {
     this.audioManager = new AudioManager(this.camera, this.scene, 64, settings);
     this.lastFingerprint = fingerprint;
 
-    this.visuals = new this.visualsConstructor(this.camera, fingerprint);
+    this.visuals = new this.visualsConstructor(this.camera, this.renderer, fingerprint);
     this.scene.add(this.visuals);
 
     this.settings = settings;
@@ -129,7 +126,6 @@ export default class ModaVisualiser {
 
     const deltaTime = this.clock.getDelta();
     this.time += deltaTime;
-    this.orbitControls.update()
 
     if (this.audioManager) {
       const audioFrame = this.audioManager.getAudioFrame(deltaTime);

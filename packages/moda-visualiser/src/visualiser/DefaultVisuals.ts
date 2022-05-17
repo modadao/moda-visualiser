@@ -95,7 +95,7 @@ export default class DefaultVisuals extends Object3D implements IVisuals {
 
   static settings = defaultVisualsDefaultSettings;
 
-  constructor(private camera: PerspectiveCamera|OrthographicCamera, private fingerprint: IDerivedFingerPrint) {
+  constructor(private camera: PerspectiveCamera|OrthographicCamera, private renderer: WebGLRenderer, private fingerprint: IDerivedFingerPrint) {
     super();
     this.name = 'RadialSpheres'
     this.fftTextureManager = new FFTTextureManager({
@@ -106,7 +106,7 @@ export default class DefaultVisuals extends Object3D implements IVisuals {
       ...DefaultVisuals.settings.springPhysics.beziers,
     });
 
-    this.cameraController = new CameraController(camera);
+    this.cameraController = new CameraController(camera, renderer);
 
     this.particles = new SuperNovaSpriteEmitter(8000);
     this.add(this.particles);
