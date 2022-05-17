@@ -1,3 +1,5 @@
+import { Color, Vector3 } from "three";
+
 export interface IPayloadCoordinates {
   x: number[],
   y: number[],
@@ -14,7 +16,12 @@ export interface IDerivedCoordinate {
   g: number,
   smoothed: number,
   featureLevel: number,
-};
+  theta: number,
+  pos: Vector3,
+  scale: number,
+  smoothhash: number,
+  color: Color,
+}
 
 export interface IDerivedFingerPrint {
   shape: [number, number],

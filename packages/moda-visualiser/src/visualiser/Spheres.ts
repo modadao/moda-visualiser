@@ -1,5 +1,5 @@
 import { BackSide, InstancedMesh, Matrix4, Object3D, Quaternion, ShaderMaterial, SphereBufferGeometry, Texture, Vector2, Vector3 } from "three"
-import { IDerivedFingerPrint } from "../types";
+import { IDerivedCoordinate, IDerivedFingerPrint } from "../types";
 import IAudioReactive from "./ReactiveObject";
 import FragShader from '../shaders/spheres_frag.glsl';
 import VertShader from '../shaders/spheres_vert.glsl';
@@ -34,11 +34,13 @@ export default class Spheres extends Object3D implements IAudioReactive {
   material: ShaderMaterial;
   outlineMaterial: ShaderMaterial;
 
+  coords: IDerivedCoordinate[];
+
   useSuperNova = true;
-  constructor(fingerprint: IDerivedFingerPrint, public coords: IVisualiserCoordinate[], public fftTextureManager: FFTTextureManager) {
+  constructor(fingerprint: IDerivedFingerPrint, public fftTextureManager: FFTTextureManager) {
     super();
     this.name = 'Spheres';
-    console.log(fingerprint, coords);
+    this.coords = fingerprint.coords;
     const { sizeSmall, sizeMed, sizeMdLg, sizeLarge } = settings.featurePoints
     const sizeBezierPoints = [
       new Vector2(0, sizeSmall),
@@ -72,15 +74,15 @@ export default class Spheres extends Object3D implements IAudioReactive {
     this.outlineMaterial.side = BackSide;
     this.material = m;
 
-    const points = new InstancedUniformsMesh(g, m, coords.length);
-    const outlines = new InstancedUniformsMesh(g, this.outlineMaterial, coords.length);
+    const points = new InstancedUniformsMesh(g, m, fingerprint.coords.length);
+    const outlines = new InstancedUniformsMesh(g, this.outlineMaterial, fingerprint.coords.length);
 
     const mat4 = new Matrix4();
     const rot = new Quaternion();
     const scale = new Vector3();
 
     const { outlineSize, outlineMultiplier, outlineAdd, innerGlow } = settings.points;
-    coords.forEach((p, i) => {
+    fingerprint.coords.forEach((p, i) => {
       // Set transform of point
       if (p.featureLevel === 0) {
         scale.setScalar(p.scale);

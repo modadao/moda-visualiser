@@ -1,13 +1,16 @@
-import { Clock, Color, OrthographicCamera, Scene, Vector2, WebGLRenderer } from "three";
+import { Clock, Color, MathUtils, OrthographicCamera, Scene, Vector2, Vector3, WebGLRenderer } from "three";
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
-import { IDerivedFingerPrint, IFingerprint } from "../types";
-import { deriveData } from "../utils";
+import { IDerivedCoordinate, IDerivedFingerPrint, IFingerprint } from "../types";
+import { customRandom, ImgSampler } from "../utils";
 import AudioManager from "./AudioAnalyser";
 import FFTDebug from "./FFTDebug";
-import RadialSphere from "./RadialSpheres";
+import DefaultVisuals from "./DefaultVisuals";
 
 const COLOR_SCHEME_IMG = ' data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/4gIoSUNDX1BST0ZJTEUAAQEAAAIYAAAAAAQwAABtbnRyUkdCIFhZWiAAAAAAAAAAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAAHRyWFlaAAABZAAAABRnWFlaAAABeAAAABRiWFlaAAABjAAAABRyVFJDAAABoAAAAChnVFJDAAABoAAAAChiVFJDAAABoAAAACh3dHB0AAAByAAAABRjcHJ0AAAB3AAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAFgAAAAcAHMAUgBHAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFhZWiAAAAAAAABvogAAOPUAAAOQWFlaIAAAAAAAAGKZAAC3hQAAGNpYWVogAAAAAAAAJKAAAA+EAAC2z3BhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABYWVogAAAAAAAA9tYAAQAAAADTLW1sdWMAAAAAAAAAAQAAAAxlblVTAAAAIAAAABwARwBvAG8AZwBsAGUAIABJAG4AYwAuACAAMgAwADEANv/bAEMACgcHCAcGCggICAsKCgsOGBAODQ0OHRUWERgjHyUkIh8iISYrNy8mKTQpISIwQTE0OTs+Pj4lLkRJQzxINz0+O//bAEMBCgsLDg0OHBAQHDsoIig7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7O//AABEIAAoAgAMBIgACEQEDEQH/xAAYAAEBAQEBAAAAAAAAAAAAAAAEAwUBAv/EACAQAAIBAwUBAQAAAAAAAAAAAAABMQIDBAUREiEyQYH/xAAWAQEBAQAAAAAAAAAAAAAAAAAFBgT/xAAcEQACAwADAQAAAAAAAAAAAAAAMQIDBAEFM0H/2gAMAwEAAhEDEQA/APAqxKBi7Eonri8mjWxktkMoS5A8aENtz+BVoVaxVkuoIWS6gKmwDaRuB6pEXA9UmmhkppZyiS7S4EKPRaryWvW/A2LA5aXEwM1Sb+X5ZgZv0tMiNlLMTIQXbsXkegrkcgiiyGlp67G1g9OgZWBdz4SKTH68H//Z'
+const FEATURE_POINT_COUNT = 7;
+const FEATURE_POINT_EXTRA_PER = 3000;
+
 
 export interface IBaseSettings {
   /**
@@ -108,7 +111,7 @@ export default class ModaVisualiser {
   camera: OrthographicCamera;
   orbitControls: OrbitControls;
 
-  radialSpheres?: RadialSphere;
+  radialSpheres?: DefaultVisuals;
   settings: ISettings = defaults;
   lastFingerprint!: IDerivedFingerPrint;
 
@@ -121,6 +124,7 @@ export default class ModaVisualiser {
   clock: Clock;
 
   fftDebug?: FFTDebug;
+  colorSampler?: ImgSampler;
 
   constructor(public element: HTMLElement) {
     this.renderer = new WebGLRenderer({
@@ -147,9 +151,10 @@ export default class ModaVisualiser {
   }
 
   private buildScene(fingerprint: IDerivedFingerPrint, settings: ISettings) {
+    this.colorSampler = new ImgSampler(settings.color.colorTextureSrc);
     this.audioManager = new AudioManager(this.camera, this.scene, 64, settings);
     this.lastFingerprint = fingerprint;
-    this.radialSpheres = new RadialSphere(this.camera, fingerprint, settings);
+    this.radialSpheres = new DefaultVisuals(this.camera, fingerprint, settings);
     this.settings = settings;
     this.scene.add(this.radialSpheres);
     if (settings.showDebugMenu && !this.fftDebug) {
@@ -225,11 +230,12 @@ export default class ModaVisualiser {
   /**
    * @description Updates the visualisation with a new fingerprint
    */
-  updateFingerprint(fingerprint: IFingerprint, audioPath: string) {
+  async updateFingerprint(fingerprint: IFingerprint, audioPath: string) {
     this.scene.clear();
     if (this.radialSpheres)
       this.radialSpheres.dispose();
-    const derivedFingerprint = deriveData(fingerprint);
+    this.colorSampler = new ImgSampler(this.settings.color.colorTextureSrc);
+    const derivedFingerprint = await this.deriveFingerprint(fingerprint);
     this.buildScene(derivedFingerprint, this.settings);
     if (this.audioManager) this.audioManager.load(audioPath);
   }
@@ -239,6 +245,7 @@ export default class ModaVisualiser {
    */
   updateSettings(settings: ISettings) {
     this.scene.clear();
+    this.colorSampler = new ImgSampler(this.settings.color.colorTextureSrc);
     if (this.radialSpheres)
       this.radialSpheres.dispose();
     this.buildScene(this.lastFingerprint, settings);
@@ -266,6 +273,183 @@ export default class ModaVisualiser {
   setColorVelocityVariation(val = 0.3) {
     this.settings.color.velocityVariation = val;
     this.updateSettings(this.settings);
+  }
+
+  private deriveFingerprint(fingerprint: IFingerprint): Promise<IDerivedFingerPrint> {
+    return new Promise((res) => {
+
+      const coords = fingerprint.coords.x.map((x, i) => ({ x, y: fingerprint.coords.y[i] }))
+      // Generate smoothed data
+      console.log(fingerprint);
+      const SMOOTH_RANGE = 40;
+      const smoothedValues = coords.map((_, i) => {
+        const startIndex = Math.max(0, i - SMOOTH_RANGE);
+        const endIndex = Math.min(coords.length, i + SMOOTH_RANGE);
+        let v = 0;
+        for (let j = startIndex; j < endIndex; j++) {
+          v += coords[j].y;
+        }
+        v /= endIndex - startIndex;
+        return v;
+      })
+
+      // Get raw gradient
+      let gradients = [] as number[];
+      console.log(Array(coords.length -1).keys())
+      for (const i of Array(coords.length).keys()) {
+        if (i === coords.length - 1) {
+          gradients.push(0);
+          break;
+        }
+        const el = coords[i];
+        const nel = coords[i+1]; // Next element
+        const dy = (el.y - nel.y)
+        const dx = el.x - nel.x
+        if (dx !== 0 && dy !== 0) {
+          const m = (dy / dx);
+          const dir = m < 0 ? -1 : 1;
+          const v = Math.log(Math.abs(m)) * dir;
+          gradients.push(v);
+        } else {
+          gradients.push(0);
+        }
+      }
+
+      // Normalize it between 0-1
+      const gradientMax = gradients.reduce((acc, el) => Math.max(acc, el), 0);
+      const gradientMin = gradients.reduce((acc, el) => Math.min(acc, el), 0);
+      gradients = gradients.map((el) => {
+        return MathUtils.mapLinear(el, gradientMin, gradientMax, 0, 1);
+      })
+      console.log({ gradients })
+
+      // Create a hashed value
+      let hash = 0;
+      for (const el of coords) {
+        hash = ((hash<<5)-hash)+ el.x - el.y;
+        hash = hash & hash; // Convert to 32bit integer
+      }
+      const floatHash = (hash / 2_147_483_647) * 0.5 + 0.5;
+
+      const targetNumberOfFeatures = FEATURE_POINT_COUNT + Math.floor(coords.length / FEATURE_POINT_EXTRA_PER);
+      const features: number[] = [];
+      const featureLevels: number[] = [];
+      for (let i = 0; i < targetNumberOfFeatures; i++) {
+        let targetFeatureIndex = 0;
+        let j = 0;
+        // Regenerate targetFeatureIndex until it's unique
+        do {
+          j += 1;
+          targetFeatureIndex = Math.floor(customRandom.deterministic(i, floatHash, j) * coords.length);
+        } while(features.includes(targetFeatureIndex))
+
+        // Push 
+        features.push(targetFeatureIndex)
+        featureLevels.push(customRandom.deterministic(i, floatHash));
+      }
+
+      // Split the coords into segments
+      const [ width, height ] = fingerprint.shape;
+      const segmentSize = Math.floor(width / targetNumberOfFeatures + 1);
+      const segmentedPoints: Array<Array<{x: number, y:number}>> = new Array(targetNumberOfFeatures).fill(0).map(() => []);
+      coords.forEach(el => {
+        const bucketIndex = Math.floor(el.x / ( segmentSize + 1 ));
+        segmentedPoints[bucketIndex].push(el);
+      });
+
+      const distance2d = (v1: {x: number, y:number}, v2: {x: number, y: number}) => {
+        return Math.sqrt(Math.pow(v1.x - v2.x, 2) + Math.pow(v1.y - v2.y, 2));
+      }
+      // Find the densest coord in each segment
+      const maxDist = Math.max(segmentSize, height);
+      let offset = 0;
+      let mostDenseCoords = segmentedPoints.map(( points, i ) => {
+        console.log(`Bucket ${i} has ${points.length} points`)
+        const densities = points.map(p => {
+          const density = points.reduce((acc, el) => {
+            return acc + (1 - distance2d(p, el) / maxDist);
+          }, 0) / points.length;
+          return density;
+        })
+
+        const mostDense = Math.max(...densities);
+        const mostDenseIndex = densities.findIndex(el => el === mostDense);
+        console.log(`\tMaking the most dense point ${mostDenseIndex} at ${mostDense}`);
+        const res = { index: offset + mostDenseIndex, density: mostDense }
+        offset += points.length;
+        return res;
+      }).filter(c => Number.isFinite(c.density)); // Filter out invalid points 
+
+      // Normalize it between 0 and 1
+      const minDense = Math.min(...mostDenseCoords.map(c => c.density));
+      const maxDense = Math.max(...mostDenseCoords.map(c => c.density));
+      mostDenseCoords = mostDenseCoords.map(c => {
+        return {
+          ...c,
+          density: MathUtils.mapLinear(c.density, minDense, maxDense, 0.05, 1),
+        }
+      });
+
+      const derivedCoords = coords.map((el, i) => {
+        const featurePoint = mostDenseCoords.find(dc => dc.index === i);
+        return {
+          x: el.x,
+          y: el.y,
+          g: gradients[i],
+          smoothed: smoothedValues[i],
+          featureLevel: featurePoint ? featurePoint.density : 0,
+        }
+      });
+
+      (async () => {
+
+        const { sin, cos, floor, max, pow } = Math;
+        const [ width, height ] = fingerprint.shape;
+
+        const fingerprintBaseVariation = MathUtils.mapLinear(sin(floatHash), 0, 1, 0.7, 1.2);
+        const fingerprintVelocityVariation = MathUtils.mapLinear(sin(floatHash), 0, 1, 0.7, 1.2);
+
+        const { baseVariation, velocityVariation } = this.settings.color;
+        const variationScalar = baseVariation * fingerprintBaseVariation;
+        const velocityScalar = velocityVariation * fingerprintVelocityVariation;
+        if (this.colorSampler && this.colorSampler.loading)
+          await this.colorSampler.loading;
+
+        const scale = (500 + max(-pow(height, 0.8), -pow(height, 0.7)-100, -pow(height, 0.6)-160)) / 400 * 0.15
+        const visualiserCoords = derivedCoords.map(p => {
+          const theta = (p.x / width) * Math.PI * 2;
+          const x = sin(theta);
+          const z = cos(theta);
+          const step = floor(theta / (Math.PI * 2));
+          const amp = p.y / height * 1.5;
+          const r = step + 1.5 + amp;
+
+          const s = (Math.abs(p.g - 0.5) + scale) * scale;
+
+          let smoothhash = (floatHash + sin(theta + floatHash * Math.PI) * variationScalar + p.g * velocityScalar) % 1;
+          while(smoothhash < 0) smoothhash += 1;
+
+          if (!this.colorSampler) throw new Error('ModaVisualiser: ColorSampler not set');
+          const color = this.colorSampler.getPixel(smoothhash);
+
+          return {
+            ...p,
+            theta,
+            pos: new Vector3(x * r, 0, z * r),
+            scale: s,
+            smoothhash,
+            color,
+          }
+        }) as IDerivedCoordinate[];
+        const result: IDerivedFingerPrint =  { 
+          shape: fingerprint.shape as [number, number],
+          coords: visualiserCoords,
+          hash,
+          floatHash,
+        }
+        res(result);
+      })()
+    })
   }
 
   /**

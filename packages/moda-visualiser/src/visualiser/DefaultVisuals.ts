@@ -24,7 +24,7 @@ export interface IVisualiserCoordinate extends IDerivedCoordinate {
   color: Color,
 }
 
-export default class RadialSphere extends Object3D implements IAudioReactive {
+export default class DefaultVisuals extends Object3D implements IAudioReactive {
   points: Spheres|undefined;
   mainBezier: FeatureBeziers|undefined;
   secondaryBeziers: FeatureBeziers[] = [];
@@ -49,7 +49,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
   animatePoints = true;
 
 
-  constructor(private camera: PerspectiveCamera|OrthographicCamera, fingerprint: IDerivedFingerPrint, settings: ISettings) {
+  constructor(private camera: PerspectiveCamera|OrthographicCamera, private fingerprint: IDerivedFingerPrint, settings: ISettings) {
     super();
     this.name = 'RadialSpheres'
     this.fftTextureManager = new FFTTextureManager({
@@ -90,32 +90,25 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     this.progressRing = new ProgressRing(3.170, 0.15);
     this.add(this.progressRing);
 
-    const colorSampler = new ImgSampler(settings.color.colorTextureSrc);
+    this.points = new Spheres(fingerprint, this.fftTextureManager);
+    this.add(this.points);
 
-    (async () => {
-      const coords = await this.calculateCoords(fingerprint, settings, colorSampler);
-      this.coords = coords;
-
-      this.points = new Spheres(fingerprint, coords, this.fftTextureManager);
-      this.add(this.points);
-
-      // Bezier through feature points
-      const featurePoints = coords.filter(p => p.featureLevel !== 0);
-      // Generate main bezier
-      this.mainBezier = new FeatureBeziers(fingerprint, featurePoints, this.bezierFftTextureManager, 0);
-      this.add(this.mainBezier);
+    // Bezier through feature points
+    const featurePoints = fingerprint.coords.filter(p => p.featureLevel !== 0);
+    // Generate main bezier
+    this.mainBezier = new FeatureBeziers(fingerprint, featurePoints, this.bezierFftTextureManager, 0);
+    this.add(this.mainBezier);
 
       
-      // Generate random secondary beziers
-      new Array(20).fill(0).forEach((_, i) => {
-        const secondaryBeziers = new FeatureBeziers(fingerprint, featurePoints, this.bezierFftTextureManager, i + 1, {
-          radialSegments: 3,
-          radius: 0.01
-        });
-        this.add(secondaryBeziers);
-        this.secondaryBeziers.push(secondaryBeziers);
+    // Generate random secondary beziers
+    new Array(20).fill(0).forEach((_, i) => {
+      const secondaryBeziers = new FeatureBeziers(fingerprint, featurePoints, this.bezierFftTextureManager, i + 1, {
+        radialSegments: 3,
+        radius: 0.01
       });
-    })()
+      this.add(secondaryBeziers);
+      this.secondaryBeziers.push(secondaryBeziers);
+    });
   }
 
   preRender(_renderer: WebGLRenderer) {
@@ -141,48 +134,6 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     this.secondaryBeziers.forEach(b => b.update(elapsed));
   }
 
-  coords?: IVisualiserCoordinate[];
-  private async calculateCoords(fingerprint: IDerivedFingerPrint, settings: ISettings, colorSampler: ImgSampler|GradientSampler): Promise<IVisualiserCoordinate[]> {
-    const { sin, cos, floor, max, pow } = Math;
-    const [ width, height ] = fingerprint.shape;
-
-    const fingerprintBaseVariation = MathUtils.mapLinear(sin(fingerprint.floatHash), 0, 1, 0.7, 1.2);
-    const fingerprintVelocityVariation = MathUtils.mapLinear(sin(fingerprint.floatHash), 0, 1, 0.7, 1.2);
-
-    const { baseVariation, velocityVariation } = settings.color;
-    const variationScalar = baseVariation * fingerprintBaseVariation;
-    const velocityScalar = velocityVariation * fingerprintVelocityVariation;
-    if (colorSampler instanceof ImgSampler)
-      await colorSampler.loading;
-
-    const scale = (500 + max(-pow(height, 0.8), -pow(height, 0.7)-100, -pow(height, 0.6)-160)) / 400 * 0.15
-    const coords = fingerprint.coords.map(p => {
-      const theta = (p.x / width) * Math.PI * 2;
-      const x = sin(theta);
-      const z = cos(theta);
-      const step = floor(theta / (Math.PI * 2));
-      const amp = p.y / height * 1.5;
-      const r = step + 1.5 + amp;
-
-      const s = (Math.abs(p.g - 0.5) + scale) * scale;
-
-      let smoothhash = (fingerprint.floatHash + sin(theta + fingerprint.floatHash * Math.PI) * variationScalar + p.g * velocityScalar) % 1;
-      while(smoothhash < 0) smoothhash += 1;
-
-      const color = colorSampler.getPixel(smoothhash);
-
-      return {
-        ...p,
-        theta,
-        pos: new Vector3(x * r, 0, z * r),
-        scale: s,
-        smoothhash,
-        color,
-      }
-    })
-    return coords;
-  }
-
   rotationalVelocity = 0;
   handleAudio(frame: IAudioFrame): void {
     if (this.animatePoints) this.fftTextureManager.handleAudio(frame);
@@ -198,15 +149,16 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     if (this.mainBezier && this.animateBeziers) this.mainBezier.handleAudio(frame);
     if (this.secondaryBeziers.length && this.animateBeziers) this.secondaryBeziers.forEach((se) => se.handleAudio(frame));
 
-    if (this.coords && this.useParticles) {
+    if (this.useParticles) {
+      const {coords} = this.fingerprint;
       const capacity = (1 - this.particles.lastCount / this.particles.count);
       const scaledPower = MathUtils.smoothstep(frame.power, 0.2, 0.6);
       const particleGenerationMultiplier = MathUtils.mapLinear(capacity * scaledPower, 0, 1, 1.01, 6.);
       // console.log(`Capacity: ${capacity.toFixed(3)}, power: ${scaledPower} => mutliplier: ${particleGenerationMultiplier.toFixed(3)}`)
       const { data } = this.fftTextureManager;
       const toFFT = 1 / (Math.PI * 2) * (data.length / 4);
-      for (let i = 0; i < this.coords.length; i++) {
-        const { theta, pos, color } = this.coords[i];
+      for (let i = 0; i < coords.length; i++) {
+        const { theta, pos, color } = coords[i];
         const fftI = Math.floor(theta * toFFT);
         const v = data[fftI * 4 + 3];
         const nParticles = Math.floor(Math.abs(v) * Math.random() * (particleGenerationMultiplier));
