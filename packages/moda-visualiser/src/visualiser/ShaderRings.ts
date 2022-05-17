@@ -1,7 +1,7 @@
 import { DoubleSide, MathUtils, Mesh, Object3D, PlaneBufferGeometry, ShaderMaterial } from "three";
-import IAudioReactive from "./ReactiveObject";
 import ShaderRingsFrag from "../shaders/shader_rings_frag.glsl";
 import ShaderRingsVert from "../shaders/shader_rings_vert.glsl";
+import IAudioReactive from "../types";
 import { IAudioFrame } from "./AudioAnalyser";
 
 const DIMENSION = 20;

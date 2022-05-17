@@ -1,9 +1,7 @@
 import { BackSide, InstancedMesh, Matrix4, Object3D, Quaternion, ShaderMaterial, SphereBufferGeometry, Texture, Vector2, Vector3 } from "three"
-import { IDerivedCoordinate, IDerivedFingerPrint } from "../types";
-import IAudioReactive from "./ReactiveObject";
+import IAudioReactive, { IDerivedCoordinate, IDerivedFingerPrint } from "../types";
 import FragShader from '../shaders/spheres_frag.glsl';
 import VertShader from '../shaders/spheres_vert.glsl';
-import { IVisualiserCoordinate } from "./RadialSpheres";
 import { bezierVector } from "../utils";
 import { IAudioFrame } from "./AudioAnalyser";
 import { InstancedUniformsMesh } from 'three-instanced-uniforms-mesh'

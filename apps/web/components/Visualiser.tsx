@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import ModaVisualiser, { IFingerprint } from '@coc-boilerplate/moda-visualiser';
+import ModaVisualiser, { IFingerprint, DefaultVisuals } from '@coc-boilerplate/moda-visualiser';
 import Song from '../data/roby.mp3';
 import fingerprint from '../data/roby.json';
 
@@ -11,7 +11,7 @@ function Visualiser() {
   const visualiser = useRef<ModaVisualiser>();
   useEffect(() => {
     if (container.current) {
-      visualiser.current = new ModaVisualiser(container.current);
+      visualiser.current = new ModaVisualiser(container.current, DefaultVisuals);
     }
     return () => {
       if (visualiser.current) {

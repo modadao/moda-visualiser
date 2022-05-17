@@ -1,18 +1,17 @@
 import { Clock, Color, MathUtils, OrthographicCamera, Scene, Vector2, Vector3, WebGLRenderer } from "three";
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
-import { IDerivedCoordinate, IDerivedFingerPrint, IFingerprint } from "../types";
+import { IDerivedCoordinate, IDerivedFingerPrint, IFingerprint, IVisuals, IVisualsConstructor } from "../types";
 import { customRandom, ImgSampler } from "../utils";
 import AudioManager from "./AudioAnalyser";
 import FFTDebug from "./FFTDebug";
-import DefaultVisuals from "./DefaultVisuals";
 
 const COLOR_SCHEME_IMG = ' data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/4gIoSUNDX1BST0ZJTEUAAQEAAAIYAAAAAAQwAABtbnRyUkdCIFhZWiAAAAAAAAAAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAAHRyWFlaAAABZAAAABRnWFlaAAABeAAAABRiWFlaAAABjAAAABRyVFJDAAABoAAAAChnVFJDAAABoAAAAChiVFJDAAABoAAAACh3dHB0AAAByAAAABRjcHJ0AAAB3AAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAFgAAAAcAHMAUgBHAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFhZWiAAAAAAAABvogAAOPUAAAOQWFlaIAAAAAAAAGKZAAC3hQAAGNpYWVogAAAAAAAAJKAAAA+EAAC2z3BhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABYWVogAAAAAAAA9tYAAQAAAADTLW1sdWMAAAAAAAAAAQAAAAxlblVTAAAAIAAAABwARwBvAG8AZwBsAGUAIABJAG4AYwAuACAAMgAwADEANv/bAEMACgcHCAcGCggICAsKCgsOGBAODQ0OHRUWERgjHyUkIh8iISYrNy8mKTQpISIwQTE0OTs+Pj4lLkRJQzxINz0+O//bAEMBCgsLDg0OHBAQHDsoIig7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7O//AABEIAAoAgAMBIgACEQEDEQH/xAAYAAEBAQEBAAAAAAAAAAAAAAAEAwUBAv/EACAQAAIBAwUBAQAAAAAAAAAAAAABMQIDBAUREiEyQYH/xAAWAQEBAQAAAAAAAAAAAAAAAAAFBgT/xAAcEQACAwADAQAAAAAAAAAAAAAAMQIDBAEFM0H/2gAMAwEAAhEDEQA/APAqxKBi7Eonri8mjWxktkMoS5A8aENtz+BVoVaxVkuoIWS6gKmwDaRuB6pEXA9UmmhkppZyiS7S4EKPRaryWvW/A2LA5aXEwM1Sb+X5ZgZv0tMiNlLMTIQXbsXkegrkcgiiyGlp67G1g9OgZWBdz4SKTH68H//Z'
 const FEATURE_POINT_COUNT = 7;
 const FEATURE_POINT_EXTRA_PER = 3000;
 
 
-export interface IBaseSettings {
+export interface ISettings {
   /**
    * @description Controls for options relating to the audio analysis including "triggers" (moments of impact in the audio, used for effects).
    */
@@ -40,37 +39,6 @@ export interface IBaseSettings {
    */
   showDebugMenu: boolean,
 }
-export interface ISettings extends IBaseSettings {
-  /**
-   * @description Options relating to the movement of the bezier curves and RadialSpheres
-   */
-  springPhysics: {
-    spheres: {
-      /** @description How much the springs move when triggered */
-      impactVelocity: number,
-      /** @description How much the impact is blurred throughout across the band */
-      blurRadius: number,
-      /** @description How much the spring wants to return back to its resting position */
-      springConstant: number,
-      /** @description How much the spring wants to continue moving in the same direction */
-      inertia: number,
-      /** @description The sensitivity of the springs, lower threshold = more impacts/triggers */
-      threshold: number
-    },
-    beziers: {
-      /** @description How much the springs move when triggered */
-      impactVelocity: number,
-      /** @description How much the impact is blurred throughout across the band */
-      blurRadius: number,
-      /** @description How much the spring wants to return back to its resting position */
-      springConstant: number,
-      /** @description How much the spring wants to continue moving in the same direction */
-      inertia: number,
-      /** @description The sensitivity of the springs, lower threshold = more impacts/triggers */
-      threshold: number
-    }
-  },
-}
 
 const defaults: ISettings = {
   color: {
@@ -81,22 +49,6 @@ const defaults: ISettings = {
   audio: {
     triggerThreshold: 0.5,
     normalizeRate: 60,
-  },
-  springPhysics: {
-    spheres: {
-      impactVelocity: 0.2,
-      springConstant: 0.025,
-      inertia: 0.95,
-      threshold: 0.8,
-      blurRadius: 3,
-    },
-    beziers: {
-      blurRadius: 56,
-      impactVelocity: 0.5,
-      springConstant: 0.03,
-      inertia: 0.7,
-      threshold: 0.9,
-    }
   },
   showDebugMenu: false,
 }
@@ -111,7 +63,7 @@ export default class ModaVisualiser {
   camera: OrthographicCamera;
   orbitControls: OrbitControls;
 
-  radialSpheres?: DefaultVisuals;
+  visuals?: IVisuals;
   settings: ISettings = defaults;
   lastFingerprint!: IDerivedFingerPrint;
 
@@ -126,7 +78,7 @@ export default class ModaVisualiser {
   fftDebug?: FFTDebug;
   colorSampler?: ImgSampler;
 
-  constructor(public element: HTMLElement) {
+  constructor(public element: HTMLElement, public visualsConstructor: IVisualsConstructor) {
     this.renderer = new WebGLRenderer({
       antialias: true,
     })
@@ -154,9 +106,11 @@ export default class ModaVisualiser {
     this.colorSampler = new ImgSampler(settings.color.colorTextureSrc);
     this.audioManager = new AudioManager(this.camera, this.scene, 64, settings);
     this.lastFingerprint = fingerprint;
-    this.radialSpheres = new DefaultVisuals(this.camera, fingerprint, settings);
+
+    this.visuals = new this.visualsConstructor(this.camera, fingerprint);
+    this.scene.add(this.visuals);
+
     this.settings = settings;
-    this.scene.add(this.radialSpheres);
     if (settings.showDebugMenu && !this.fftDebug) {
       this.fftDebug = new FFTDebug(settings);
     }
@@ -179,10 +133,10 @@ export default class ModaVisualiser {
 
     if (this.audioManager) {
       const audioFrame = this.audioManager.getAudioFrame(deltaTime);
-      if (this.radialSpheres) {
-        this.radialSpheres.preRender(this.renderer);
-        this.radialSpheres.update(this.time, deltaTime);
-        if (audioFrame.ready) this.radialSpheres.handleAudio(audioFrame);
+      if (this.visuals !== undefined) {
+        if (this.visuals.preRender) this.visuals.preRender(this.renderer);
+        this.visuals.update(this.time, deltaTime);
+        if (audioFrame.ready) this.visuals.handleAudio(audioFrame);
       }
       if (this.fftDebug) this.fftDebug.handleAudio(audioFrame);
     }
@@ -232,8 +186,8 @@ export default class ModaVisualiser {
    */
   async updateFingerprint(fingerprint: IFingerprint, audioPath: string) {
     this.scene.clear();
-    if (this.radialSpheres)
-      this.radialSpheres.dispose();
+    if (this.visuals)
+      this.visuals.dispose();
     this.colorSampler = new ImgSampler(this.settings.color.colorTextureSrc);
     const derivedFingerprint = await this.deriveFingerprint(fingerprint);
     this.buildScene(derivedFingerprint, this.settings);
@@ -246,8 +200,8 @@ export default class ModaVisualiser {
   updateSettings(settings: ISettings) {
     this.scene.clear();
     this.colorSampler = new ImgSampler(this.settings.color.colorTextureSrc);
-    if (this.radialSpheres)
-      this.radialSpheres.dispose();
+    if (this.visuals)
+      this.visuals.dispose();
     this.buildScene(this.lastFingerprint, settings);
   }
 
@@ -463,7 +417,7 @@ export default class ModaVisualiser {
     this.renderer.domElement.parentElement?.removeChild(this.renderer.domElement);
     this.stopped = true;
     if (this.audioManager) this.audioManager.dispose();
-    if (this.radialSpheres) this.radialSpheres.dispose();
+    if (this.visuals) this.visuals.dispose();
   }
 
   /**

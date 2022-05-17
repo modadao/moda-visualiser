@@ -1,7 +1,7 @@
 import { ISettings } from ".";
+import IAudioReactive from "../types";
 import { IAudioFrame } from "./AudioAnalyser";
 import FFTTextureManager from "./FftTextureManager";
-import IAudioReactive from "./ReactiveObject";
 
 type HistoryEl = {
   power: number,

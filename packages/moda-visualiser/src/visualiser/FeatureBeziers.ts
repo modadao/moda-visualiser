@@ -1,8 +1,6 @@
 import { BufferAttribute, Color, CubicBezierCurve3, Curve, Mesh, Object3D, ShaderMaterial, Texture, TubeGeometry, Vector3 } from "three"
 import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils";
-import { IDerivedFingerPrint } from "../types";
-import IAudioReactive from "./ReactiveObject";
-import { IVisualiserCoordinate } from "./RadialSpheres";
+import IAudioReactive, { IDerivedCoordinate, IDerivedFingerPrint } from "../types";
 import { customRandom } from "../utils";
 import TubeShaderFrag from '../shaders/tube_frag.glsl';
 import TubeShaderVert from '../shaders/tube_vert.glsl';
@@ -23,8 +21,8 @@ const defaultOptions: IFeatureBezierOptions = {
 
 type GenerateCurvesResult = {
   curve: Curve<Vector3>,
-  cur: IVisualiserCoordinate,
-  next: IVisualiserCoordinate,
+  cur: IDerivedCoordinate,
+  next: IDerivedCoordinate,
 }[]
 
 let mat: ShaderMaterial|undefined;
@@ -61,7 +59,7 @@ const settings = {
 
 export default class FeatureBeziers extends Object3D implements IAudioReactive {
   material: ShaderMaterial;
-  constructor(_fingerprint: IDerivedFingerPrint, coords: IVisualiserCoordinate[], public fftTextureManager: FFTTextureManager, public index: number, options?: Partial<IFeatureBezierOptions>) {
+  constructor(_fingerprint: IDerivedFingerPrint, coords: IDerivedCoordinate[], public fftTextureManager: FFTTextureManager, public index: number, options?: Partial<IFeatureBezierOptions>) {
     super();
     this.name = 'FeatureBeziers'
 
@@ -92,13 +90,13 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
    * @param firstPoint - Starting point, used to connect final bezier back to beginning
    * @param firstDir - Starting direction, used to connect final bezier back to beginning
    */
-  private generateCurves (points: IVisualiserCoordinate[], cur: IVisualiserCoordinate, dir: Vector3, facingTowardsCenter: boolean, result: GenerateCurvesResult, firstPoint?: IVisualiserCoordinate, firstDir?: Vector3): GenerateCurvesResult {
+  private generateCurves (points: IDerivedCoordinate[], cur: IDerivedCoordinate, dir: Vector3, facingTowardsCenter: boolean, result: GenerateCurvesResult, firstPoint?: IDerivedCoordinate, firstDir?: Vector3): GenerateCurvesResult {
     const center = new Vector3();
     const { flareOut, flareIn, angleRandomness, verticalAngleRandomness, verticalIncidence } = settings.beziers;
     const isLast = points.length === 0;
     const targetDist = 2;
     const next = isLast 
-      ? firstPoint as IVisualiserCoordinate
+      ? firstPoint as IDerivedCoordinate
       : points.reduce((acc, el) => {
         return Math.abs(targetDist - cur.pos.distanceTo(el.pos)) < Math.abs(targetDist - cur.pos.distanceTo(acc.pos)) ? el : acc
       }, points[0])
@@ -137,7 +135,6 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
   /**
    * @description Converts the Curve objects from generateCurves into threejs meshs 
    * @param curves - Curve object
-   * @param featurePoints - Points used to colourise the beziers
    * @param segments - Number of segmeents per section
    * @param radius - Radius of TubeGeometry
    * @param radialSegments - Number of radial segments 

@@ -1,6 +1,6 @@
 import { DataTexture, FloatType, LinearFilter, MathUtils, RGBAFormat } from "three";
+import IAudioReactive from "../types";
 import { IAudioFrame } from "./AudioAnalyser";
-import IAudioReactive from "./ReactiveObject";
 
 export default class SpringPhysicsTextureManager implements IAudioReactive {
   height = 0;

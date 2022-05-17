@@ -1,10 +1,10 @@
 import { Color, ShaderMaterial, WebGLRenderer } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass';
 import { IAudioFrame } from './AudioAnalyser';
-import IAudioReactive from "./ReactiveObject";
 
 import BackgroundVert from '../shaders/background_vert.glsl';
 import BackgroundFrag from '../shaders/background_frag.glsl';
+import IAudioReactive from '../types';
 
 export default class ShaderBackground implements IAudioReactive {
   mat: ShaderMaterial;

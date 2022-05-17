@@ -1,12 +1,9 @@
-import { IDerivedCoordinate, IDerivedFingerPrint } from "../types";
-import { GradientSampler, ImgSampler } from "../utils";
+import IAudioReactive, { IDerivedCoordinate, IDerivedFingerPrint, IVisuals } from "../types";
 import { Vector3, Mesh, Object3D, LineBasicMaterial, Line, Color, MathUtils, WebGLRenderer, PerspectiveCamera, OrthographicCamera } from "three";
 import CircleLineGeometry from '../helpers/CircleLineGeometry';
-import { ISettings } from "../visualiser";
 import RingBar from "./RingBar";
 import Spheres from "./Spheres";
 import FeatureBeziers from "./FeatureBeziers";
-import IAudioReactive from "./ReactiveObject";
 import { IAudioFrame } from "./AudioAnalyser";
 // import PlaybackHead from "./PlaybackHead";
 import ProgressRing from "./ProgressRing";
@@ -24,7 +21,55 @@ export interface IVisualiserCoordinate extends IDerivedCoordinate {
   color: Color,
 }
 
-export default class DefaultVisuals extends Object3D implements IAudioReactive {
+export interface IDefaultVisualSettings {
+  springPhysics: {
+    spheres: {
+      /** @description How much the springs move when triggered */
+      impactVelocity: number,
+      /** @description How much the impact is blurred throughout across the band */
+      blurRadius: number,
+      /** @description How much the spring wants to return back to its resting position */
+      springConstant: number,
+      /** @description How much the spring wants to continue moving in the same direction */
+      inertia: number,
+      /** @description The sensitivity of the springs, lower threshold = more impacts/triggers */
+      threshold: number
+    },
+    beziers: {
+      /** @description How much the springs move when triggered */
+      impactVelocity: number,
+      /** @description How much the impact is blurred throughout across the band */
+      blurRadius: number,
+      /** @description How much the spring wants to return back to its resting position */
+      springConstant: number,
+      /** @description How much the spring wants to continue moving in the same direction */
+      inertia: number,
+      /** @description The sensitivity of the springs, lower threshold = more impacts/triggers */
+      threshold: number
+    }
+  },
+}
+
+const defaultVisualsDefaultSettings: IDefaultVisualSettings = {
+  springPhysics: {
+    spheres: {
+      impactVelocity: 0.2,
+      springConstant: 0.025,
+      inertia: 0.95,
+      threshold: 0.8,
+      blurRadius: 3,
+    },
+    beziers: {
+      blurRadius: 56,
+      impactVelocity: 0.5,
+      springConstant: 0.03,
+      inertia: 0.7,
+      threshold: 0.9,
+    }
+  },
+}
+
+export default class DefaultVisuals extends Object3D implements IVisuals {
   points: Spheres|undefined;
   mainBezier: FeatureBeziers|undefined;
   secondaryBeziers: FeatureBeziers[] = [];
@@ -48,16 +93,17 @@ export default class DefaultVisuals extends Object3D implements IAudioReactive {
   animateBeziers = true;
   animatePoints = true;
 
+  static settings = defaultVisualsDefaultSettings;
 
-  constructor(private camera: PerspectiveCamera|OrthographicCamera, private fingerprint: IDerivedFingerPrint, settings: ISettings) {
+  constructor(private camera: PerspectiveCamera|OrthographicCamera, private fingerprint: IDerivedFingerPrint) {
     super();
     this.name = 'RadialSpheres'
     this.fftTextureManager = new FFTTextureManager({
-      ...settings.springPhysics.spheres,
+      ...DefaultVisuals.settings.springPhysics.spheres,
     });
     this.bezierFftTextureManager = new FFTTextureManager({
       textureSize: 256,
-      ...settings.springPhysics.beziers,
+      ...DefaultVisuals.settings.springPhysics.beziers,
     });
 
     this.cameraController = new CameraController(camera);
