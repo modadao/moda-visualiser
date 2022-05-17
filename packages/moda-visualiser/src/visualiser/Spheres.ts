@@ -9,7 +9,6 @@ import { IAudioFrame } from "./AudioAnalyser";
 import { InstancedUniformsMesh } from 'three-instanced-uniforms-mesh'
 import FFTTextureManager from "./FftTextureManager";
 import SuperNova from "./SuperNova";
-import { components } from "./gui";
 
 const settings = {
   points: {
@@ -108,7 +107,6 @@ export default class Spheres extends Object3D implements IAudioReactive {
     this.add(this.points, this.outlines);
 
     this.disposeSuperNova = this.disposeSuperNova.bind(this);
-    components.add(this, 'useSuperNova');
   }
 
   setCameraDirection(v: Vector3) {

@@ -1,6 +1,5 @@
 import { BufferAttribute, Color, CubicBezierCurve3, Curve, Mesh, Object3D, ShaderMaterial, Texture, TubeGeometry, Vector3 } from "three"
 import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils";
-import { ISettings } from ".";
 import { IDerivedFingerPrint } from "../types";
 import IAudioReactive from "./ReactiveObject";
 import { IVisualiserCoordinate } from "./RadialSpheres";
@@ -8,7 +7,6 @@ import { customRandom } from "../utils";
 import TubeShaderFrag from '../shaders/tube_frag.glsl';
 import TubeShaderVert from '../shaders/tube_vert.glsl';
 import { IAudioFrame } from "./AudioAnalyser";
-import gui, { bezierControls } from "./gui";
 import FFTTextureManager from "./FftTextureManager";
 
 export interface IFeatureBezierOptions {
@@ -47,12 +45,6 @@ const getMaterial = () => {
         u_time: { value: 0 },
       }
     });
-
-    bezierControls.add(mat.uniforms.u_noiseDensity, 'value', 0, 1, 0.001).name('Noise Density');
-    bezierControls.add(mat.uniforms.u_noiseScale, 'value', 0, 30, 0.01).name('Noise Scale');
-    bezierControls.add(mat.uniforms.u_noiseRamp, 'value', 0, 2, 0.01).name('Noise Ramp');
-    bezierControls.add(mat.uniforms.u_noiseSpread, 'value', 0, 10, 0.01).name('Noise Spread');
-    bezierControls.add(mat.uniforms.u_rotationDensity, 'value', 0, 10, 0.01).name('Noise Rotation Density');
   }
   return mat;
 }

@@ -16,6 +16,8 @@ export interface IBaseSettings {
   audio: {
     /** @description The rate at which the FFT adjusts to the audio.  Higher normalize rate = more frequent triggers, lower normalize rate = less frequent triggers.  **/
     normalizeRate: number,
+    /** @description How sensitive the FFT is to "triggering" (sudden jumps in audio power). **/
+    triggerThreshold: number,
   },
 
   /**
@@ -41,7 +43,7 @@ export interface ISettings extends IBaseSettings {
    */
   springPhysics: {
     spheres: {
-      /** @description How much the springs are "hit" when triggered */
+      /** @description How much the springs move when triggered */
       impactVelocity: number,
       /** @description How much the impact is blurred throughout across the band */
       blurRadius: number,
@@ -53,7 +55,7 @@ export interface ISettings extends IBaseSettings {
       threshold: number
     },
     beziers: {
-      /** @description How much the springs are "hit" when triggered */
+      /** @description How much the springs move when triggered */
       impactVelocity: number,
       /** @description How much the impact is blurred throughout across the band */
       blurRadius: number,

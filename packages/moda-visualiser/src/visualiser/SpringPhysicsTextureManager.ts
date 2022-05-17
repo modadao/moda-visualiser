@@ -1,6 +1,5 @@
-import { DataTexture, FloatType, LinearFilter, Mapping, MathUtils, RGBAFormat } from "three";
+import { DataTexture, FloatType, LinearFilter, MathUtils, RGBAFormat } from "three";
 import { IAudioFrame } from "./AudioAnalyser";
-import gui from "./gui";
 import IAudioReactive from "./ReactiveObject";
 
 export default class SpringPhysicsTextureManager implements IAudioReactive {
@@ -17,13 +16,6 @@ export default class SpringPhysicsTextureManager implements IAudioReactive {
   fakeSpringPhysicsValue = 0;
   constructor(public width: number, public springConstant = 0.05, public inertia = 0.95) {
     
-    gui.add(this, 'springConstant', 0.01, 1, 0.01);
-    gui.add(this, 'inertia', 0.01, 1, 0.01);
-    gui.add(this, 'impactRadius', 0, 1, 0.01);
-    gui.add(this, 'impactWaveFrequency', 0, 16, 0.01);
-
-    gui.add(this, 'fakeSpringPhysics');
-    gui.add(this, 'fakeSpringPhysicsValue', -2, 2, 0.01);
   }
 
   /**

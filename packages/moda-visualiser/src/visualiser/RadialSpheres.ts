@@ -15,7 +15,6 @@ import FFTTextureManager from "./FftTextureManager";
 import ShaderRings from "./ShaderRings";
 import { SuperNovaSpriteEmitter } from "./SuperNova";
 import CameraController from "./CameraController";
-import { bezierSpringControls, components, fftSpringControls } from "./gui";
 
 export interface IVisualiserCoordinate extends IDerivedCoordinate {
   theta: number,
@@ -54,22 +53,15 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     super();
     this.name = 'RadialSpheres'
     this.fftTextureManager = new FFTTextureManager({
-      folder: fftSpringControls,
       ...settings.springPhysics.spheres,
     });
     this.bezierFftTextureManager = new FFTTextureManager({
       textureSize: 256,
-      folder: bezierSpringControls,
       ...settings.springPhysics.beziers,
     });
 
     this.cameraController = new CameraController(camera);
 
-    components.add(this, 'showBackground');
-    components.add(this, 'useCameraController');
-    components.add(this, 'useParticles');
-    components.add(this, 'animatePoints');
-    components.add(this, 'animateBeziers');
     this.particles = new SuperNovaSpriteEmitter(8000);
     this.add(this.particles);
 
@@ -88,7 +80,7 @@ export default class RadialSphere extends Object3D implements IAudioReactive {
     this.add(this.barGraph);
 
     // Outer rings 
-    this.rings = new ShaderRings(fingerprint, settings);
+    this.rings = new ShaderRings();
     this.rings.rotateX(Math.PI / 2);
     this.add(this.rings);
 

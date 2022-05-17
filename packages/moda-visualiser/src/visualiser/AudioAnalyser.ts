@@ -1,6 +1,5 @@
 import { Camera, Scene, AudioListener, Audio, AudioAnalyser, MathUtils } from "three";
 import { ISettings } from ".";
-import gui, { fftControls } from "./gui";
 
 export interface IAudioFrame {
   ready: boolean,
