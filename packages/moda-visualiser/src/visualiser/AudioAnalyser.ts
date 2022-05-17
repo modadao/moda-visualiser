@@ -33,11 +33,7 @@ export default class AudioManager {
     this.fftNormalizeRate = settings.audio.normalizeRate;
 
     document.body.addEventListener('click', () => {
-      console.log('Creating audio listener')
-      this.listener = new AudioListener();
-      this.song = new Audio(this.listener);
-      this.camera.add(this.listener);
-      this.scene.add(this.song);
+      this.setup();
     }, { once: true })
 
     this.fft = new Uint8Array(fftSize).fill(0);
@@ -45,11 +41,20 @@ export default class AudioManager {
     this.maxFft = new Array(fftSize).fill(200);
   }
 
+  hasSetup = false;
+  setup() {
+    if (this.hasSetup) return;
+    this.listener = new AudioListener();
+    this.song = new Audio(this.listener);
+    this.camera.add(this.listener);
+    this.scene.add(this.song);
+    this.hasSetup = true;
+  }
+
   interval: number|undefined;
   load(path: string) {
     if (!this.listener || !this.song) {
-      console.warn('click on page first')
-      return;
+      this.setup();
     }
 
     if (!AudioManager.audio) {
