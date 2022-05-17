@@ -95,7 +95,7 @@ export default class DefaultVisuals extends Object3D implements IVisuals {
 
   static settings = defaultVisualsDefaultSettings;
 
-  constructor(private camera: PerspectiveCamera|OrthographicCamera, private renderer: WebGLRenderer, private fingerprint: IDerivedFingerPrint) {
+  constructor(private camera: PerspectiveCamera|OrthographicCamera, renderer: WebGLRenderer, private fingerprint: IDerivedFingerPrint) {
     super();
     this.name = 'RadialSpheres'
     this.fftTextureManager = new FFTTextureManager({
@@ -166,7 +166,7 @@ export default class DefaultVisuals extends Object3D implements IVisuals {
     this.elapsed = elapsed;
     const dir = new Vector3();
     this.shaderBackground.update(elapsed);
-    if (this.useCameraController) this.cameraController.update(elapsed);
+    if (this.useCameraController) this.cameraController.update(elapsed, delta);
     this.camera.updateMatrixWorld();
     this.camera.updateProjectionMatrix();
     this.camera.getWorldDirection(dir);
