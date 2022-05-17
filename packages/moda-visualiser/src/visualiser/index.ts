@@ -76,6 +76,7 @@ const defaults: ISettings = {
     velocityVariation: 0.3,
   },
   audio: {
+    triggerThreshold: 0.5,
     normalizeRate: 60,
   },
   springPhysics: {
@@ -152,7 +153,7 @@ export default class ModaVisualiser {
     this.settings = settings;
     this.scene.add(this.radialSpheres);
     if (settings.showDebugMenu && !this.fftDebug) {
-      this.fftDebug = new FFTDebug();
+      this.fftDebug = new FFTDebug(settings);
     }
     if (!this.clock.running) this.clock.start();
   }
@@ -297,10 +298,10 @@ export default class ModaVisualiser {
   }
 
   play() {
-    this.audioManager.play();
+    if (this.audioManager) this.audioManager.play();
   }
 
   pause() {
-    this.audioManager.pause();
+    if (this.audioManager) this.audioManager.pause();
   }
 }

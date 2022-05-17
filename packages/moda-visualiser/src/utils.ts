@@ -101,6 +101,7 @@ export const deriveData = (fingerprint: IFingerprint): IDerivedFingerPrint => {
       gradients.push(0);
     }
   }
+
   // Normalize it between 0-1
   const gradientMax = gradients.reduce((acc, el) => Math.max(acc, el), 0);
   const gradientMin = gradients.reduce((acc, el) => Math.min(acc, el), 0);
@@ -238,28 +239,6 @@ export const pickRandom = <T>(arr: T[], count: number) => {
   }
 
   return indices.map(index => arr[index]);
-}
-
-export const preProcessTexture = (renderer: WebGLRenderer, tex: Texture, passes: Pass[]): Promise<Texture> => {
-  return new Promise(res => {
-    const composer = new EffectComposer(renderer);
-    composer.setPixelRatio(window.devicePixelRatio);
-    composer.addPass(new TexturePass(tex));
-    const s = new Vector2()
-    renderer.getSize(s)
-    s.multiplyScalar(window.devicePixelRatio);
-    composer.addPass(new UnrealBloomPass(s, 1, 0.2, 0.2))
-    composer.addPass(new ShaderPass(HorizontalBlurShader))
-    composer.addPass(new ShaderPass(VerticalBlurShader))
-    passes.forEach(p => {
-      composer.addPass(p);
-    })
-    console.log(composer.passes)
-    setTimeout(() => {
-      composer.render(0.1);
-      res(composer.readBuffer.texture);
-    }, 1000)
-  })
 }
 
 const mat = new LineBasicMaterial({
