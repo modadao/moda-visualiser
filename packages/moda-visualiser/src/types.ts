@@ -12,15 +12,25 @@ export interface IFingerprint {
 }
 
 export interface IDerivedCoordinate {
+  /* @description x position in the fingerprint plot. */
   x: number,
+  /* @description y position in the fingerprint plot. */
   y: number,
+  /* @description gradient of this fingerprint coordinate (if it's moving up or down relative to previous point). */
   g: number,
+  /* @description Smoothed version of the `y` coordinate. */
   smoothed: number,
+  /* @description If this point is a feature point then this value will be > 0. */
   featureLevel: number,
+  /* @description The theta (angle in radians) of this coordinate (so that it can be plotted in a circle). */
   theta: number,
+  /* @description The 3d position of this coordinate (use this to keep the same point structure as the DefaultVisuals). */
   pos: Vector3,
+  /* @description The scale of this point. */
   scale: number,
+  /* @description Calculated off the floatHash of the entire fingerprint and then offset by theta and gradient, used to calculate colors.. */
   smoothhash: number,
+  /* @description The color of the point (calculated from smoothhash). */
   color: Color,
 }
 

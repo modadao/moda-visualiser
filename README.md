@@ -1,77 +1,142 @@
-# Turborepo starter
+# Moda NFT Visualiser
 
-This is an official Yarn v1 starter turborepo.
+## Overview
 
-## What's inside?
+This is a turborepo project containing both the visualiser library and an example integration with a next app.
 
-This turborepo uses [Yarn](https://classic.yarnpkg.com/lang/en/) as a package manager. It includes the following packages/apps:
+- `./apps/web/` Next.js project showing how the component might be used
+- `./packages/moda-visualiser/` Moda visualiser as a typescript library. 
 
-### Apps and Packages
+## Getting started
 
-- `docs`: a [Next.js](https://nextjs.org) app
-- `web`: another [Next.js](https://nextjs.org) app
-- `ui`: a stub React component library shared by both `web` and `docs` applications
-- `config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `tsconfig`: `tsconfig.json`s used throughout the monorepo
+- Run `yarn` inside of the monorepo root (same folder as this README.md) to install the dependencies
+- Run `yarn build` inside of the monorepo root to build the moda-visualiser library.
+- Run `yarn dev` to run a dev server and view the visualiser in the next app.
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+## How to use
 
-### Utilities
+### Lazy Loading
+The Moda Visualiser has a large bundle size (due to threejs) and depends on client side APIs and thus should be lazyloaded/codesplit using dynamic components.
 
-This turborepo has some additional tools already setup for you:
+```javascript
+const Visualiser = dynamic(() => import('../components/Visualiser'), { ssr: false })
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-## Setup
-
-This repository is used in the `npx create-turbo` command, and selected when choosing which package manager you wish to use with your monorepo (Yarn).
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-yarn run build
+function App() {
+  return (
+    <div className="App">
+    { typeof window !== 'undefined' && 
+      <Visualiser />
+    }
+    </div>
+  )
+}
 ```
 
-### Develop
+### Initialising the visualiser
 
-To develop all apps and packages, run the following command:
+The visualiser needs to be constructed on mount (here via a `useEffect` hook) and disposed on unmount.
+This is because the visualiser will create a lot of GPU resources + add event
+listeners that will need to be disposed at the end of the lifecycle.
 
+```javascript
+import ModaVisualiser, { DefaultVisuals } from '@moda/moda-visualiser';
+
+function Visualiser() {
+  // Mount/dispose and remove visualiser on mount/unmount
+  const container = useRef(null);
+  const visualiser = useRef<ModaVisualiser>();
+  useEffect(() => {
+    if (container.current) {
+      visualiser.current = new ModaVisualiser(container.current, DefaultVisuals);
+    }
+    return () => {
+      if (visualiser.current) {
+        visualiser.current.dispose();
+        visualiser.current = null;
+      }
+    }
+  }, [])
+
+  return(
+    <div ref={container}> </div>
+  )
+}
 ```
-cd my-turborepo
-yarn run dev
+
+### Implementing custom visuals
+
+Implement custom visuals by passing the implementation of the visuals to the ModaVisualiser.  You can create custom visuals using the following code block.
+
+```typescript
+import { Object3D, OrthographicCamera, WebGLRenderer } from 'three';
+import { IVisuals, IDerivedFingerPrint, IAudioFrame } from '@moda/moda-visualiser';
+
+export default class CustomVisuals extends Object3D implements IVisuals {
+  constructor(
+    private camera: OrthographicCamera,
+    renderer: WebGLRenderer,
+    private fingerprint: IDerivedFingerPrint
+  ) {
+    super();
+    this.axes = new AxesHelper(1);
+    this.add(this.axes); // Scene elements should be added to self 
+  }
+
+  // Update function runs once per frame.
+  update(elapsed: number, delta: number) {
+    this.axes.rotateY(delta * 5); // Rotate axes at a consistent speed
+  }
+
+  // Handle audio is run once every frame after update.  This is where you add the audio reactivity.
+  handleAudio(frame: IAudioFrame) {
+    this.axes.position.y = frame.power; // Move axes up and down 
+  }
+
+  // Dispose function is run on unmount/when switching fingerprint or settings.
+  // It is required to cleanup GPU resources, event listeners etc.
+  dispose() {
+    this.axes.dispose();
+  }
+}
 ```
 
-### Remote Caching
+#### Extra helpers
 
-Turborepo can use a technique known as [Remote Caching (Beta)](https://turborepo.org/docs/features/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+##### `FFTTextureManager.ts`
 
-By default, Turborepo will cache locally. To enable Remote Caching (Beta) you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup), then enter the following commands:
+This is a helper function that encodes some FFT data in a data texture to be used inside shaders.
 
+```typescript
+const fftTTextureManager = new FFTTextureManager({
+  textureSize: 256,
+});
+
+const fftTexture = fftTTextureManager.dataTexture; // This is the texture object that can be bound to a shader
+
+// Inside of handleAudio function
+// The FFTTextureManager will update dataTexture each frame (no need to rebind).
+fFTTextureManager.handleAudio(frame);
 ```
-cd my-turborepo
-npx turbo login
+
+Usage inside shader
+```glsl
+// vert shader
+uniform sampler2D u_fftTexture;
+
+attribute float alpha; // (Scales from 0 - 1)
+
+void main() {
+  vec4 c = texture2D(u_fftTexture, vec2(alpha, 0.5));
+  float fftBandPower = c.r; // Red channel is encoded with FFT band power (i.e. raw FFT data).
+  float fftSpringPhysicsPosition = c.b; // Blue channel is encoded with a spring physics version of the FFT band power.
+  float fftSpringPhysicsAcceleration = c.g; // Green channel is encoded with the acceleration of the FFT band (not very useful);
+  bool trigger = c.a > 0.5; // Alpha channel is encoded with the whether or not the band is being "triggered" right now.
+}
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your turborepo:
 
-```
-npx turbo link
-```
+## Integration
 
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Pipelines](https://turborepo.org/docs/features/pipelines)
-- [Caching](https://turborepo.org/docs/features/caching)
-- [Remote Caching (Beta)](https://turborepo.org/docs/features/remote-caching)
-- [Scoped Tasks](https://turborepo.org/docs/features/scopes)
-- [Configuration Options](https://turborepo.org/docs/reference/configuration)
-- [CLI Usage](https://turborepo.org/docs/reference/command-line-reference)
+- If you don't want/need the Next.js app or monorepo you should just be able to pull `packages/moda-visualiser` out into it's own folder and run `yarn && yarn build`.  There are no cross-dependencies.
+- Alternatively you can run `yarn build` and use the output bundle `./packages/moda-visualiser/dist/moda-visualiser.es.js`.

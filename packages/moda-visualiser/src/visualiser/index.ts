@@ -107,7 +107,7 @@ export default class ModaVisualiser {
     this.scene.add(this.visuals);
 
     this.settings = settings;
-    if (settings.showDebugMenu && !this.fftDebug) {
+    if (settings.showDebugMenu && !this.fftDebug && import.meta.env.DEV) {
       this.fftDebug = new FFTDebug(settings);
     }
     if (!this.clock.running) this.clock.start();

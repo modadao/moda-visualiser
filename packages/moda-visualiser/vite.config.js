@@ -2,6 +2,7 @@
 const path = require('path')
 const { defineConfig } = require('vite')
 import glsl from 'vite-plugin-glsl';
+import analyzeRollup from 'rollup-plugin-analyzer';
 
 module.exports = defineConfig({
   plugins: [
@@ -18,6 +19,7 @@ module.exports = defineConfig({
       // make sure to externalize deps that shouldn't be bundled
       // into your library
       external: ['three'],
+      plugins: [analyzeRollup()],
     }
   }
 })
