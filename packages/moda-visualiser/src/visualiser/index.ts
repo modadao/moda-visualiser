@@ -123,7 +123,7 @@ export default class ModaVisualiser {
     if (this.stopped) return;
     this.renderer.clear();
 
-    const deltaTime = this.clock.getDelta();
+    const deltaTime = Math.min(this.clock.getDelta(), 0.2);
     this.time += deltaTime;
 
     if (this.audioManager) {
