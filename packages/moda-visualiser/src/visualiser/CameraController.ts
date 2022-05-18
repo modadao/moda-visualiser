@@ -13,6 +13,10 @@ export default class CameraController {
     camera.zoom = 0.45;
     this.startTime = this.clock.getElapsedTime() + 10;
     this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.orbitControls.enableDamping = true;
+    // this.orbitControls.dampingFactor = 0.95;
+    this.orbitControls.minZoom = 0.004;
+    this.orbitControls.maxZoom = 0.8;
     this.orbitControls.addEventListener('start', () => {
       this.usingManualControls = true;
     })
@@ -66,7 +70,7 @@ export default class CameraController {
       this.tempObj.getWorldDirection(dir);
 
       cameraPos.copy(dir);
-      const distanceScalar = (25 / this.camera.position.length()) - 1;
+      const distanceScalar = (20 / this.camera.position.length()) - 1;
       cameraPos.multiplyScalar(cameraDistance + distanceScalar * 3 * autoPilotPower);
 
       const targetZoom = MathUtils.mapLinear(Math.sin(elapsed * 0.1), -1, 1, 0.45, 0.8);
@@ -78,3 +82,10 @@ export default class CameraController {
     this.camera.lookAt(new Vector3());
   }
 }
+
+  window.addEventListener('focus', () => console.log(`
+
+focus
+
+
+`))
