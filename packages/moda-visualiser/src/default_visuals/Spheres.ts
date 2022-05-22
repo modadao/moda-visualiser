@@ -3,9 +3,9 @@ import IAudioReactive, { IDerivedCoordinate, IDerivedFingerPrint } from "../type
 import FragShader from '../shaders/spheres_frag.glsl';
 import VertShader from '../shaders/spheres_vert.glsl';
 import { bezierVector } from "../utils";
-import { IAudioFrame } from "./AudioAnalyser";
+import { IAudioFrame } from "../visualiser/AudioAnalyser";
 import { InstancedUniformsMesh } from 'three-instanced-uniforms-mesh'
-import FFTTextureManager from "./FftTextureManager";
+import FFTTextureManager from "../visualiser/FftTextureManager";
 import SuperNova from "./SuperNova";
 
 const settings = {

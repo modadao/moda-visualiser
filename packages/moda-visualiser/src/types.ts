@@ -65,7 +65,7 @@ export default interface IAudioReactive {
 }
 
 export interface IVisualsConstructor {
-  new (camera: OrthographicCamera|PerspectiveCamera, renderer: WebGLRenderer, fingerprint: IDerivedFingerPrint): IVisuals;
+  new (camera: OrthographicCamera, renderer: WebGLRenderer, fingerprint: IDerivedFingerPrint): IVisuals;
 }
 
 export interface IVisuals extends IAudioReactive, Object3D {

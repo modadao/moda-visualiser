@@ -4,8 +4,8 @@ import IAudioReactive, { IDerivedCoordinate, IDerivedFingerPrint } from "../type
 import { customRandom } from "../utils";
 import TubeShaderFrag from '../shaders/tube_frag.glsl';
 import TubeShaderVert from '../shaders/tube_vert.glsl';
-import { IAudioFrame } from "./AudioAnalyser";
-import FFTTextureManager from "./FftTextureManager";
+import { IAudioFrame } from "../visualiser/AudioAnalyser";
+import FFTTextureManager from "../visualiser/FftTextureManager";
 
 export interface IFeatureBezierOptions {
   segments: number;

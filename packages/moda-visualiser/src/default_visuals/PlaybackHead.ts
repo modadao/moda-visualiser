@@ -1,5 +1,5 @@
 import { CylinderBufferGeometry, Mesh, Object3D, ShaderMaterial } from "three";
-import { IAudioFrame } from "./AudioAnalyser";
+import { IAudioFrame } from "../visualiser/AudioAnalyser";
 
 import PlaybackFrag from '../shaders/playback_head_frag.glsl';
 import PlaybackVert from '../shaders/playback_head_vert.glsl';

@@ -1,6 +1,6 @@
 import { Color, ShaderMaterial, WebGLRenderer } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass';
-import { IAudioFrame } from './AudioAnalyser';
+import { IAudioFrame } from '../visualiser/AudioAnalyser';
 
 import BackgroundVert from '../shaders/background_vert.glsl';
 import BackgroundFrag from '../shaders/background_frag.glsl';

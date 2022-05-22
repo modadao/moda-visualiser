@@ -1,5 +1,5 @@
 import ModaVisualiser from './visualiser';
-export { default as DefaultVisuals } from './visualiser/DefaultVisuals';
+export { default as DefaultVisuals } from './default_visuals';
 export default ModaVisualiser;
 export type { ISettings } from './visualiser';
 export type { IFingerprint, IVisuals, IVisualsConstructor } from './types';

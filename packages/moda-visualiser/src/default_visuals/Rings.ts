@@ -3,7 +3,7 @@ import IAudioReactive, { IDerivedFingerPrint } from "../types";
 import CircleLineGeometry from "../helpers/CircleLineGeometry";
 import RingFragShader from '../shaders/v1_rings_frag.glsl';
 import RingVertShader from '../shaders/v1_rings_vert.glsl';
-import { IAudioFrame } from "./AudioAnalyser";
+import { IAudioFrame } from "../visualiser/AudioAnalyser";
 
 export default class Rings extends Object3D implements IAudioReactive {
   rings: Line[] = [];

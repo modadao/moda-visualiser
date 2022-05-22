@@ -1,5 +1,5 @@
 import { BoxBufferGeometry, MathUtils, Mesh, ShaderMaterial } from "three";
-import { IAudioFrame } from "./AudioAnalyser";
+import { IAudioFrame } from "../visualiser/AudioAnalyser";
 import ProgressRingFrag from '../shaders/progress_ring_frag.glsl';
 import ProgressRingVert from '../shaders/progress_ring_vert.glsl';
 import IAudioReactive from "../types";

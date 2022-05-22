@@ -21,5 +21,5 @@ module.exports = defineConfig({
       external: ['three'],
       plugins: [analyzeRollup()],
     }
-  }
+  },
 })
