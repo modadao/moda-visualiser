@@ -51,42 +51,41 @@ export default class AudioManager {
   }
 
   interval: number|undefined;
-  load(path: string) {
-    if (!this.listener || !this.song) {
-      this.setup();
-    }
-
-    if (!AudioManager.audio) {
-      AudioManager.audio = document.createElement('audio');
-      AudioManager.audio.classList.add('Moda-Visualiser-Audio-Source')
-      AudioManager.audio.style.display = 'none';
-      document.body.appendChild(AudioManager.audio);
-    }
-    const {audio} = AudioManager;
-    audio.addEventListener('canplaythrough', () => {
-      console.log('Audio loaded, playing song', audio)
-      if (!this.song) throw new Error('song audio object not initialised');
-      try {
-        this.song.setMediaElementSource(audio);
-      } catch(e) {
-        console.warn(`There was an error setting the media source but usually it works anyway. \n\n`, e)
+  load(path: string): Promise<void> {
+    return new Promise((res, rej) => {
+      if (!this.listener || !this.song) {
+        this.setup();
       }
 
-      this.analyser = new AudioAnalyser(this.song, this.fftSize * 2);
-      console.log( this.analyser.analyser);
-      audio.play();
-      if (this.interval) window.clearInterval(this.interval);
-      this.interval = window.setInterval(() => {
-        this.handleAudioFrame();
-      }, 5);
+      if (!AudioManager.audio) {
+        AudioManager.audio = document.createElement('audio');
+        AudioManager.audio.classList.add('Moda-Visualiser-Audio-Source')
+        AudioManager.audio.style.display = 'none';
+        document.body.appendChild(AudioManager.audio);
+      }
+      const {audio} = AudioManager;
+      audio.addEventListener('canplaythrough', () => {
+        if (!this.song) throw new Error('song audio object not initialised');
+        try {
+          this.song.setMediaElementSource(audio);
+        } catch(e) {
+          console.warn(`There was an error setting the media source but usually it works anyway. \n\n`, e)
+        }
+
+        this.analyser = new AudioAnalyser(this.song, this.fftSize * 2);
+        audio.play();
+        if (this.interval) window.clearInterval(this.interval);
+        this.interval = window.setInterval(() => {
+          this.handleAudioFrame();
+        }, 5);
+        res();
+      })
+      audio.addEventListener('error', (e: ErrorEvent) => {
+        console.error('Error loading audio: ', e)
+        rej(e);
+      })
+      audio.src = path;
     })
-    audio.addEventListener('error', (e: ErrorEvent) => {
-      console.error('Error loading audio: ', e)
-    })
-    audio.addEventListener('loadstart', () => console.log('started loading'))
-    audio.addEventListener('loadedmetadata', (e: Event) => console.log('metadata loaded ', e))
-    console.log('Loading audio now:w')
-    audio.src = path;
   }
 
   private hasTriggered = false

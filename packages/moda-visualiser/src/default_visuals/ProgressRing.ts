@@ -8,7 +8,6 @@ class ProgressRing extends Mesh implements IAudioReactive {
   constructor(innerRadius: number, thickness: number, segments = 64) {
     const geometry = new BoxBufferGeometry(1, 0.01, 1, 2, 1, segments);
     geometry.translate(0.5, 0.005, 0.5);
-    console.log(geometry.getAttribute('position'));
 
     const mat = new ShaderMaterial({
       vertexShader: ProgressRingVert,

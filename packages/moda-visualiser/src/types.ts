@@ -70,6 +70,10 @@ export interface IVisualsConstructor {
 
 export interface IVisuals extends IAudioReactive, Object3D {
   /*
+   * @description Flag whether or not visuals are paused or playing
+   */
+  paused: boolean;
+  /*
    * @description Optional function called before rendering the scene, can be used to add a background.
    */
   preRender?: (renderer: WebGLRenderer) => void;

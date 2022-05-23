@@ -110,7 +110,6 @@ export default class ModaVisualiser {
     if (settings.showDebugMenu && !this.fftDebug && import.meta.env.DEV) {
       this.fftDebug = new FFTDebug(settings);
     }
-    if (!this.clock.running) this.clock.start();
   }
 
   private startAnimation() {
@@ -146,7 +145,6 @@ export default class ModaVisualiser {
       link.click();
       this.handleResize(); // Return to default resolution
       this.shouldExport = false;
-      console.log('Exporting done')
     }
     if (!this.stopped) window.requestAnimationFrame(this.update);
   }
@@ -156,21 +154,17 @@ export default class ModaVisualiser {
     if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
 
     this.resizeTimeout = window.setTimeout(() => {
-      console.log(overrideBounds);
       const bounds = overrideBounds || this.element.getBoundingClientRect();
 
       const dimensionScale = Math.max(bounds.height / bounds.width, 1);
       halfDims.set(10, 10).multiplyScalar(dimensionScale).divideScalar(2);
-      console.log(`Resizing to ${bounds.width}x${bounds.height}`);
       const aspect = bounds.width / bounds.height;
-      console.log(aspect);
       this.camera.left = -aspect * halfDims.x;
       this.camera.right = aspect * halfDims.x;
       this.camera.top = halfDims.y;
       this.camera.bottom = -halfDims.y;
       this.camera.updateProjectionMatrix();
       const { top, bottom, left, right } = this.camera;
-      console.log({ top, bottom, left, right })
       this.renderer.setSize(bounds.width, bounds.height);
       this.resizeTimeout = undefined;
     }, 200)
@@ -186,7 +180,14 @@ export default class ModaVisualiser {
     this.colorSampler = new ImgSampler(this.settings.color.colorTextureSrc);
     const derivedFingerprint = await this.deriveFingerprint(fingerprint);
     this.buildScene(derivedFingerprint, this.settings);
-    if (this.audioManager) this.audioManager.load(audioPath);
+    if (this.audioManager) {
+      await this.audioManager.load(audioPath);
+      this.clock = new Clock();
+      this.clock.start();
+      if (this.visuals) {
+        this.visuals.paused = false;
+      }
+    }
   }
 
   /**
@@ -229,7 +230,6 @@ export default class ModaVisualiser {
 
       const coords = fingerprint.coords.x.map((x, i) => ({ x, y: fingerprint.coords.y[i] }))
       // Generate smoothed data
-      console.log(fingerprint);
       const SMOOTH_RANGE = 40;
       const smoothedValues = coords.map((_, i) => {
         const startIndex = Math.max(0, i - SMOOTH_RANGE);
@@ -244,7 +244,6 @@ export default class ModaVisualiser {
 
       // Get raw gradient
       let gradients = [] as number[];
-      console.log(Array(coords.length -1).keys())
       for (const i of Array(coords.length).keys()) {
         if (i === coords.length - 1) {
           gradients.push(0);
@@ -270,7 +269,6 @@ export default class ModaVisualiser {
       gradients = gradients.map((el) => {
         return MathUtils.mapLinear(el, gradientMin, gradientMax, 0, 1);
       })
-      console.log({ gradients })
 
       // Create a hashed value
       let hash = 0;
@@ -312,8 +310,7 @@ export default class ModaVisualiser {
       // Find the densest coord in each segment
       const maxDist = Math.max(segmentSize, height);
       let offset = 0;
-      let mostDenseCoords = segmentedPoints.map(( points, i ) => {
-        console.log(`Bucket ${i} has ${points.length} points`)
+      let mostDenseCoords = segmentedPoints.map(( points ) => {
         const densities = points.map(p => {
           const density = points.reduce((acc, el) => {
             return acc + (1 - distance2d(p, el) / maxDist);
@@ -323,7 +320,6 @@ export default class ModaVisualiser {
 
         const mostDense = Math.max(...densities);
         const mostDenseIndex = densities.findIndex(el => el === mostDense);
-        console.log(`\tMaking the most dense point ${mostDenseIndex} at ${mostDense}`);
         const res = { index: offset + mostDenseIndex, density: mostDense }
         offset += points.length;
         return res;

@@ -156,7 +156,6 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
       const colorsData: Array<number> = [];
       const progressAttribute = [];
       const baseProgress = baseLength / totalLength;
-      console.log(baseProgress)
       const progressLength = length / totalLength;
       for (let i = 0; i < nVerts; i++) {
         const thisProgress = Math.floor(i/radialSegments) / Math.floor(nVerts / radialSegments);

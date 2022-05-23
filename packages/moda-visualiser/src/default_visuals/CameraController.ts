@@ -4,9 +4,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 const INTRO_TIME = 10;
 
 export default class CameraController {
-  clock = new Clock();
   orbitControls: OrbitControls;
-  startTime = 0;
   usingManualControls = false;
   constructor(private camera: OrthographicCamera, private renderer: WebGLRenderer) {
     camera.position.set(0, 50, 0);
@@ -21,12 +19,12 @@ export default class CameraController {
       this.usingManualControls = true;
     })
     this.orbitControls.addEventListener('end', () => {
-      console.log('Orbit controls change');
       this.usingManualControls = false;
       this.lastChanged = this.lastElapsed + 10;
     })
   }
 
+  startTime = 10;
   lastChanged = 0;
   lastElapsed = 0;
   tempObj = new Object3D();
@@ -48,7 +46,6 @@ export default class CameraController {
       cameraPos.applyAxisAngle(new Vector3(-1, 0, 0), diffY * delta * 20 * autoPilotPower)
       const targetZoom = MathUtils.mapLinear(a, 0, 1, 0.45, 0.8);
       const cam = this.camera as OrthographicCamera;
-      console.log(a)
       cam.zoom += (targetZoom - cam.zoom) * delta * 8 * autoPilotPower;
       const targetDist = MathUtils.mapLinear(a, 0, 1, 50, 25);
       const newDist = cameraDistance + (targetDist / cameraDistance - 1) * 4 * autoPilotPower;
@@ -82,10 +79,3 @@ export default class CameraController {
     this.camera.lookAt(new Vector3());
   }
 }
-
-  window.addEventListener('focus', () => console.log(`
-
-focus
-
-
-`))

@@ -122,7 +122,6 @@ export default class Spheres extends Object3D implements IAudioReactive {
       this.outlineMaterial.uniforms.u_springTexture.value = this.fftTextureManager.dataTexture;
       this.outlineMaterial.needsUpdate = true;
       this.dataTextureSet = true;
-      console.log('Set sphere data tex')
     }
 
     this.superNovas.forEach(sn => sn.update(delta));
@@ -134,7 +133,6 @@ export default class Spheres extends Object3D implements IAudioReactive {
       this.material.uniforms.u_triggerCount = { value: this.material.uniforms.u_triggerCount.value + 1};
     }
     if (this.coords && this.useSuperNova) {
-      // console.log(`Capacity: ${capacity.toFixed(3)}, power: ${scaledPower} => mutliplier: ${particleGenerationMultiplier.toFixed(3)}`)
       const { data } = this.fftTextureManager;
       const toFFT = 1 / (Math.PI * 2) * (data.length / 4);
       for (let i = 0; i < this.coords.length; i++) {

@@ -87,6 +87,8 @@ export default class DefaultVisuals extends Object3D implements IVisuals {
 
   particles: SuperNovaSpriteEmitter;
 
+  paused = true;
+  started = 0;
   showBackground = true;
   useCameraController = true;
   useParticles = true;
@@ -163,21 +165,23 @@ export default class DefaultVisuals extends Object3D implements IVisuals {
 
   elapsed = 0;
   update(elapsed: number, delta: number) {
-    this.elapsed = elapsed;
-    const dir = new Vector3();
-    this.shaderBackground.update(elapsed);
-    if (this.useCameraController) this.cameraController.update(elapsed, delta);
-    this.camera.updateMatrixWorld();
-    this.camera.updateProjectionMatrix();
-    this.camera.getWorldDirection(dir);
-    this.rings.update(elapsed);
-    this.particles.update(elapsed, delta);
-    if (this.points) {
-      this.points.setCameraDirection(dir);
-      this.points.update(elapsed, delta);
+    if (!this.paused) {
+      this.elapsed = elapsed;
+      const dir = new Vector3();
+      this.shaderBackground.update(elapsed);
+      if (this.useCameraController) this.cameraController.update(elapsed, delta);
+      this.camera.updateMatrixWorld();
+      this.camera.updateProjectionMatrix();
+      this.camera.getWorldDirection(dir);
+      this.rings.update(elapsed);
+      this.particles.update(elapsed, delta);
+      if (this.points) {
+        this.points.setCameraDirection(dir);
+        this.points.update(elapsed, delta);
+      }
+      if (this.mainBezier) this.mainBezier.update(elapsed);
+      this.secondaryBeziers.forEach(b => b.update(elapsed));
     }
-    if (this.mainBezier) this.mainBezier.update(elapsed);
-    this.secondaryBeziers.forEach(b => b.update(elapsed));
   }
 
   rotationalVelocity = 0;
@@ -200,7 +204,6 @@ export default class DefaultVisuals extends Object3D implements IVisuals {
       const capacity = (1 - this.particles.lastCount / this.particles.count);
       const scaledPower = MathUtils.smoothstep(frame.power, 0.2, 0.6);
       const particleGenerationMultiplier = MathUtils.mapLinear(capacity * scaledPower, 0, 1, 1.01, 6.);
-      // console.log(`Capacity: ${capacity.toFixed(3)}, power: ${scaledPower} => mutliplier: ${particleGenerationMultiplier.toFixed(3)}`)
       const { data } = this.fftTextureManager;
       const toFFT = 1 / (Math.PI * 2) * (data.length / 4);
       for (let i = 0; i < coords.length; i++) {

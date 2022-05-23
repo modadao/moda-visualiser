@@ -34,7 +34,6 @@ export default class FFTTextureManager implements IAudioReactive {
 
     this.opts = Object.assign({}, defaultOptions, opts || {});
 
-    console.log('FFTTextureManager opts: ', this.opts)
     const { frameSize, textureSize } = this.opts;
     this.texture2fft = frameSize / textureSize;
 
@@ -43,7 +42,6 @@ export default class FFTTextureManager implements IAudioReactive {
     this.dataTexture.wrapT = RepeatWrapping;
     this.data = new Float32Array(textureSize * 4).fill(0);
     this.triggerStates = new Array(textureSize).fill(0).map(() => [false, false]);
-    console.log(this.opts.blurRadius)
   }
 
   handleAudio(frame: IAudioFrame): void {

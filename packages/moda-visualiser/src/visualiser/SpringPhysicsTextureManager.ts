@@ -36,7 +36,6 @@ export default class SpringPhysicsTextureManager implements IAudioReactive {
     this.dataTexture.minFilter = LinearFilter;
     this.dataTexture.magFilter = LinearFilter;
     this.dataTexture.needsUpdate = true;
-    console.log('Building spring physics texture manager', this.width, this.height);
 
     // this.canvas = document.createElement('canvas');
     // this.canvas.width = this.width;
