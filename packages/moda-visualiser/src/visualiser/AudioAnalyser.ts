@@ -85,6 +85,7 @@ export default class AudioManager {
         rej(e);
       })
       audio.src = path;
+      audio.load();
     })
   }
 
