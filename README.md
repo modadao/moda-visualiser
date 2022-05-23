@@ -63,6 +63,49 @@ function Visualiser() {
 }
 ```
 
+### Loading a fingerprint
+
+The visualiser is not responsible for loading fingerprints, 
+to visualise/play a fingerprint you must first pre-fetch the fingerprint.
+
+
+```typescript
+const response = await fetch(`${API_ENDPOINT}?id=xxx&address=xxxx);
+const fingerprint = await response.json();
+
+const audio_path = '...';
+
+visualiser.current.updateFingerprint(fingerprint, audio_path)
+```
+
+### Event listeners + showing loading state
+
+There are some events you can hook into to provide feedback to the user.
+These events are `play`|`pause`|`loading`|`loaded`.  
+
+- `play` : Triggers after `updateFingerprint` is complete and autoplay starts or when `play()` method is run. 
+- `pause` : Triggers when `pause()` method is run. 
+- `loading` : Triggers at the start of `updateFingerprint`
+- `loaded` : Triggers once `updateFingerprint` is complete and visualiser is ready to play (triggers before `play`).
+
+```typescript
+  const container = useRef(null);
+  const visualiser = useRef<ModaVisualiser>();
+  const [isLoading, setIsLoading] = useState(false);
+  useEffect(() => {
+    if (container.current) {
+      visualiser.current = new ModaVisualiser(container.current, DefaultVisuals);
+      visualiser.current.addEventListener('loading', () => setIsLoading(true););
+      visualiser.current.addEventListener('loaded', () => setIsLoading(false););
+    }
+    return () => {
+      if (visualiser.current) {
+        visualiser.current.dispose();
+        visualiser.current = null;
+      }
+    }
+```
+
 ### Implementing custom visuals
 
 Implement custom visuals by passing the implementation of the visuals to the ModaVisualiser.  You can create custom visuals using the following code block.
@@ -72,6 +115,8 @@ import { Object3D, OrthographicCamera, WebGLRenderer } from 'three';
 import { IVisuals, IDerivedFingerPrint, IAudioFrame } from '@moda/moda-visualiser';
 
 export default class CustomVisuals extends Object3D implements IVisuals {
+  paused = false; // Flag to play and pause the visuals
+
   constructor(
     private camera: OrthographicCamera,
     renderer: WebGLRenderer,
@@ -84,11 +129,13 @@ export default class CustomVisuals extends Object3D implements IVisuals {
 
   // Update function runs once per frame.
   update(elapsed: number, delta: number) {
+    if (paused) return;
     this.axes.rotateY(delta * 5); // Rotate axes at a consistent speed
   }
 
   // Handle audio is run once every frame after update.  This is where you add the audio reactivity.
   handleAudio(frame: IAudioFrame) {
+    if (paused) return;
     this.axes.position.y = frame.power; // Move axes up and down 
   }
 
@@ -98,6 +145,8 @@ export default class CustomVisuals extends Object3D implements IVisuals {
     this.axes.dispose();
   }
 }
+
+visualiser.current = new ModaVisualiser(container.current, CustomVisuals);
 ```
 
 #### Extra helpers
