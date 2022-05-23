@@ -12,8 +12,8 @@ export default class CameraController {
     this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
     this.orbitControls.enableDamping = true;
     // this.orbitControls.dampingFactor = 0.95;
-    this.orbitControls.minZoom = 0.0001;
-    this.orbitControls.maxZoom = 0.8;
+    this.orbitControls.minZoom = 0.34;
+    this.orbitControls.maxZoom = 0.99;
     this.orbitControls.addEventListener('start', () => {
       this.usingManualControls = true;
     })
