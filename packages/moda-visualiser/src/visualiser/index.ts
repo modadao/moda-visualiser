@@ -189,6 +189,7 @@ export default class ModaVisualiser {
         this.visuals.paused = false;
       }
       this.emitEvent('loaded');
+      this.emitEvent('play');
     }
   }
 

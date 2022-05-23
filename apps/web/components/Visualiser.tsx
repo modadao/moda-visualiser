@@ -6,6 +6,8 @@ import fingerprint from '../data/roby.json';
 
 
 class CustomVisuals extends Object3D implements IVisuals {
+  paused = false;
+
   axes: AxesHelper;
  constructor(
     _camera: OrthographicCamera,
@@ -19,11 +21,13 @@ class CustomVisuals extends Object3D implements IVisuals {
 
   // Update function runs once per frame.
   update(elapsed: number, delta: number) {
+    if (this.paused) return;
     this.axes.rotateY(delta); // Rotate axes at a consistent speed
   }
 
   // Handle audio is run once every frame after update.  This is where you add the audio reactivity.
   handleAudio(frame: IAudioFrame) {
+    if (this.paused) return;
     this.axes.position.x = frame.power * 4; // Move axes up and down 
   }
 
