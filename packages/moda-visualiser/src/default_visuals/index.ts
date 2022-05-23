@@ -186,44 +186,38 @@ export default class DefaultVisuals extends Object3D implements IVisuals {
 
   rotationalVelocity = 0;
   handleAudio(frame: IAudioFrame): void {
-    if (this.animatePoints) this.fftTextureManager.handleAudio(frame);
-    else this.fftTextureManager.reset();
-    if (this.animateBeziers) this.bezierFftTextureManager.handleAudio(frame);
-    else this.bezierFftTextureManager.reset();
-    // this.bezierSpringPhysicsTextureManager.handleAudio(frame);
-    this.shaderBackground.handleAudio(frame);
-    this.rings.handleAudio(frame);
-    // this.playbackHead.handleAudio(frame);
-    this.progressRing.handleAudio(frame);
-    if (this.points && this.animatePoints) this.points.handleAudio(frame);
-    if (this.mainBezier && this.animateBeziers) this.mainBezier.handleAudio(frame);
-    if (this.secondaryBeziers.length && this.animateBeziers) this.secondaryBeziers.forEach((se) => se.handleAudio(frame));
+    if (!this.paused) {
+      if (this.animatePoints) this.fftTextureManager.handleAudio(frame);
+      else this.fftTextureManager.reset();
+      if (this.animateBeziers) this.bezierFftTextureManager.handleAudio(frame);
+      else this.bezierFftTextureManager.reset();
+      // this.bezierSpringPhysicsTextureManager.handleAudio(frame);
+      this.shaderBackground.handleAudio(frame);
+      this.rings.handleAudio(frame);
+      // this.playbackHead.handleAudio(frame);
+      this.progressRing.handleAudio(frame);
+      if (this.points && this.animatePoints) this.points.handleAudio(frame);
+      if (this.mainBezier && this.animateBeziers) this.mainBezier.handleAudio(frame);
+      if (this.secondaryBeziers.length && this.animateBeziers) this.secondaryBeziers.forEach((se) => se.handleAudio(frame));
 
-    if (this.useParticles) {
-      const {coords} = this.fingerprint;
-      const capacity = (1 - this.particles.lastCount / this.particles.count);
-      const scaledPower = MathUtils.smoothstep(frame.power, 0.2, 0.6);
-      const particleGenerationMultiplier = MathUtils.mapLinear(capacity * scaledPower, 0, 1, 1.01, 6.);
-      const { data } = this.fftTextureManager;
-      const toFFT = 1 / (Math.PI * 2) * (data.length / 4);
-      for (let i = 0; i < coords.length; i++) {
-        const { theta, pos, color } = coords[i];
-        const fftI = Math.floor(theta * toFFT);
-        const v = data[fftI * 4 + 3];
-        const nParticles = Math.floor(Math.abs(v) * Math.random() * (particleGenerationMultiplier));
-        if (nParticles) {
-          this.particles.addParticles(nParticles, pos, color);
+      if (this.useParticles) {
+        const {coords} = this.fingerprint;
+        const capacity = (1 - this.particles.lastCount / this.particles.count);
+        const scaledPower = MathUtils.smoothstep(frame.power, 0.2, 0.6);
+        const particleGenerationMultiplier = MathUtils.mapLinear(capacity * scaledPower, 0, 1, 1.01, 6.);
+        const { data } = this.fftTextureManager;
+        const toFFT = 1 / (Math.PI * 2) * (data.length / 4);
+        for (let i = 0; i < coords.length; i++) {
+          const { theta, pos, color } = coords[i];
+          const fftI = Math.floor(theta * toFFT);
+          const v = data[fftI * 4 + 3];
+          const nParticles = Math.floor(Math.abs(v) * Math.random() * (particleGenerationMultiplier));
+          if (nParticles) {
+            this.particles.addParticles(nParticles, pos, color);
+          }
         }
+
       }
-      // for (let i = 0; i < this.fftTextureManager)
-      // this.fftTextureManager.da
-      // const theta = Math.sin(frame.avgFrequency / 29);
-      // this.coords.forEach(c => {
-      //   const nParticles = Math.floor(Math.abs(theta - c.theta) * frame.power * c.scale * (4.0 + c.featureLevel));
-      //   if (nParticles) {
-      //     this.particles.addParticles(nParticles, c.pos, c.color);
-      //   }
-      // })
     }
   }
 

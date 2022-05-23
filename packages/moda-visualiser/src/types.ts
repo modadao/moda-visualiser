@@ -1,4 +1,4 @@
-import { Color, Object3D, OrthographicCamera, PerspectiveCamera, Vector3, WebGLRenderer } from "three";
+import { Color, Object3D, OrthographicCamera, Vector3, WebGLRenderer } from "three";
 import { IAudioFrame } from "./visualiser/AudioAnalyser";
 
 export interface IPayloadCoordinates {

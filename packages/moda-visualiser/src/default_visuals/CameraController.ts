@@ -1,4 +1,4 @@
-import { Clock, MathUtils, Object3D, OrthographicCamera, Vector3, WebGLRenderer } from "three";
+import { MathUtils, Object3D, OrthographicCamera, Vector3, WebGLRenderer } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 const INTRO_TIME = 10;
@@ -9,7 +9,6 @@ export default class CameraController {
   constructor(private camera: OrthographicCamera, private renderer: WebGLRenderer) {
     camera.position.set(0, 50, 0);
     camera.zoom = 0.45;
-    this.startTime = this.clock.getElapsedTime() + 10;
     this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
     this.orbitControls.enableDamping = true;
     // this.orbitControls.dampingFactor = 0.95;

@@ -164,7 +164,6 @@ export default class ModaVisualiser {
       this.camera.top = halfDims.y;
       this.camera.bottom = -halfDims.y;
       this.camera.updateProjectionMatrix();
-      const { top, bottom, left, right } = this.camera;
       this.renderer.setSize(bounds.width, bounds.height);
       this.resizeTimeout = undefined;
     }, 200)
@@ -428,9 +427,13 @@ export default class ModaVisualiser {
 
   play() {
     if (this.audioManager) this.audioManager.play();
+    if (this.visuals) this.visuals.paused = false;
+    this.clock.start();
   }
 
   pause() {
     if (this.audioManager) this.audioManager.pause();
+    if (this.visuals) this.visuals.paused = true;
+    this.clock.stop();
   }
 }
