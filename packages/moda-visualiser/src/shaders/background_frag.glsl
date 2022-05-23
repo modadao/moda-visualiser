@@ -1,18 +1,21 @@
 uniform float u_power;
 uniform float u_time;
+uniform vec2 u_resolution;
 uniform vec3 u_backgroundColor;
 varying vec2 vUv;
 
 void main() {
+  /* vec2 sUv = (vUv.xy - vec2(0.5, 0.5)) * vec2(u_resolution.y / u_resolution.x, 1.); */
+  vec2 sUv = (gl_FragCoord.xy - vec2(u_resolution.x, u_resolution.y)) / u_resolution * vec2(1., u_resolution.y / u_resolution.x);
   gl_FragColor = vec4(u_backgroundColor, 1.);
-  float mask = 1. - length( vUv - vec2(0.5, 0.5)) * 2.;
+  float mask = 1. - length( sUv - vec2(0.5, 0.5)) * 2.;
 
   vec3 c = vec3(0.);
   float l, t = u_time;
   for(int i = 0; i < 3; i++){ // calc rgb offset;
-        vec2 uv, p = vUv;
+        vec2 uv, p = sUv;
         uv = p;
-        p += vec2(-0.5, -0.5);
+        /* p += vec2(-0.5, -0.5); */
         l = length(p); // distance from 0 coord
         t += u_power * 0.1;
 

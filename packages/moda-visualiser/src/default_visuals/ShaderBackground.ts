@@ -1,4 +1,4 @@
-import { Color, ShaderMaterial, WebGLRenderer } from 'three';
+import { Color, ShaderMaterial, Vector2, WebGLRenderer } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass';
 import { IAudioFrame } from '../visualiser/AudioAnalyser';
 
@@ -14,6 +14,7 @@ export default class ShaderBackground implements IAudioReactive {
       fragmentShader: BackgroundFrag,
       vertexShader: BackgroundVert,
       uniforms: {
+        u_resolution: { value: new Vector2() },
         u_backgroundColor: { value: backgroundColor },
         u_power: { value: 0 },
         u_time: { value: 0 },
@@ -28,7 +29,13 @@ export default class ShaderBackground implements IAudioReactive {
     this.mat.uniforms.u_time.value = elapsed;
   }
 
+  size = new Vector2();
   render(renderer: WebGLRenderer) {
+    renderer.getSize(this.size);
+    if (!this.size.equals(this.mat.uniforms.u_resolution.value)) {
+      this.mat.uniforms.u_resolution.value = new Vector2().copy(this.size);
+      console.log('Size changed to ', this.size);
+    }
     this.quad.render(renderer);
   }
 
