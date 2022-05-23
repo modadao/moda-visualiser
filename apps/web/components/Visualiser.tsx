@@ -39,9 +39,24 @@ function Visualiser() {
   // Mount/dispose and remove visualiser on mount/unmount
   const container = useRef(null);
   const visualiser = useRef<ModaVisualiser>();
+  const isLoading = useRef(false);
   useEffect(() => {
     if (container.current) {
       visualiser.current = new ModaVisualiser(container.current, DefaultVisuals);
+      visualiser.current.addEventListener('loading', () => {
+        console.log('loading')
+        isLoading.current = true
+      });
+      visualiser.current.addEventListener('loaded', () => {
+        console.log('loaded')
+        isLoading.current = false
+      });
+      visualiser.current.addEventListener('play', () => {
+        console.log('play')
+      });
+      visualiser.current.addEventListener('pause', () => {
+        console.log('pause')
+      });
     }
     return () => {
       if (visualiser.current) {
@@ -78,6 +93,7 @@ function Visualiser() {
   return (
     <div className="App">
       <div ref={container}></div>
+      <h3>Options {isLoading.current ? "(Loading)" : ""}</h3>
       <form className="fetchform" onSubmit={handleSubmit}>
         <div>
           <span>Address</span>

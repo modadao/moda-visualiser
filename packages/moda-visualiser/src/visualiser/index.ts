@@ -9,6 +9,7 @@ const COLOR_SCHEME_IMG = ' data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/4g
 const FEATURE_POINT_COUNT = 7;
 const FEATURE_POINT_EXTRA_PER = 3000;
 
+export type VisualiserEvents = 'play'|'pause'|'loading'|'loaded';
 
 export interface ISettings {
   /**
@@ -173,6 +174,7 @@ export default class ModaVisualiser {
    * @description Updates the visualisation with a new fingerprint
    */
   async updateFingerprint(fingerprint: IFingerprint, audioPath: string) {
+    this.emitEvent('loading');
     this.scene.clear();
     if (this.visuals)
       this.visuals.dispose();
@@ -186,6 +188,7 @@ export default class ModaVisualiser {
       if (this.visuals) {
         this.visuals.paused = false;
       }
+      this.emitEvent('loaded');
     }
   }
 
@@ -425,15 +428,34 @@ export default class ModaVisualiser {
     // Rest handled in the `update` loop.
   }
 
-  play() {
+  play(): boolean {
     if (this.audioManager) this.audioManager.play();
     if (this.visuals) this.visuals.paused = false;
     this.clock.start();
+    this.emitEvent('play');
+    return true;
   }
 
-  pause() {
+  pause(): boolean {
     if (this.audioManager) this.audioManager.pause();
     if (this.visuals) this.visuals.paused = true;
     this.clock.stop();
+    this.emitEvent('pause');
+    return true;
+  }
+
+  callbacks: Record<VisualiserEvents, Array<() => void>> = {
+    play: [],
+    pause: [],
+    loading: [],
+    loaded: [],
+  };
+
+  addEventListener(name: VisualiserEvents, cb: () => void) {
+    this.callbacks[name].push(cb);
+  }
+
+  private emitEvent(name: VisualiserEvents) {
+    this.callbacks[name].forEach(cb => cb());
   }
 }
