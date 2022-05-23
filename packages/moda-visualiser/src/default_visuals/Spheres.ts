@@ -158,4 +158,13 @@ export default class Spheres extends Object3D implements IAudioReactive {
     })
     this.superNovas = this.superNovas.filter(sn => sn.id !== toRemove.id);
   }
+
+  dispose() {
+    // @ts-expect-error; Bad typing
+    this.points.material.dispose();
+    this.points.geometry.dispose();
+    // @ts-expect-error; Bad typing
+    this.outlines.material.dispose();
+    this.outlines.geometry.dispose();
+  }
 }

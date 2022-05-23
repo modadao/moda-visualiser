@@ -72,4 +72,11 @@ export default class Rings extends Object3D implements IAudioReactive {
     }
     this.bufferTexture.needsUpdate = true;
   }
+
+  dispose() {
+    this.rings.forEach(r => {
+      (r.material as ShaderMaterial).dispose();
+      r.geometry.dispose();
+    })
+  }
 }

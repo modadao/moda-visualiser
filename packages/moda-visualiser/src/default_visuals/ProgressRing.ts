@@ -4,7 +4,7 @@ import ProgressRingFrag from '../shaders/progress_ring_frag.glsl';
 import ProgressRingVert from '../shaders/progress_ring_vert.glsl';
 import IAudioReactive from "../types";
 
-class ProgressRing extends Mesh implements IAudioReactive {
+class ProgressRing extends Mesh<BoxBufferGeometry, ShaderMaterial> implements IAudioReactive {
   constructor(innerRadius: number, thickness: number, segments = 64) {
     const geometry = new BoxBufferGeometry(1, 0.01, 1, 2, 1, segments);
     geometry.translate(0.5, 0.005, 0.5);
@@ -22,8 +22,12 @@ class ProgressRing extends Mesh implements IAudioReactive {
   }
 
   handleAudio(frame: IAudioFrame): void {
-    (this.material as ShaderMaterial).uniforms.u_progress = { value: MathUtils.degToRad(frame.progress * 360) };
-      
+    this.material.uniforms.u_progress = { value: MathUtils.degToRad(frame.progress * 360) };
+  }
+
+  dispose() {
+    this.geometry.dispose();
+    this.material.dispose();
   }
 }
 

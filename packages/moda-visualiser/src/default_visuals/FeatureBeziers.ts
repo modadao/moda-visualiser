@@ -1,4 +1,4 @@
-import { BufferAttribute, Color, CubicBezierCurve3, Curve, Mesh, Object3D, ShaderMaterial, Texture, TubeGeometry, Vector3 } from "three"
+import { BufferAttribute, BufferGeometry, Color, CubicBezierCurve3, Curve, Mesh, Object3D, ShaderMaterial, Texture, TubeGeometry, Vector3 } from "three"
 import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils";
 import IAudioReactive, { IDerivedCoordinate, IDerivedFingerPrint } from "../types";
 import { customRandom } from "../utils";
@@ -184,5 +184,13 @@ export default class FeatureBeziers extends Object3D implements IAudioReactive {
     if (frame.trigger) {
       this.material.uniforms.u_triggerCount = { value: this.material.uniforms.u_triggerCount.value + 1};
     }
+  }
+
+  dispose() {
+    this.children.forEach(c => {
+      const m = c as Mesh<BufferGeometry, ShaderMaterial>;
+      m.geometry.dispose();
+    })
+    this.material.dispose();
   }
 }

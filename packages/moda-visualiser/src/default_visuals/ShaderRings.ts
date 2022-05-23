@@ -43,4 +43,9 @@ export default class ShaderRings extends Object3D implements IAudioReactive {
     this.internalPower = MathUtils.lerp(this.internalPower, frame.power, mixAmount);
     this.mesh.material.uniforms.u_power.value = this.internalPower;
   }
+
+  dispose() {
+    this.mesh.material.dispose();
+    this.mesh.geometry.dispose();
+  }
 }

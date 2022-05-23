@@ -12,7 +12,7 @@ export default class CameraController {
     this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
     this.orbitControls.enableDamping = true;
     // this.orbitControls.dampingFactor = 0.95;
-    this.orbitControls.minZoom = 0.004;
+    this.orbitControls.minZoom = 0.0001;
     this.orbitControls.maxZoom = 0.8;
     this.orbitControls.addEventListener('start', () => {
       this.usingManualControls = true;
@@ -76,5 +76,9 @@ export default class CameraController {
 
     this.camera.position.lerp(cameraPos, 0.02);
     this.camera.lookAt(new Vector3());
+  }
+
+  dispose() {
+    this.orbitControls.dispose();
   }
 }

@@ -223,6 +223,14 @@ export default class DefaultVisuals extends Object3D implements IVisuals {
 
   dispose() {
     // this.folder.destroy();
+    this.cameraController.dispose();
+    this.shaderBackground.dispose();
+    this.rings.dispose();
+    if (this.points) this.points.dispose();
+    if (this.mainBezier) this.mainBezier.dispose();
+    this.secondaryBeziers.forEach(b => b.dispose());
+    this.progressRing.dispose();
+    this.particles.dispose();
   }
 
 }

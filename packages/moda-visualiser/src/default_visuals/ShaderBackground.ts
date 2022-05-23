@@ -35,4 +35,8 @@ export default class ShaderBackground implements IAudioReactive {
   handleAudio(frame: IAudioFrame): void {
     this.mat.uniforms.u_power.value = frame.power;
   }
+
+  dispose() {
+    this.quad.dispose();
+  }
 }
