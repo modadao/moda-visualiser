@@ -9,7 +9,7 @@ void main() {
   /* vec2 sUv = (gl_FragCoord.xy - vec2(u_resolution.x, u_resolution.y)) / u_resolution * vec2(1., u_resolution.y / u_resolution.x); */
   vec2 sUv = (vUv.xy - vec2(0.5)) * vec2(1., u_resolution.y / u_resolution.x);
   gl_FragColor = vec4(u_backgroundColor, 1.);
-  float mask = 1. - length(sUv) * max(u_resolution.x, u_resolution.y) / min(u_resolution.x, u_resolution.y) * 1.;
+  float mask = max(0., 1. - length(sUv) * max(u_resolution.x, u_resolution.y) / min(u_resolution.x, u_resolution.y) * 1.);
 
   vec3 c = vec3(0.);
   float l, t = u_time;
