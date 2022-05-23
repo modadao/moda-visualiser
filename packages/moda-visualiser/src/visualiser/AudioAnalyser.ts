@@ -14,7 +14,7 @@ export interface IAudioFrame {
 }
 
 export default class AudioManager {
-  static audio: HTMLAudioElement|undefined;
+  static audio: HTMLAudioElement;
   song: Audio|undefined;
   listener: AudioListener|undefined;
 
@@ -38,6 +38,21 @@ export default class AudioManager {
     this.fft = new Uint8Array(fftSize).fill(0);
     this.minFft = new Array(fftSize).fill(0);
     this.maxFft = new Array(fftSize).fill(200);
+
+    if (!AudioManager.audio) {
+      const existingAudio = document.getElementById('moda-visualiser-audio-source') as HTMLAudioElement;
+      if (existingAudio) {
+        AudioManager.audio = existingAudio;
+      } else {
+        AudioManager.audio = document.createElement('audio');
+      }
+
+      AudioManager.audio.classList.add('Moda-Visualiser-Audio-Source')
+      AudioManager.audio.id = 'moda-visualiser-audio-source';
+      // mediaElement.setAttribute('crossorigin', 'anonymous');
+      AudioManager.audio.style.display = 'none';
+      document.body.appendChild(AudioManager.audio);
+    }
   }
 
   hasSetup = false;
@@ -52,18 +67,12 @@ export default class AudioManager {
 
   interval: number|undefined;
   load(path: string): Promise<void> {
-    return new Promise((res, rej) => {
+    const {audio} = AudioManager;
+    const promise: Promise<void> = new Promise((res, rej) => {
       if (!this.listener || !this.song) {
         this.setup();
       }
 
-      if (!AudioManager.audio) {
-        AudioManager.audio = document.createElement('audio');
-        AudioManager.audio.classList.add('Moda-Visualiser-Audio-Source')
-        AudioManager.audio.style.display = 'none';
-        document.body.appendChild(AudioManager.audio);
-      }
-      const {audio} = AudioManager;
       audio.addEventListener('canplaythrough', () => {
         if (!this.song) throw new Error('song audio object not initialised');
         try {
@@ -73,20 +82,21 @@ export default class AudioManager {
         }
 
         this.analyser = new AudioAnalyser(this.song, this.fftSize * 2);
-        audio.play();
         if (this.interval) window.clearInterval(this.interval);
         this.interval = window.setInterval(() => {
           this.handleAudioFrame();
         }, 5);
+        audio.play();
         res();
       })
       audio.addEventListener('error', (e: ErrorEvent) => {
         console.error('Error loading audio: ', e)
         rej(e);
       })
-      audio.src = path;
-      audio.load();
     })
+    audio.src = path;
+    audio.load();
+    return promise;
   }
 
   private hasTriggered = false
@@ -171,20 +181,39 @@ export default class AudioManager {
   play() {
     if (AudioManager.audio) {
       AudioManager.audio.play();
+      return true;
     }
+    return false;
   }
 
   pause() {
     if (AudioManager.audio) {
       AudioManager.audio.pause();
+      return true;
     }
+    return false;
+  }
+
+  mute() {
+    if (AudioManager.audio) {
+      AudioManager.audio.setAttribute('muted', '');
+      return true;
+    }
+    return false;
+  }
+
+  unmute() {
+    if (AudioManager.audio) {
+      AudioManager.audio.removeAttribute('muted');
+      return true;
+    }
+    return false;
   }
 
   dispose() {
     if (AudioManager.audio) {
       AudioManager.audio.pause();
       document.body.removeChild(AudioManager.audio);
-      AudioManager.audio = undefined;
     }
     if (this.interval) window.clearInterval(this.interval);
     if (this.song) this.song.disconnect();

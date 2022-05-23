@@ -101,7 +101,6 @@ export default class ModaVisualiser {
 
   private buildScene(fingerprint: IDerivedFingerPrint, settings: ISettings) {
     this.colorSampler = new ImgSampler(settings.color.colorTextureSrc);
-    this.audioManager = new AudioManager(this.camera, this.scene, 64, settings);
     this.lastFingerprint = fingerprint;
 
     this.visuals = new this.visualsConstructor(this.camera, this.renderer, fingerprint);
@@ -173,16 +172,18 @@ export default class ModaVisualiser {
   /**
    * @description Updates the visualisation with a new fingerprint
    */
-  async updateFingerprint(fingerprint: IFingerprint, audioPath: string) {
+  updateFingerprint(fingerprint: IFingerprint, audioPath: string) {
     this.emitEvent('loading');
     this.scene.clear();
     if (this.visuals)
       this.visuals.dispose();
     this.colorSampler = new ImgSampler(this.settings.color.colorTextureSrc);
-    const derivedFingerprint = await this.deriveFingerprint(fingerprint);
-    this.buildScene(derivedFingerprint, this.settings);
-    if (this.audioManager) {
-      await this.audioManager.load(audioPath);
+    if (this.audioManager) this.audioManager.dispose();
+    this.audioManager = new AudioManager(this.camera, this.scene, 64, this.settings);
+    this.deriveFingerprint(fingerprint).then((derivedFingerprint) => {
+      this.buildScene(derivedFingerprint, this.settings);
+    });
+    this.audioManager.load(audioPath).then(() => {
       this.clock = new Clock();
       this.clock.start();
       if (this.visuals) {
@@ -190,7 +191,7 @@ export default class ModaVisualiser {
       }
       this.emitEvent('loaded');
       this.emitEvent('play');
-    }
+    });
   }
 
   /**
@@ -430,6 +431,7 @@ export default class ModaVisualiser {
   }
 
   play(): boolean {
+    if (!this.visuals) return false;
     if (this.audioManager) this.audioManager.play();
     if (this.visuals) this.visuals.paused = false;
     this.clock.start();
@@ -438,11 +440,28 @@ export default class ModaVisualiser {
   }
 
   pause(): boolean {
+    if (!this.visuals) return false;
     if (this.audioManager) this.audioManager.pause();
     if (this.visuals) this.visuals.paused = true;
     this.clock.stop();
     this.emitEvent('pause');
     return true;
+  }
+
+  mute(): boolean {
+    if (this.audioManager) {
+      return this.audioManager.mute();
+    } else {
+      return false;
+    }
+  }
+
+  unmute(): boolean {
+    if (this.audioManager) {
+      return this.audioManager.unmute();
+    } else {
+      return false;
+    }
   }
 
   callbacks: Record<VisualiserEvents, Array<() => void>> = {
