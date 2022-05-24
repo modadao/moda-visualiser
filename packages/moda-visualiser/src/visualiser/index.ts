@@ -66,9 +66,6 @@ export default class ModaVisualiser {
   settings: ISettings = defaults;
   lastFingerprint!: IDerivedFingerPrint;
 
-  shouldExport = false;
-  exportDimensions = 0;
-
   audioManager?: AudioManager;
 
   stopped = false;
@@ -145,8 +142,10 @@ export default class ModaVisualiser {
       link.click();
       this.handleResize(); // Return to default resolution
       this.shouldExport = false;
+      this.exportComplete = true;
     }
-    if (!this.stopped) window.requestAnimationFrame(this.update);
+
+    window.requestAnimationFrame(this.update);
   }
 
   resizeTimeout: number | undefined;
@@ -418,15 +417,31 @@ export default class ModaVisualiser {
   /**
    * @description Exports the next frame at a given dimension.
    */
+  exportComplete = false;
+  shouldExport = false;
   export(dimensions: number) {
     const dpr = window.devicePixelRatio;
     const bounds = new DOMRect(0, 0, dimensions / dpr, dimensions / dpr);
+    const oldZoom = this.camera.zoom;
+    const oldPosition = this.camera.position.clone();
     this.camera.zoom = 0.45;
     this.camera.position.set(0, 50, 0);
     this.handleResize(bounds);
+    this.pause();
+
     setTimeout(() => {
       this.shouldExport = true;
-    }, 300)
+    }, 200)
+
+    const checkCompletionInterval = setInterval(() => {
+      if (this.exportComplete) {
+        this.exportComplete = false;
+        this.camera.zoom = oldZoom;
+        this.camera.position.copy(oldPosition);
+        this.play();
+        window.clearInterval(checkCompletionInterval);
+      }
+    })
     // Rest handled in the `update` loop.
   }
 
