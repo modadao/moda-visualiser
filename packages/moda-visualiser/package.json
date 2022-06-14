@@ -13,6 +13,7 @@
     }
   },
   "scripts": {
+    "prepare": "npm run build",
     "build": "vite build && tsc --emitDeclarationOnly && npm run build:bundle-types",
     "build:bundle-types": "dts-bundle-generator -o dist/types.d.ts dist/index.d.ts",
     "preview": "vite preview"
