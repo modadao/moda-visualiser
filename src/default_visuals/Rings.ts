@@ -68,7 +68,8 @@ export default class Rings extends Object3D implements IAudioReactive {
     this.bufferTexture.image = {
       data,
       width: 512,
-      height: 1
+      height: 1,
+      colorSpace: "display-p3",
     }
     this.bufferTexture.needsUpdate = true;
   }
