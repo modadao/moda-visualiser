@@ -8,17 +8,6 @@ on:
     types: [created]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          # Defaults to the user or organization that owns the workflow file
-          scope: '@moda'
-          node-version: 14
-      - run: npm ci
-
   publish-gpr:
     needs: build
     runs-on: ubuntu-latest
@@ -31,8 +20,9 @@ jobs:
         with:
           node-version: 14
           registry-url: https://npm.pkg.github.com/
-          scope: '@moda'
           # Defaults to the user or organization that owns the workflow file
+          scope: '@modadao'
+          always-auth: true
       - run: npm ci
       - run: npm publish
         env:
