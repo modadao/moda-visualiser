@@ -1,5 +1,8 @@
 # Moda NFT Visualiser
 
+This project is forked from a Code on Canvas repository.
+Code On Canvas Origin: `git@bitbucket.org:codeoncanvas/moda-genesis-nft.git`
+
 ## Overview
 
 This is a turborepo project containing both the visualiser library and an example integration with a next app.
