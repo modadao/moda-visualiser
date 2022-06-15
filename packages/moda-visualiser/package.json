@@ -13,7 +13,6 @@
     }
   },
   "scripts": {
-    "prepare": "yarn run build",
     "build": "vite build && tsc --emitDeclarationOnly && npm run build:bundle-types",
     "build:bundle-types": "dts-bundle-generator -o dist/types.d.ts dist/index.d.ts",
     "preview": "vite preview"
@@ -36,5 +35,6 @@
     "simplex-noise": "^3.0.1",
     "three": "^0.138.1",
     "three-instanced-uniforms-mesh": "^0.46.0"
-  }
+  },
+  "gitHead": "d39133a0b8bf8e85a75f05dc0d99513fcf984d66"
 }

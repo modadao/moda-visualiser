@@ -15,6 +15,9 @@ jobs:
         with:
           node-version: '14.x'
           registry-url: 'https://npm.pkg.github.com'
+          # Cache installed packages
+          cache: 'yarn'
+          cache-dependency-path: 'packages/moda-visualiser/yarn.lock'
           # Defaults to the user or organization that owns the workflow file
           scope: '@moda'
       - run: yarn
@@ -25,6 +28,9 @@ jobs:
 
       - name: Bootstrap lerna
         run: yarn ci:bootstrap
+
+      - name: Build visualiser
+        run: yarn build
 
       - run: yarn ci:publish
         env:
