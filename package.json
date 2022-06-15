@@ -1,6 +1,8 @@
 {
   "name": "moda",
   "version": "0.0.3",
+  "private": true,
+  "license": "UNLICENSED",
   "workspaces": [
     "apps/*",
     "packages/*"
