@@ -15,6 +15,7 @@
   "scripts": {
     "build": "vite build && tsc --emitDeclarationOnly && npm run build:bundle-types",
     "build:bundle-types": "dts-bundle-generator -o dist/types.d.ts dist/index.d.ts",
+    "build:clean-dist": "find ./dist/ -name \"*.d.ts\" | grep -v \"types.d.ts\" | xargs rm -r",
     "preview": "vite preview"
   },
   "devDependencies": {
