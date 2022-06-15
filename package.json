@@ -1,30 +1,40 @@
 {
-  "name": "moda",
+  "name": "@moda/moda-visualiser",
   "version": "0.0.3",
-  "private": true,
   "license": "UNLICENSED",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
+  "files": [
+    "dist"
   ],
+  "types": "./dist/types.d.ts",
+  "module": "./dist/moda-visualiser.es.js",
+  "exports": {
+    ".": {
+      "import": "./dist/moda-visualiser.es.js"
+    }
+  },
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "preview": "turbo run preview",
-    "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "ci:bootstrap": "npx lerna bootstrap",
-    "ci:publish": "lerna publish from-package --yes"
+    "build": "vite build && tsc --emitDeclarationOnly && npm run build:bundle-types",
+    "build:bundle-types": "dts-bundle-generator -o dist/types.d.ts dist/index.d.ts",
+    "preview": "vite preview"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.19.0",
-    "@typescript-eslint/parser": "^5.20.0",
-    "prettier": "^2.5.1",
-    "turbo": "latest"
+    "@types/p5": "^1.4.2",
+    "@types/three": "^0.137.0",
+    "dts-bundle-generator": "^6.5.0",
+    "nodemon": "^2.0.15",
+    "p5": "^1.4.1",
+    "p5js-wrapper": "^1.2.3",
+    "rollup-plugin-analyzer": "^4.0.0",
+    "rollup-plugin-typescript2": "^0.31.2",
+    "typescript": "^4.5.4",
+    "vite": "^2.8.0",
+    "vite-plugin-dts": "^0.9.9",
+    "vite-plugin-glsl": "^0.0.9"
   },
-  "engines": {
-    "npm": ">=7.0.0",
-    "node": ">=14.0.0"
+  "dependencies": {
+    "simplex-noise": "^3.0.1",
+    "three": "^0.138.1",
+    "three-instanced-uniforms-mesh": "^0.46.0"
   },
-  "packageManager": "yarn@1.22.10"
+  "gitHead": "d39133a0b8bf8e85a75f05dc0d99513fcf984d66"
 }
