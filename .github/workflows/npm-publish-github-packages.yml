@@ -14,7 +14,9 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: 16
+          # Defaults to the user or organization that owns the workflow file
+          scope: '@moda'
+          node-version: 14
       - run: npm ci
 
   publish-gpr:
@@ -29,6 +31,8 @@ jobs:
         with:
           node-version: 14
           registry-url: https://npm.pkg.github.com/
+          scope: '@moda'
+          # Defaults to the user or organization that owns the workflow file
       - run: npm ci
       - run: npm publish
         env:
