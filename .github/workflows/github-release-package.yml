@@ -14,17 +14,18 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '14.x'
-          registry-url: 'https://npm.pkg.github.com'
           # Cache installed packages
           cache: 'yarn'
           cache-dependency-path: 'packages/moda-visualiser/yarn.lock'
-          # Defaults to the user or organization that owns the workflow file
-          scope: '@moda'
+
+      - name: "Add auth details to npmrc"
+        run : echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+      - name: "Set default registry to npm"
+        run : echo "registry=https://registry.npmjs.org/" >> .npmrc
+      - name: "Add scoped registry for moda"
+        run : echo "@moda:registry=https://npm.pkg.github.com" >> .npmrc
+
       - run: yarn
-      - name: Config git user
-        run: |
-          git config --global user.name "${{ github.actor }}"
-          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
 
       - name: Bootstrap lerna
         run: yarn ci:bootstrap
