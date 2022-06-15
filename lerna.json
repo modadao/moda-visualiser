@@ -8,8 +8,8 @@
     },
     "publish": {
       "npmClient": "yarn",
-      "allowBranch": ["master", "canary"],
-      "registry": "https://registry.npmjs.org/"
+      "allowBranch": ["main"],
+      "registry": "https://npm.pkg.github.com"
     }
   },
   "version": "2.1.6"
