@@ -31,8 +31,8 @@ jobs:
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
 
       - name: Bootstrap lerna
-        run: yarn bootstrap
+        run: yarn ci:bootstrap
 
-      - run: yarn publish
+      - run: yarn ci:publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
