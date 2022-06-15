@@ -16,7 +16,7 @@ Code On Canvas Origin: `git@bitbucket.org:codeoncanvas/moda-genesis-nft.git`
 2. Increment the package version numbers
 3. [Go to the releases page](https://github.com/modadao/moda-visualiser/releases).
 4. Create a new release
-5. [Verify release workflow status](https://github.com/modadao/moda-visualiser/actions/workflows/github-release-package.yml)
+5. [Verify release workflow status](https://github.com/modadao/moda-visualiser/actions)
 
 ### Example integration
 
@@ -25,7 +25,7 @@ This is because the visualiser will create a lot of GPU resources + add event
 listeners that will need to be disposed at the end of the lifecycle.
 
 ```javascript
-import ModaVisualiser, { DefaultVisuals } from '@moda/moda-visualiser';
+import ModaVisualiser, { DefaultVisuals } from '@moda/visualiser';
 
 function Visualiser() {
   // Mount/dispose and remove visualiser on mount/unmount
@@ -116,7 +116,7 @@ Implement custom visuals by passing the implementation of the visuals to the Mod
 
 ```typescript
 import { Object3D, OrthographicCamera, WebGLRenderer } from 'three';
-import { IVisuals, IDerivedFingerPrint, IAudioFrame } from '@moda/moda-visualiser';
+import { IVisuals, IDerivedFingerPrint, IAudioFrame } from '@moda/visualiser';
 
 export default class CustomVisuals extends Object3D implements IVisuals {
   paused = false; // Flag to play and pause the visuals
@@ -188,8 +188,3 @@ void main() {
 ```
 
 
-
-## Integration
-
-- If you don't want/need the Next.js app or monorepo you should just be able to pull `packages/moda-visualiser` out into it's own folder and run `yarn && yarn build`.  There are no cross-dependencies.
-- Alternatively you can run `yarn build` and use the output bundle `./packages/moda-visualiser/dist/moda-visualiser.es.js`.
