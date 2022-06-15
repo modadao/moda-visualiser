@@ -1,6 +1,6 @@
 {
-  "name": "@modadao/nft-visualiser",
-  "version": "0.0.3",
+  "name": "@modadao/visualiser",
+  "version": "0.9.2",
   "license": "UNLICENSED",
   "files": [
     "dist"
@@ -41,6 +41,6 @@
   "publishConfig": { "registry": "https://npm.pkg.github.com/" },
   "repository": {
     "type": "git",
-    "url": "https://github.com/modadao/nft-visualiser.git"
+    "url": "https://github.com/modadao/moda-visualiser.git"
   }
 }
