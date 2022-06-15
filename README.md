@@ -18,6 +18,14 @@ This is a turborepo project containing both the visualiser library and an exampl
 
 ## How to use
 
+### Updating the packages
+
+1. Make changes to the repository and push to main
+2. Increment the package version numbers
+3. [Go to the releases page](https://github.com/modadao/moda-visualiser/releases).
+4. Create a new release
+5. [Verify release workflow status](https://github.com/modadao/moda-visualiser/actions/workflows/github-release-package.yml)
+
 ### Lazy Loading
 The Moda Visualiser has a large bundle size (due to threejs) and depends on client side APIs and thus should be lazyloaded/codesplit using dynamic components.
 
