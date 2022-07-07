@@ -8,23 +8,23 @@ Code On Canvas Origin: `git@bitbucket.org:codeoncanvas/moda-genesis-nft.git`
 - Run `yarn` (same folder as this README.md) to install the dependencies
 - Run `yarn build` to build the moda-visualiser library.
 
-## Publishing Packages
-
-- Grab a token from GitHub with permissions to read / write to repos
-- Set this token in your zshrc or bash_profile: `export MODA_PACKAGE_TOKEN=<secret>`
-- Increment the version in the package.json (duplicate versions are not allowed)
-- Run `npm publish`
-- Be sure to periodically delete older unused versions inside the GitHub account
-
 ## How to use
 
-### Updating the packages
+### Updating the packages in GitHub
 
 1. Make changes to the repository and push to main
 2. Increment the package version numbers
 3. [Go to the releases page](https://github.com/modadao/moda-visualiser/releases).
 4. Create a new release
 5. [Verify release workflow status](https://github.com/modadao/moda-visualiser/actions)
+
+### Publishing Packages via the command line
+
+- Grab a token from GitHub with permissions to read / write to repos
+- Set this token in your zshrc or bash_profile: `export MODA_PACKAGE_TOKEN=<secret>`
+- Increment the version in the package.json (duplicate versions are not allowed)
+- Run `npm publish`
+- Be sure to periodically delete older unused versions inside the GitHub account
 
 ### Example integration
 
