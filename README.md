@@ -8,6 +8,14 @@ Code On Canvas Origin: `git@bitbucket.org:codeoncanvas/moda-genesis-nft.git`
 - Run `yarn` (same folder as this README.md) to install the dependencies
 - Run `yarn build` to build the moda-visualiser library.
 
+## Publishing Packages
+
+- Grab a token from GitHub with permissions to read / write to repos
+- Set this token in your zshrc or bash_profile: `export MODA_PACKAGE_TOKEN=<secret>`
+- Increment the version in the package.json (duplicate versions are not allowed)
+- Run `npm publish`
+- Be sure to periodically delete older unused versions inside the GitHub account
+
 ## How to use
 
 ### Updating the packages
@@ -59,7 +67,7 @@ const Visualiser = dynamic(() => import('../components/Visualiser'), { ssr: fals
 function App() {
   return (
     <div className="App">
-    { typeof window !== 'undefined' && 
+    { typeof window !== 'undefined' &&
       <Visualiser />
     }
     </div>
@@ -69,7 +77,7 @@ function App() {
 
 ### Loading a fingerprint
 
-The visualiser is not responsible for loading fingerprints, 
+The visualiser is not responsible for loading fingerprints,
 to visualise/play a fingerprint you must first pre-fetch the fingerprint.
 
 
@@ -85,10 +93,10 @@ visualiser.current.updateFingerprint(fingerprint, audio_path)
 ### Event listeners + showing loading state
 
 There are some events you can hook into to provide feedback to the user.
-These events are `play`|`pause`|`loading`|`loaded`.  
+These events are `play`|`pause`|`loading`|`loaded`.
 
-- `play` : Triggers after `updateFingerprint` is complete and autoplay starts or when `play()` method is run. 
-- `pause` : Triggers when `pause()` method is run. 
+- `play` : Triggers after `updateFingerprint` is complete and autoplay starts or when `play()` method is run.
+- `pause` : Triggers when `pause()` method is run.
 - `loading` : Triggers at the start of `updateFingerprint`
 - `loaded` : Triggers once `updateFingerprint` is complete and visualiser is ready to play (triggers before `play`).
 
@@ -128,7 +136,7 @@ export default class CustomVisuals extends Object3D implements IVisuals {
   ) {
     super();
     this.axes = new AxesHelper(1);
-    this.add(this.axes); // Scene elements should be added to self 
+    this.add(this.axes); // Scene elements should be added to self
   }
 
   // Update function runs once per frame.
@@ -140,7 +148,7 @@ export default class CustomVisuals extends Object3D implements IVisuals {
   // Handle audio is run once every frame after update.  This is where you add the audio reactivity.
   handleAudio(frame: IAudioFrame) {
     if (paused) return;
-    this.axes.position.y = frame.power; // Move axes up and down 
+    this.axes.position.y = frame.power; // Move axes up and down
   }
 
   // Dispose function is run on unmount/when switching fingerprint or settings.

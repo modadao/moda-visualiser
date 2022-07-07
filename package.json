@@ -1,12 +1,15 @@
 {
   "name": "@modadao/visualiser",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "license": "UNLICENSED",
   "files": [
     "dist"
   ],
   "types": "./dist/types.d.ts",
   "module": "./dist/moda-visualiser.es.js",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
   "exports": {
     ".": {
       "import": "./dist/moda-visualiser.es.js"
@@ -16,6 +19,7 @@
     "build": "vite build && tsc --emitDeclarationOnly && npm run build:bundle-types",
     "build:bundle-types": "dts-bundle-generator -o dist/types.d.ts dist/index.d.ts",
     "build:clean-dist": "find ./dist/ -name \"*.d.ts\" | grep -v \"types.d.ts\" | xargs rm -r",
+    "prepublishOnly": "rm -rf dist && vite build && tsc --emitDeclarationOnly && npm run build:bundle-types",
     "preview": "vite preview"
   },
   "devDependencies": {
