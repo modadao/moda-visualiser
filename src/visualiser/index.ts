@@ -299,7 +299,7 @@ export default class ModaVisualiser {
       }
 
       // Split the coords into segments
-      const [ width, height ] = fingerprint.shape;
+      const [ height, width ] = fingerprint.shape;
       const segmentSize = Math.floor(width / targetNumberOfFeatures + 1);
       const segmentedPoints: Array<Array<{x: number, y:number}>> = new Array(targetNumberOfFeatures).fill(0).map(() => []);
       coords.forEach(el => {
@@ -352,7 +352,7 @@ export default class ModaVisualiser {
       (async () => {
 
         const { sin, cos, floor, max, pow } = Math;
-        const [ width, height ] = fingerprint.shape;
+        const [ height, width ] = fingerprint.shape;
 
         const fingerprintBaseVariation = MathUtils.mapLinear(sin(floatHash), 0, 1, 0.7, 1.2);
         const fingerprintVelocityVariation = MathUtils.mapLinear(sin(floatHash), 0, 1, 0.7, 1.2);

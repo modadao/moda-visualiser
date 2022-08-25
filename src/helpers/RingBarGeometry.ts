@@ -5,7 +5,7 @@ export default class RingBarGeometry extends BufferGeometry {
   constructor(radius: number, fingerprint: IDerivedFingerPrint, amplitude: number, skip = 1) {
     super();
     const { sin, cos } = Math;
-    const [width] = fingerprint.shape;
+    const [_, width] = fingerprint.shape;
     const points = fingerprint.coords.map((p, i) => {
       if (i % skip !== 0) return [];
       const theta = (p.x / width) * Math.PI * 2;
