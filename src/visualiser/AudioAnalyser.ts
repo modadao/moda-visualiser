@@ -73,8 +73,11 @@ export default class AudioManager {
         this.setup();
       }
 
-      audio.addEventListener('canplaythrough', () => {
+      let hasAlreadyHandled = false;
+      const loadHandler = () => {
         if (!this.song) throw new Error('song audio object not initialised');
+        if (hasAlreadyHandled) return;
+        hasAlreadyHandled = true;
         try {
           this.song.setMediaElementSource(audio);
         } catch(e) {
@@ -86,9 +89,12 @@ export default class AudioManager {
         this.interval = window.setInterval(() => {
           this.handleAudioFrame();
         }, 5);
-        audio.play();
         res();
-      })
+      }
+
+      audio.addEventListener('canplaythrough', loadHandler);
+      audio.addEventListener('canplay', loadHandler);
+      audio.addEventListener('loadeddata', loadHandler);
       audio.addEventListener('error', (e: ErrorEvent) => {
         console.error('Error loading audio: ', e)
         rej(e);
@@ -179,11 +185,19 @@ export default class AudioManager {
   }
 
   play() {
-    if (AudioManager.audio) {
-      AudioManager.audio.play();
-      return true;
-    }
-    return false;
+    return new Promise((res, rej) => {
+      if (AudioManager.audio) {
+        try {
+          AudioManager.audio.play()
+            .catch(rej)
+            .then(res);
+        } catch(error) {
+          rej(error);
+        }
+        return;
+      }
+      rej("AudioManager does not have an audio element.")
+    })
   }
 
   pause() {

@@ -171,26 +171,33 @@ export default class ModaVisualiser {
   /**
    * @description Updates the visualisation with a new fingerprint
    */
-  updateFingerprint(fingerprint: IFingerprint, audioPath: string) {
-    this.emitEvent('loading');
-    this.scene.clear();
-    if (this.visuals)
-      this.visuals.dispose();
-    this.colorSampler = new ImgSampler(this.settings.color.colorTextureSrc);
-    if (this.audioManager) this.audioManager.dispose();
-    this.audioManager = new AudioManager(this.camera, this.scene, 64, this.settings);
-    this.deriveFingerprint(fingerprint).then((derivedFingerprint) => {
-      this.buildScene(derivedFingerprint, this.settings);
-    });
-    this.audioManager.load(audioPath).then(() => {
-      this.clock = new Clock();
-      this.clock.start();
-      if (this.visuals) {
-        this.visuals.paused = false;
-      }
-      this.emitEvent('loaded');
-      this.emitEvent('play');
-    });
+  updateFingerprint(fingerprint: IFingerprint, audioPath: string): Promise<void> {
+    return new Promise((res, rej) => {
+      this.emitEvent('loading');
+      this.scene.clear();
+      if (this.visuals)
+        this.visuals.dispose();
+      this.colorSampler = new ImgSampler(this.settings.color.colorTextureSrc);
+      if (this.audioManager) this.audioManager.dispose();
+      this.audioManager = new AudioManager(this.camera, this.scene, 64, this.settings);
+      this.deriveFingerprint(fingerprint).then((derivedFingerprint) => {
+        this.buildScene(derivedFingerprint, this.settings);
+      });
+      this.audioManager.load(audioPath).then(() => {
+        if (this.audioManager) {
+          this.audioManager.play()
+            .catch(rej)
+            .then(() => res());
+        } else throw new Error('Could not play audio, no AudioManager')
+        this.clock = new Clock();
+        this.clock.start();
+        if (this.visuals) {
+          this.visuals.paused = false;
+        }
+        this.emitEvent('loaded');
+        this.emitEvent('play');
+      });
+    })
   }
 
   /**
