@@ -34,7 +34,6 @@ export default class ShaderBackground implements IAudioReactive {
     renderer.getSize(this.size);
     if (!this.size.equals(this.mat.uniforms.u_resolution.value)) {
       this.mat.uniforms.u_resolution.value = new Vector2().copy(this.size);
-      console.log('Size changed to ', this.size);
     }
     this.quad.render(renderer);
   }

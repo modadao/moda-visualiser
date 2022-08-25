@@ -81,7 +81,7 @@ export default class AudioManager {
         try {
           this.song.setMediaElementSource(audio);
         } catch(e) {
-          console.warn(`There was an error setting the media source but usually it works anyway. \n\n`, e)
+          console.debug(`There was an error setting the media source but usually it works anyway. \n\n`, e)
         }
 
         this.analyser = new AudioAnalyser(this.song, this.fftSize * 2);

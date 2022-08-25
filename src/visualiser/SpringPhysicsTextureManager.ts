@@ -22,7 +22,6 @@ export default class SpringPhysicsTextureManager implements IAudioReactive {
    * @returns The current y value of the row in the texture
    */
   registerSpringPhysicsElement() {
-    console.warn('Registering spring physics element')
     const height = this.height;
     this.height += 1;
     return height;
