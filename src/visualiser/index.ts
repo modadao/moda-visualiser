@@ -500,4 +500,14 @@ export default class ModaVisualiser {
   private emitEvent(name: VisualiserEvents) {
     this.callbacks[name].forEach(cb => cb());
   }
+
+  /**
+   * Pass in an audio element that already has playback permissions, needed for
+   * for working around browser autoplay audio / video prevention.
+   * 
+   * @param audio - 
+   */
+  static setAudioElement(audio: HTMLAudioElement) {
+    AudioManager.audio = audio;
+  }
 }
