@@ -68,7 +68,7 @@ export default class ModaVisualiser {
 
   visuals?: IVisuals;
   settings: ISettings = defaults;
-  lastFingerprint!: IDerivedFingerPrint;
+  lastFingerprint?: IDerivedFingerPrint;
 
   audioManager?: AudioManager;
 
@@ -220,7 +220,7 @@ export default class ModaVisualiser {
     this.colorSampler = new ImgSampler(this.settings.color.colorTextureSrc);
     if (this.visuals)
       this.visuals.dispose();
-    this.buildScene(this.lastFingerprint, this.settings);
+    if (this.lastFingerprint) this.buildScene(this.lastFingerprint, this.settings);
   }
 
   /**
