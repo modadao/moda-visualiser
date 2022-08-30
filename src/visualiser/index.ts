@@ -13,7 +13,6 @@ export type VisualiserEvents = 'play'|'pause'|'loading'|'loaded';
 
 export interface ISettings {
   autoplay: boolean,
-  autoanalyze: boolean,
   /**
    * @description Controls for options relating to the audio analysis including "triggers" (moments of impact in the audio, used for effects).
    */
