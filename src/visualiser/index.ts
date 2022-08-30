@@ -13,6 +13,7 @@ export type VisualiserEvents = 'play'|'pause'|'loading'|'loaded';
 
 export interface ISettings {
   autoplay: boolean,
+  autoanalyze: boolean,
   /**
    * @description Controls for options relating to the audio analysis including "triggers" (moments of impact in the audio, used for effects).
    */
@@ -43,6 +44,7 @@ export interface ISettings {
 
 const defaults: ISettings = {
   autoplay: true,
+  autoanalyze: true,
   color: {
     colorTextureSrc: COLOR_SCHEME_IMG,
     baseVariation: 0.2,
@@ -192,6 +194,9 @@ export default class ModaVisualiser {
               .catch(rej)
               .then(() => {
                 this.emitEvent('play');
+                if (this.settings.autoanalyze) {
+                  this.startAnalyzer();
+                }
                 res()
             });
           }
