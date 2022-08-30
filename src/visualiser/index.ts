@@ -209,12 +209,13 @@ export default class ModaVisualiser {
   /**
    * @description Updates the visualisation to use new settings
    */
-  updateSettings(settings: ISettings) {
+  updateSettings(settings: Partial<ISettings>) {
     this.scene.clear();
+    this.settings = Object.assign(this.settings, settings);
     this.colorSampler = new ImgSampler(this.settings.color.colorTextureSrc);
     if (this.visuals)
       this.visuals.dispose();
-    this.buildScene(this.lastFingerprint, settings);
+    this.buildScene(this.lastFingerprint, this.settings);
   }
 
   /**
