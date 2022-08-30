@@ -12,6 +12,8 @@ const FEATURE_POINT_EXTRA_PER = 3000;
 export type VisualiserEvents = 'play'|'pause'|'loading'|'loaded';
 
 export interface ISettings {
+  autoplay: boolean,
+  autoanalyze: boolean,
   /**
    * @description Controls for options relating to the audio analysis including "triggers" (moments of impact in the audio, used for effects).
    */
@@ -41,6 +43,7 @@ export interface ISettings {
 }
 
 const defaults: ISettings = {
+  autoplay: true,
   color: {
     colorTextureSrc: COLOR_SCHEME_IMG,
     baseVariation: 0.2,
@@ -185,9 +188,14 @@ export default class ModaVisualiser {
       });
       this.audioManager.load(audioPath).then(() => {
         if (this.audioManager) {
-          this.audioManager.play()
-            .catch(rej)
-            .then(() => res());
+          if (this.settings.autoplay) {
+            this.audioManager.play()
+              .catch(rej)
+              .then(() => {
+                this.emitEvent('play');
+                res()
+            });
+          }
         } else throw new Error('Could not play audio, no AudioManager')
         this.clock = new Clock();
         this.clock.start();
@@ -195,7 +203,6 @@ export default class ModaVisualiser {
           this.visuals.paused = false;
         }
         this.emitEvent('loaded');
-        this.emitEvent('play');
       });
     })
   }
@@ -509,5 +516,10 @@ export default class ModaVisualiser {
    */
   static setAudioElement(audio: HTMLAudioElement) {
     AudioManager.audio = audio;
+  }
+
+  startAnalyzer() {
+    if (this.audioManager) this.audioManager.connect();
+    else throw new Error('No audio manager, call updateFingerprint first');
   }
 }

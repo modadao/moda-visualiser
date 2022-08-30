@@ -49,7 +49,7 @@ export default class AudioManager {
 
       AudioManager.audio.classList.add('Moda-Visualiser-Audio-Source')
       AudioManager.audio.id = 'moda-visualiser-audio-source';
-      // mediaElement.setAttribute('crossorigin', 'anonymous');
+      AudioManager.audio.setAttribute('crossorigin', 'anonymous');
       AudioManager.audio.style.display = 'none';
       document.body.appendChild(AudioManager.audio);
     }
@@ -57,7 +57,7 @@ export default class AudioManager {
 
   hasSetup = false;
   setup() {
-    if (this.hasSetup) return;
+  if (this.hasSetup) return;
     this.listener = new AudioListener();
     this.song = new Audio(this.listener);
     this.camera.add(this.listener);
@@ -69,20 +69,17 @@ export default class AudioManager {
   load(path: string): Promise<void> {
     const {audio} = AudioManager;
     const promise: Promise<void> = new Promise((res, rej) => {
-      if (!this.listener || !this.song) {
-        this.setup();
-      }
+      console.log('load')
+      this.setup();
 
       let hasAlreadyHandled = false;
       const loadHandler = () => {
+        console.log('Load handler')
         if (!this.song) throw new Error('song audio object not initialised');
-        if (hasAlreadyHandled) return;
-        hasAlreadyHandled = true;
-        try {
-          this.song.setMediaElementSource(audio);
-        } catch(e) {
-          console.debug(`There was an error setting the media source but usually it works anyway. \n\n`, e)
-        }
+        if (hasAlreadyHandled) {
+          res();
+          return;
+        };
 
         this.analyser = new AudioAnalyser(this.song, this.fftSize * 2);
         if (this.interval) window.clearInterval(this.interval);
@@ -92,9 +89,7 @@ export default class AudioManager {
         res();
       }
 
-      audio.addEventListener('canplaythrough', loadHandler);
       audio.addEventListener('canplay', loadHandler);
-      audio.addEventListener('loadeddata', loadHandler);
       audio.addEventListener('error', (e: ErrorEvent) => {
         console.error('Error loading audio: ', e)
         rej(e);
@@ -231,5 +226,14 @@ export default class AudioManager {
     }
     if (this.interval) window.clearInterval(this.interval);
     if (this.song) this.song.disconnect();
+  }
+
+  connect() {
+    try {
+      if (AudioManager.audio && this.song)
+        this.song.setMediaElementSource(AudioManager.audio);
+    } catch(e) {
+      console.debug(`There was an error setting the media source but usually it works anyway. \n\n`, e)
+    }
   }
 }
